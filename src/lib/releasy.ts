@@ -56,7 +56,7 @@ export class Releasy extends Api {
 
   private next = async (isBreaking: boolean) => {
     const { next } = this.config;
-    return execVoid(isBreaking ? next : `${next} -b`);
+    return execVoid(isBreaking ? `${next} -b` : next);
   };
 
   private open = async (body: string) => {

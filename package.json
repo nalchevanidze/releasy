@@ -1,6 +1,6 @@
 {
   "name": "gh-rel-easy",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/nalchevanidze/rel-easy.git"
