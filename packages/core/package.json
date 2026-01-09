@@ -18,8 +18,7 @@
   ],
   "scripts": {
     "build": "rm -rf ./dist tsconfig.tsbuildinfo && tsc -b",
-    "prepublishOnly": "npm run build",
-    "dev": "npm run build && ts-node src/index.ts"
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
