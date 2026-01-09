@@ -45194,12 +45194,12 @@ var require_gh = __commonJS({
   }
 });
 
-// ../../packages/core/dist/lib/releasy.js
-var require_releasy = __commonJS({
-  "../../packages/core/dist/lib/releasy.js"(exports2) {
+// ../../packages/core/dist/lib/relasy.js
+var require_relasy = __commonJS({
+  "../../packages/core/dist/lib/relasy.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.Releasy = void 0;
+    exports2.Relasy = void 0;
     var fetch_1 = require_fetch2();
     var render_1 = require_render();
     var git_1 = require_git();
@@ -45216,7 +45216,7 @@ var require_releasy = __commonJS({
       fix: "Bug Fixes",
       chore: "Minor Changes"
     };
-    var Releasy2 = class _Releasy extends types_1.Api {
+    var Relasy2 = class _Relasy extends types_1.Api {
       constructor({ pr, ...config }) {
         const github = new gh_1.Github(config.gh, config.user);
         const cfg = { pr: { ...defaultPR, ...pr }, ...config };
@@ -45254,12 +45254,12 @@ var require_releasy = __commonJS({
         this.render = new render_1.RenderAPI(cfg, github);
       }
       static async load() {
-        const data = await (0, promises_1.readFile)("./releasy.json", "utf8").then(JSON.parse);
+        const data = await (0, promises_1.readFile)("./relasy.json", "utf8").then(JSON.parse);
         const config = types_1.ConfigSchema.parse(data);
-        return new _Releasy(config);
+        return new _Relasy(config);
       }
     };
-    exports2.Releasy = Releasy2;
+    exports2.Relasy = Relasy2;
   }
 });
 
@@ -45268,10 +45268,10 @@ var require_dist = __commonJS({
   "../../packages/core/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.Releasy = void 0;
-    var releasy_1 = require_releasy();
-    Object.defineProperty(exports2, "Releasy", { enumerable: true, get: function() {
-      return releasy_1.Releasy;
+    exports2.Relasy = void 0;
+    var relasy_1 = require_relasy();
+    Object.defineProperty(exports2, "Relasy", { enumerable: true, get: function() {
+      return relasy_1.Relasy;
     } });
   }
 });
@@ -45287,7 +45287,7 @@ async function run() {
     process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
     const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
     process.chdir(cwd);
-    const easy = await import_core.Releasy.load();
+    const easy = await import_core.Relasy.load();
     await easy.release();
     core.info("Draft release finished.");
   } catch (e) {
