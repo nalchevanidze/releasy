@@ -1,33 +1,12 @@
 {
-  "name": "gh-rel-easy",
-  "version": "0.31.0",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/nalchevanidze/rel-easy.git"
-  },
-  "author": "Davit Nalchevanidze <d.nalchevanidze@gmail.com>",
-  "license": "MIT",
-  "private": false,
-  "bin": {
-    "releasy": "./dist/index.js"
-  },
-  "files": ["dist"],
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "actions/*"
+  ],
   "scripts": {
-    "build": "rm -rf ./dist tsconfig.tsbuildinfo && tsc -b",
+    "build": "npm run build -w=@releasy/core",
     "prepublishOnly": "npm run build",
     "dev": "npm run build && ts-node src/index.ts"
-  },
-  "devDependencies": {
-    "@types/node": "^17.0.23",
-    "@types/ramda": "^0.28.4",
-    "ts-node": "^10.7.0",
-    "typescript": "^4.6.2"
-  },
-  "dependencies": {
-    "axios": "^1.13.2",
-    "commander": "^10.0.1",
-    "js-yaml": "^4.1.0",
-    "ramda": "^0.28.0",
-    "zod": "^3.22.4"
   }
 }
