@@ -1,5 +1,5 @@
 {
-  "name": "@releasy/draft-release-action",
+  "name": "@relasy/draft-release-action",
   "private": true,
   "version": "1.1.0",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/exec": "^1.1.1",
-    "@releasy/core": "0.31.0"
+    "@relasy/core": "0.1"
   },
   "devDependencies": {
     "esbuild": "^0.21.5",

@@ -1,7 +1,7 @@
 {
-  "gh": "nalchevanidze/releasy",
+  "gh": "nalchevanidze/relasy",
   "scope": {
-    "releasy": "releasy"
+    "core": "@relasy/core"
   },
   "pkg": "https://www.npmjs.com/package/{{SCOPE}}",
   "version": "node -p \"require('./packages/core/package.json').version\"",

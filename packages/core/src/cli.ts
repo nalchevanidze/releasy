@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { Releasy } from "./lib/releasy";
+import { Relasy } from "./lib/relasy";
 import { exit } from "./lib/utils";
 
 export const main = async () => {
-  const easy = await Releasy.load();
+  const easy = await Relasy.load();
 
   const cli = new Command()
-    .name("Releasy")
+    .name("Relasy")
     .description("Generate Automated Releases")
     .version("0.26.0");
 

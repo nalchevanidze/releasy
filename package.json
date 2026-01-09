@@ -5,8 +5,8 @@
     "actions/*"
   ],
   "scripts": {
-    "build:core": "npm -w @releasy/core run build",
-    "build:action": "npm -w @releasy/draft-release-action run build",
+    "build:core": "npm -w @relasy/core run build",
+    "build:action": "npm -w @relasy/draft-release-action run build",
     "build": "npm run build:core && npm run build:action"
   }
 }

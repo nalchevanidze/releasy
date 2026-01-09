@@ -23,7 +23,7 @@ const defaultPR = {
   chore: "Minor Changes",
 };
 
-export class Releasy extends Api {
+export class Relasy extends Api {
   private fetch: FetchApi;
   private render: RenderAPI;
 
@@ -36,9 +36,9 @@ export class Releasy extends Api {
   }
 
   public static async load() {
-    const data = await readFile("./releasy.json", "utf8").then(JSON.parse);
+    const data = await readFile("./relasy.json", "utf8").then(JSON.parse);
     const config = ConfigSchema.parse(data);
-    return new Releasy(config);
+    return new Relasy(config);
   }
 
   public version = () => exec(this.config.version);

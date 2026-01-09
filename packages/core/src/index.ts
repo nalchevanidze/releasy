@@ -1,1 +1,1 @@
-export { Releasy } from "./lib/releasy";
+export { Relasy } from "./lib/relasy";

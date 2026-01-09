@@ -1,17 +1,17 @@
 {
-  "name": "@releasy/core",
-  "version": "0.31.0",
+  "name": "@relasy/core",
+  "version": "0.1",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/nalchevanidze/releasy.git"
+    "url": "git+ssh://git@github.com/nalchevanidze/relasy.git"
   },
   "author": "Davit Nalchevanidze <d.nalchevanidze@gmail.com>",
   "license": "MIT",
-  "private": false,
+  "private": true,
   "main": "./dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "releasy": "./dist/cli.js"
+    "relasy": "./dist/cli.js"
   },
   "files": [
     "dist"
