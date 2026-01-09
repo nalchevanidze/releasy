@@ -11,25 +11,26 @@ name: Draft Release
 on: workflow_dispatch
 
 permissions:
-    contents: write
-    pull-requests: write
+  contents: write
+  pull-requests: write
 
 jobs:
-    draft-release:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-                with:
-                    ref: main
-                    fetch-depth: 0
+  draft-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
-            - name: Setup Release
-                run: <commands-to-setup-release-environment-and-bump-version>
+      - name: Setup
+        run: # Commands to setup release environment and bump version
 
-            - name: Draft Release
-                uses: nalchevanidze/relasy/actions/draft-release@main
-                env:
-                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Draft Release
+        uses: nalchevanidze/relasy/actions/draft-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 ```
 
 ## Publish Release Action Template
@@ -39,6 +40,8 @@ name: Publish Release
 on:
     pull_request:
         types: [closed]
+
+
 
 jobs:
     detect_release:

@@ -14,6 +14,9 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Setup
+        run: # Commands to setup release environment and bump version
+
       - name: Draft Release
         uses: nalchevanidze/relasy/actions/draft-release@main
         env:
