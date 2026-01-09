@@ -80,12 +80,8 @@ export class Relasy extends Api {
   public changelog = async (save?: string) =>
     this.genChangelog(save).catch(exit);
 
-  public release = (dry?: boolean) =>
+  public release = () =>
     this.genChangelog()
-      .then((txt) =>
-        execVoid(this.config.setup).then(() =>
-          dry ? undefined : this.open(txt)
-        )
-      )
+      .then((txt) => execVoid(this.config.setup).then(() => this.open(txt)))
       .catch(exit);
 }

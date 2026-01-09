@@ -12,11 +12,6 @@ export const main = async () => {
     .version("0.26.0");
 
   cli
-    .command("open")
-    .option("-d, --dry", "only changelog and setup", false)
-    .action(({ dry }: { dry: boolean }) => easy.release(dry));
-
-  cli
     .command("changelog")
     .action(() => easy.changelog("changelog").then(() => undefined));
 
