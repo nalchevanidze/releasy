@@ -45223,9 +45223,9 @@ var require_relasy = __commonJS({
         super(cfg, github);
         this.version = () => (0, utils_1.exec)(this.config.version);
         this.initialVersion = () => {
-          const version = (0, git_1.lastTag)().replace(/^v/, "");
-          const projectVersion = this.version().replace(/^v/, "");
-          if (version !== projectVersion) {
+          const version = (0, git_1.lastTag)();
+          const projectVersion = this.version();
+          if (version.replace(/^v/, "") !== projectVersion.replace(/^v/, "")) {
             throw Error(`versions does not match: ${version} ${projectVersion}`);
           }
           return version;

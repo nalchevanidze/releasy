@@ -44,10 +44,10 @@ export class Relasy extends Api {
   public version = () => exec(this.config.version);
 
   private initialVersion = () => {
-    const version = lastTag().replace(/^v/, "");
-    const projectVersion = this.version().replace(/^v/, "");
+    const version = lastTag();
+    const projectVersion = this.version();
 
-    if (version !== projectVersion) {
+    if (version.replace(/^v/, "") !== projectVersion.replace(/^v/, "")) {
       throw Error(`versions does not match: ${version} ${projectVersion}`);
     }
 
