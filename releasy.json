@@ -4,7 +4,7 @@
     "releasy": "releasy"
   },
   "pkg": "https://www.npmjs.com/package/{{SCOPE}}",
-  "version": "releasy version",
-  "next": "releasy next",
-  "setup": "releasy setup"
+  "version": "node -p \"require('./packages/core/package.json').version\"",
+  "next": "",
+  "setup": "npm install"
 }
