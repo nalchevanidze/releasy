@@ -8,7 +8,7 @@ import { Relasy } from "@relasy/core";
 
 async function run() {
   try {
-    const easy = await Relasy.load();
+    const relasy = await Relasy.load();
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
     const draft = getInput("draft", { required: false }) === "true";
@@ -17,7 +17,7 @@ async function run() {
       getInput("body", { required: false }) ??
       context.payload.pull_request?.body;
 
-    const version = easy.version();
+    const version = relasy.version();
 
     const { data } = await octokit.repos.createRelease({
       owner,
