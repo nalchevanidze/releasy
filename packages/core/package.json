@@ -3,12 +3,13 @@
   "version": "0.31.0",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/nalchevanidze/rel-easy.git"
+    "url": "git+ssh://git@github.com/nalchevanidze/releasy.git"
   },
   "author": "Davit Nalchevanidze <d.nalchevanidze@gmail.com>",
   "license": "MIT",
   "private": false,
-  "exports": "./dist/index.js",
+  "main": "./dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "releasy": "./dist/cli.js"
   },

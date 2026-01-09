@@ -1,5 +1,5 @@
 name: Draft Release
-description: Draft a release PR/branch using gh-rel-easy (pinned) from the checked-out repository.
+description: Draft a release PR/branch.
 
 runs:
   using: "node20"

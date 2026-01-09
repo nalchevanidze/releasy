@@ -80,7 +80,7 @@ export class Releasy extends Api {
   public changelog = async (save?: string) =>
     this.genChangelog(save).catch(exit);
 
-  public release = (dry: boolean) =>
+  public release = (dry?: boolean) =>
     this.genChangelog()
       .then((txt) =>
         execVoid(this.config.setup).then(() =>

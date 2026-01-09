@@ -45216,7 +45216,7 @@ var require_releasy = __commonJS({
       fix: "Bug Fixes",
       chore: "Minor Changes"
     };
-    var Releasy = class _Releasy extends types_1.Api {
+    var Releasy2 = class _Releasy extends types_1.Api {
       constructor({ pr, ...config }) {
         const github = new gh_1.Github(config.gh, config.user);
         const cfg = { pr: { ...defaultPR, ...pr }, ...config };
@@ -45259,7 +45259,7 @@ var require_releasy = __commonJS({
         return new _Releasy(config);
       }
     };
-    exports2.Releasy = Releasy;
+    exports2.Releasy = Releasy2;
   }
 });
 
@@ -45287,7 +45287,8 @@ async function run() {
     process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
     const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
     process.chdir(cwd);
-    await import_core.releasy.open();
+    const easy = await import_core.Releasy.load();
+    await easy.release();
     core.info("Draft release finished.");
   } catch (e) {
     core.setFailed(e?.message ?? String(e));

@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-import { releasy } from "@releasy/core";
+import { Releasy } from "@releasy/core";
 
 async function run() {
   try {
@@ -14,7 +14,9 @@ async function run() {
     const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
     process.chdir(cwd);
 
-    await releasy.open();
+    const easy = await Releasy.load();
+
+    await easy.release();
 
     core.info("Draft release finished.");
   } catch (e: any) {

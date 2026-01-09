@@ -1,7 +1,7 @@
 {
-  "gh": "nalchevanidze/rel-easy",
+  "gh": "nalchevanidze/releasy",
   "scope": {
-    "releasy": "gh-rel-easy"
+    "releasy": "releasy"
   },
   "pkg": "https://www.npmjs.com/package/{{SCOPE}}",
   "version": "releasy version",
