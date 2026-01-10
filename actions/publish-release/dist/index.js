@@ -26505,8 +26505,8 @@ var require_context = __commonJS({
       }
       get repo() {
         if (process.env.GITHUB_REPOSITORY) {
-          const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-          return { owner, repo };
+          const [owner2, repo2] = process.env.GITHUB_REPOSITORY.split("/");
+          return { owner: owner2, repo: repo2 };
         }
         if (this.payload.repository) {
           return {
@@ -54076,9 +54076,9 @@ var require_gh = __commonJS({
             body
           });
         };
-        const [org, repo] = path.split("/");
+        const [org, repo2] = path.split("/");
         this.org = org;
-        this.repo = repo;
+        this.repo = repo2;
         this.user = user;
       }
       get path() {
@@ -54180,20 +54180,26 @@ var import_core = __toESM(require_core());
 var import_rest = __toESM(require_dist_node12());
 var import_github = __toESM(require_github());
 var import_core2 = __toESM(require_dist());
+var { owner, repo } = import_github.context.repo;
+var getbody = () => {
+  const inputBody = (0, import_core.getInput)("body", { required: false });
+  if (inputBody && inputBody.trim().length > 0) {
+    return inputBody;
+  }
+  return import_github.context.payload.pull_request?.body ?? "";
+};
 async function run() {
   try {
     const relasy = await import_core2.Relasy.load();
     const octokit = new import_rest.Octokit({ auth: process.env.GITHUB_TOKEN });
     const draft = (0, import_core.getInput)("draft", { required: false }) === "true";
-    const { owner, repo } = import_github.context.repo;
-    const body = (0, import_core.getInput)("body", { required: false }) ?? import_github.context.payload.pull_request?.body;
     const version = relasy.version();
     const { data } = await octokit.repos.createRelease({
       owner,
       repo,
       tag_name: version,
       name: version,
-      body,
+      body: getbody(),
       draft
     });
     (0, import_core.setOutput)("id", data.id);

@@ -3,8 +3,20 @@ import { Octokit } from "@octokit/rest";
 import { context } from "@actions/github";
 import { Relasy } from "@relasy/core";
 
+const { owner, repo } = context.repo;
+
 // TODO: this action should only run if the PR is merged into main
 // if: ${{ github.base_ref == 'main' && startsWith(github.head_ref, 'publish-release/') && github.event.pull_request.merged == true  }}
+
+const getbody = (): string => {
+  const inputBody = getInput("body", { required: false });
+
+  if (inputBody && inputBody.trim().length > 0) {
+    return inputBody;
+  }
+
+  return context.payload.pull_request?.body ?? "";
+};
 
 async function run() {
   try {
@@ -12,10 +24,6 @@ async function run() {
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
     const draft = getInput("draft", { required: false }) === "true";
-    const { owner, repo } = context.repo;
-    const body =
-      getInput("body", { required: false }) ??
-      context.payload.pull_request?.body;
 
     const version = relasy.version();
 
@@ -24,7 +32,7 @@ async function run() {
       repo,
       tag_name: version,
       name: version,
-      body,
+      body: getbody(),
       draft,
     });
 
