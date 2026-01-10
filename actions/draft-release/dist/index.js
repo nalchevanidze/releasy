@@ -45197,7 +45197,7 @@ var require_config = __commonJS({
       return result;
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadConfig = exports2.ConfigSchema = exports2.ChangeTypeSchema = void 0;
+    exports2.loadConfig = exports2.ConfigSchema = exports2.Setup = exports2.ChangeTypeSchema = void 0;
     var promises_1 = require("fs/promises");
     var z = __importStar(require_zod());
     exports2.ChangeTypeSchema = z.enum([
@@ -45206,6 +45206,15 @@ var require_config = __commonJS({
       "feature",
       "fix",
       "chore"
+    ]);
+    exports2.Setup = z.union([
+      z.literal("npm"),
+      z.object({
+        type: z.literal("custom"),
+        next: z.string(),
+        version: z.string(),
+        setup: z.string()
+      })
     ]);
     exports2.ConfigSchema = z.object({
       gh: z.string(),
