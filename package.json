@@ -11,8 +11,5 @@
     "build:action": "npm -w @relasy/draft-release-action run build && npm -w @relasy/publish-release-action run build",
     "build:cli": "npm -w @relasy/cli run build",
     "build": "npm run build:core && npm run build:action && npm run build:cli"
-  },
-  "devDependencies": {
-    "fast-glob": "^3.3.3"
   }
 }

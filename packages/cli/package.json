@@ -23,6 +23,7 @@
     "@relasy/core": "workspace:*"
   },
   "dependencies": {
-    "commander": "^10.0.1"
+    "commander": "^10.0.1",
+    "fast-glob": "^3.3.3"
   }
 }

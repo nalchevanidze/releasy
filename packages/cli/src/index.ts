@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { Relasy , exit } from "@relasy/core";
+import { Relasy, exit } from "@relasy/core";
+import { setup } from "./setup";
 
 export const main = async () => {
   const easy = await Relasy.load();
@@ -8,11 +9,13 @@ export const main = async () => {
   const cli = new Command()
     .name("Relasy")
     .description("Generate Automated Releases")
-    .version("0.1.1");
+    .version(easy.version());
 
-  cli
-    .command("changelog")
-    .action(() => easy.changelog("changelog").then(() => undefined));
+  cli.command("changelog").action(async () => {
+    await easy.changelog("changelog");
+  });
+
+  cli.command("setup").action(setup);
 
   cli.parse();
 };
