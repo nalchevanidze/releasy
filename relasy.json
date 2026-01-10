@@ -6,5 +6,5 @@
   "pkg": "https://www.npmjs.com/package/{{SCOPE}}",
   "version": "echo 0.1.1",
   "next": "echo 0.1.2",
-  "setup": "echoe setup"
+  "setup": "echo setup"
 }
