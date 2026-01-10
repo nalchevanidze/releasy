@@ -11,6 +11,7 @@ requires the following Workflow permissions to be set to "Read and write":
   1. Go to your GitHub repository.
   2. Navigate to:  Repo → Settings → Actions → General → Workflow permissions
   3. Select "Read and write permissions".
+  4. Enable Allow GitHub Actions to create and approve pull requests
 
 ```yaml
 name: Draft Release
