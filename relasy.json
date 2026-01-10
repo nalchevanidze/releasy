@@ -6,5 +6,5 @@
   "pkg": "https://www.npmjs.com/package/{{SCOPE}}",
   "version": "node -p \"require('./package.json').version\"",
   "next": "npm version patch --no-git-tag-version",
-  "setup": "echo setup"
+  "setup": "node setup.js && pnpm build"
 }
