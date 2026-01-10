@@ -45,33 +45,23 @@ jobs:
 ```yaml
 name: Publish Release
 on:
-    pull_request:
-        types: [closed]
-
-
+  pull_request:
+    types: [closed]
 
 jobs:
-    detect_release:
-        runs-on: ubuntu-latest
-        outputs:
-            should_publish: ${{ steps.detect.outputs.should_publish }}
-        steps:
-            - id: detect
-                uses: nalchevanidze/relasy/actions/check-release@main
+  publish_release:
+    if: ${{ github.base_ref == 'main' && startsWith(github.head_ref, 'publish-release/') && github.event.pull_request.merged == true  }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
 
-    publish_release:
-        needs: detect_release
-        if: ${{ needs.detect_release.outputs.should_publish == 'true' }}
-        runs-on: ubuntu-latest
-        permissions:
-            contents: write
-        steps:
-            - uses: actions/checkout@v4
+      - name: Publish to Registry
+        run: # Commands to publish package to registry
 
-            - name: Push Packages to Registry
-                run: <your-package-publish-command-here>
+      - uses: nalchevanidze/relasy/actions/publish-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - uses: nalchevanidze/relasy/actions/publish-release@main
-                env:
-                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
