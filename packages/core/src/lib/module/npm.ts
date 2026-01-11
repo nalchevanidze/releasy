@@ -54,7 +54,8 @@ export async function setup() {
 
 export class NpmModule implements Module {
   version(): string {
-    throw new Error("Method not implemented.");
+    const rootPkg = readJson("package.json");
+    return rootPkg.version;
   }
 
   next = async (isBreaking: boolean) => {
