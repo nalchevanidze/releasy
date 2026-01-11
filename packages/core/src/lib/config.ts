@@ -1,5 +1,6 @@
 import { readFile } from "fs/promises";
 import * as z from "zod";
+import { remote } from "./git";
 
 export type LabelType = "pr" | "scope";
 
@@ -34,7 +35,6 @@ export const ManagerSchema = z.union([NPMManagerSchema, CustomManagerSchema]);
 export type Manager = z.infer<typeof ManagerSchema>;
 
 export const ConfigSchema = z.object({
-  gh: z.string(),
   scope: z.record(z.string(), z.string()),
   pr: z.record(ChangeTypeSchema, z.string()).optional(),
   manager: ManagerSchema,
@@ -42,14 +42,19 @@ export const ConfigSchema = z.object({
 
 type RawConfig = z.infer<typeof ConfigSchema>;
 
-export type Config = Omit<RawConfig, "pr"> & { pr: Record<ChangeType, string> };
+export type Config = Omit<RawConfig, "pr"> & {
+  pr: Record<ChangeType, string>;
+  gh: string;
+};
 
 export const loadConfig = async (): Promise<Config> => {
   const data = await readFile("./relasy.json", "utf8").then(JSON.parse);
   const config = ConfigSchema.parse(data);
+  const gh = remote();
 
   return {
     ...config,
+    gh,
     pr: {
       major: "Major Change",
       breaking: "Breaking Change",

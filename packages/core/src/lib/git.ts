@@ -2,6 +2,12 @@ import { exec } from "./utils";
 
 const git = (...cmd: string[]) => exec(["git", ...cmd].join(" "));
 
+export const remote = () => {
+  const url = git("remote", "get-url", "origin").trim();
+  const path = url.replace(/\.git$/, "").replace(/^.*github.com/, "").split(":").join("/").replace(/^\/+/, "");
+  return path;
+};
+
 const getDate = () => git("log", "-1", "--format=%cd", "--date=short");
 const lastTag = () => git("describe", "--abbrev=0", "--tags");
 const commitsAfter = (tag: string) =>

@@ -1,4 +1,4 @@
-import { lastTag } from "./lib/git";
+import { lastTag, remote } from "./lib/git";
 import { Api } from "./lib/changelog/types";
 import { Github } from "./lib/gh";
 import { loadConfig } from "./lib/config";

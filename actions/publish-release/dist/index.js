@@ -28725,10 +28725,16 @@ var require_git = __commonJS({
   "../../packages/core/dist/lib/git.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.isUserSet = exports2.commitsAfter = exports2.lastTag = exports2.getDate = exports2.git = void 0;
+    exports2.isUserSet = exports2.commitsAfter = exports2.lastTag = exports2.getDate = exports2.git = exports2.remote = void 0;
     var utils_1 = require_utils6();
     var git = (...cmd) => (0, utils_1.exec)(["git", ...cmd].join(" "));
     exports2.git = git;
+    var remote = () => {
+      const url = git("remote", "get-url", "origin").trim();
+      const path = url.replace(/\.git$/, "").replace(/^.*github.com/, "").split(":").join("/").replace(/^\/+/, "");
+      return path;
+    };
+    exports2.remote = remote;
     var getDate = () => git("log", "-1", "--format=%cd", "--date=short");
     exports2.getDate = getDate;
     var lastTag = () => git("describe", "--abbrev=0", "--tags");
@@ -53982,6 +53988,7 @@ var require_config = __commonJS({
     exports2.loadConfig = exports2.ConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.ChangeTypeSchema = void 0;
     var promises_1 = require("fs/promises");
     var z = __importStar(require_zod());
+    var git_1 = require_git();
     exports2.ChangeTypeSchema = z.enum([
       "major",
       "breaking",
@@ -54001,7 +54008,6 @@ var require_config = __commonJS({
     });
     exports2.ManagerSchema = z.union([exports2.NPMManagerSchema, exports2.CustomManagerSchema]);
     exports2.ConfigSchema = z.object({
-      gh: z.string(),
       scope: z.record(z.string(), z.string()),
       pr: z.record(exports2.ChangeTypeSchema, z.string()).optional(),
       manager: exports2.ManagerSchema
@@ -54009,8 +54015,10 @@ var require_config = __commonJS({
     var loadConfig = async () => {
       const data = await (0, promises_1.readFile)("./relasy.json", "utf8").then(JSON.parse);
       const config = exports2.ConfigSchema.parse(data);
+      const gh = (0, git_1.remote)();
       return {
         ...config,
+        gh,
         pr: {
           major: "Major Change",
           breaking: "Breaking Change",
