@@ -59759,6 +59759,7 @@ var require_relasy = __commonJS({
         const github = new gh_1.Github(config.gh, config.user);
         const module3 = config.manager.type === "npm" ? new npm_1.NpmModule() : new custom_1.CustomModule(config.manager);
         super(config, github, module3);
+        this.version = () => this.module.version();
         this.initialVersion = () => {
           const version = (0, git_1.lastTag)();
           const projectVersion = this.module.version();
@@ -59787,6 +59788,13 @@ var require_relasy = __commonJS({
         this.render = new render_1.RenderAPI(config, github, module3);
       }
       static async load() {
+        const token = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN;
+        if (!token)
+          throw new Error("Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).");
+        process.env.GITHUB_TOKEN = process.env.GITHUB_TOKEN || token;
+        process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
+        const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
+        process.chdir(cwd);
         return new _Relasy(await (0, config_1.loadConfig)());
       }
     };
