@@ -28684,6 +28684,69 @@ var require_github = __commonJS({
   }
 });
 
+// ../../packages/core/dist/lib/utils.js
+var require_utils6 = __commonJS({
+  "../../packages/core/dist/lib/utils.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.setupEnv = exports2.exit = exports2.execVoid = exports2.exec = exports2.isKey = void 0;
+    var node_child_process_1 = require("node:child_process");
+    var node_util_1 = require("node:util");
+    var options = {
+      maxBuffer: 10 * 1024 * 1024,
+      encoding: "utf-8"
+    };
+    var isKey = (obj, key) => typeof key === "string" && key in obj;
+    exports2.isKey = isKey;
+    var exec = (command) => (0, node_child_process_1.execSync)(command, options)?.trimEnd();
+    exports2.exec = exec;
+    var execVoid = (cmd) => (0, node_util_1.promisify)(node_child_process_1.exec)(cmd, options).then(({ stdout }) => console.log(stdout));
+    exports2.execVoid = execVoid;
+    var exit = (error) => {
+      console.log(error.message);
+      process.exit(1);
+    };
+    exports2.exit = exit;
+    var setupEnv = () => {
+      const token = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN;
+      if (!token)
+        throw new Error("Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).");
+      process.env.GITHUB_TOKEN = process.env.GITHUB_TOKEN || token;
+      process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
+      const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
+      process.chdir(cwd);
+    };
+    exports2.setupEnv = setupEnv;
+  }
+});
+
+// ../../packages/core/dist/lib/git.js
+var require_git = __commonJS({
+  "../../packages/core/dist/lib/git.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.isUserSet = exports2.commitsAfter = exports2.lastTag = exports2.getDate = exports2.git = void 0;
+    var utils_1 = require_utils6();
+    var git = (...cmd) => (0, utils_1.exec)(["git", ...cmd].join(" "));
+    exports2.git = git;
+    var getDate = () => git("log", "-1", "--format=%cd", "--date=short");
+    exports2.getDate = getDate;
+    var lastTag = () => git("describe", "--abbrev=0", "--tags");
+    exports2.lastTag = lastTag;
+    var commitsAfter = (tag) => git("rev-list", "--reverse", `${tag}..`).split("\n");
+    exports2.commitsAfter = commitsAfter;
+    var isUserSet = () => {
+      try {
+        const user = `${git("config", "user.name")}${git("config", "user.email")}`.trim();
+        return user.length > 0;
+      } catch {
+        return false;
+      }
+    };
+    exports2.isUserSet = isUserSet;
+  }
+});
+
 // ../../node_modules/.pnpm/ramda@0.28.0/node_modules/ramda/src/F.js
 var require_F = __commonJS({
   "../../node_modules/.pnpm/ramda@0.28.0/node_modules/ramda/src/F.js"(exports2, module2) {
@@ -35290,176 +35353,6 @@ var require_types = __commonJS({
     exports2.Api = Api;
     var isBreaking = (changes) => Boolean(changes.find((0, ramda_1.propEq)("type", "breaking")));
     exports2.isBreaking = isBreaking;
-  }
-});
-
-// ../../packages/core/dist/lib/utils.js
-var require_utils6 = __commonJS({
-  "../../packages/core/dist/lib/utils.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.setupEnv = exports2.exit = exports2.execVoid = exports2.exec = exports2.isKey = void 0;
-    var node_child_process_1 = require("node:child_process");
-    var node_util_1 = require("node:util");
-    var options = {
-      maxBuffer: 10 * 1024 * 1024,
-      encoding: "utf-8"
-    };
-    var isKey = (obj, key) => typeof key === "string" && key in obj;
-    exports2.isKey = isKey;
-    var exec = (command) => (0, node_child_process_1.execSync)(command, options)?.trimEnd();
-    exports2.exec = exec;
-    var execVoid = (cmd) => (0, node_util_1.promisify)(node_child_process_1.exec)(cmd, options).then(({ stdout }) => console.log(stdout));
-    exports2.execVoid = execVoid;
-    var exit = (error) => {
-      console.log(error.message);
-      process.exit(1);
-    };
-    exports2.exit = exit;
-    var setupEnv = () => {
-      const token = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN;
-      if (!token)
-        throw new Error("Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).");
-      process.env.GITHUB_TOKEN = process.env.GITHUB_TOKEN || token;
-      process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
-      const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
-      process.chdir(cwd);
-    };
-    exports2.setupEnv = setupEnv;
-  }
-});
-
-// ../../packages/core/dist/lib/git.js
-var require_git = __commonJS({
-  "../../packages/core/dist/lib/git.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.isUserSet = exports2.commitsAfter = exports2.lastTag = exports2.getDate = exports2.git = void 0;
-    var utils_1 = require_utils6();
-    var git = (...cmd) => (0, utils_1.exec)(["git", ...cmd].join(" "));
-    exports2.git = git;
-    var getDate = () => git("log", "-1", "--format=%cd", "--date=short");
-    exports2.getDate = getDate;
-    var lastTag = () => git("describe", "--abbrev=0", "--tags");
-    exports2.lastTag = lastTag;
-    var commitsAfter = (tag) => git("rev-list", "--reverse", `${tag}..`).split("\n");
-    exports2.commitsAfter = commitsAfter;
-    var isUserSet = () => {
-      try {
-        const user = `${git("config", "user.name")}${git("config", "user.email")}`.trim();
-        return user.length > 0;
-      } catch {
-        return false;
-      }
-    };
-    exports2.isUserSet = isUserSet;
-  }
-});
-
-// ../../packages/core/dist/lib/changelog/fetch.js
-var require_fetch2 = __commonJS({
-  "../../packages/core/dist/lib/changelog/fetch.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.FetchApi = void 0;
-    var ramda_1 = require_src();
-    var types_1 = require_types();
-    var git_1 = require_git();
-    var parseNumber = (msg) => {
-      const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
-      return num ? parseInt(num, 10) : void 0;
-    };
-    var FetchApi = class extends types_1.Api {
-      constructor() {
-        super(...arguments);
-        this.parseLabels = (t, labels) => labels.flatMap((label) => {
-          const [prefix, key, ...rest] = label.split("/");
-          if (prefix !== t)
-            return [];
-          const values = this.config[t];
-          if (rest.length || !key || !values[key]) {
-            const fields = Object.keys(values).join(", ");
-            throw new Error(`invalid label ${label}. key ${key} could not be found on object with fields: ${fields}`);
-          }
-          return [key];
-        });
-        this.commits = this.github.batch((i) => `object(oid: "${i}") {
-      ... on Commit {
-        message
-        associatedPullRequests(first: 10) { 
-          nodes {
-            number
-            repository { nameWithOwner }
-          }
-        }
-      }
-    }`);
-        this.pullRequests = this.github.batch((i) => `pullRequest(number: ${i}) {
-      number
-      title
-      body
-      author { login url }
-      labels(first: 10) { nodes { name } }
-    }`);
-        this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.github.isOwner(repository))?.number ?? parseNumber(c.message);
-        this.changes = (version) => this.commits((0, git_1.commitsAfter)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
-          const labels = (0, ramda_1.pluck)("name", pr.labels.nodes);
-          return {
-            ...pr,
-            type: this.parseLabels("pr", labels).find(Boolean) ?? "chore",
-            scopes: this.parseLabels("scope", labels)
-          };
-        }));
-      }
-    };
-    exports2.FetchApi = FetchApi;
-  }
-});
-
-// ../../packages/core/dist/lib/changelog/render.js
-var require_render = __commonJS({
-  "../../packages/core/dist/lib/changelog/render.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.RenderAPI = void 0;
-    var ramda_1 = require_src();
-    var utils_1 = require_utils6();
-    var types_1 = require_types();
-    var git_1 = require_git();
-    var link = (name, url) => `[${name}](${url})`;
-    var newLine = (size) => (0, ramda_1.range)(0, size).map(() => "\n").join("");
-    var lines = (xs, size = 1) => xs.filter(Boolean).join(newLine(size));
-    var space = (n, txt = "") => `${(0, ramda_1.range)(0, n * 2).map(() => " ").join("")}${txt}`;
-    var stat = (topics) => lines(topics.filter(([_, value]) => value).map(([topic, value]) => space(1, `- ${topic} ${value}`)));
-    var indent = (txt, n = 1) => space(n, txt.replace(/\n/g, `
-${space(n)}`));
-    var RenderAPI = class extends types_1.Api {
-      constructor() {
-        super(...arguments);
-        this.pkg = (key) => {
-          const id = this.config.scope[key];
-          return link(key, this.module.pkg(id));
-        };
-        this.change = ({ number, author, title, body, scopes }) => {
-          const details = body ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1) : "";
-          const head = `* ${link(`#${number}`, this.github.issue(number))}: ${title?.trim()}`;
-          const stats = stat([
-            ["\u{1F4E6}", lines(scopes.map(this.pkg))],
-            ["\u{1F464}", link(`@${author.login}`, author.url)]
-          ]);
-          return lines([head, stats, details]);
-        };
-        this.section = (label, changes) => lines([`#### ${label}`, ...changes.map(this.change)]);
-        this.changes = (tag, changes) => {
-          const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
-          return lines([
-            `## ${tag || "Unreleased"} (${(0, git_1.getDate)()})`,
-            ...Object.entries(this.config.pr).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.section(label, groups[type]) : "")
-          ], 2);
-        };
-      }
-    };
-    exports2.RenderAPI = RenderAPI;
   }
 });
 
@@ -59762,54 +59655,130 @@ var require_module = __commonJS({
   }
 });
 
-// ../../packages/core/dist/lib/relasy.js
-var require_relasy = __commonJS({
-  "../../packages/core/dist/lib/relasy.js"(exports2) {
+// ../../packages/core/dist/lib/changelog/fetch.js
+var require_fetch2 = __commonJS({
+  "../../packages/core/dist/lib/changelog/fetch.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.Relasy = void 0;
-    var fetch_1 = require_fetch2();
-    var render_1 = require_render();
-    var git_1 = require_git();
+    exports2.FetchApi = void 0;
+    var ramda_1 = require_src();
     var types_1 = require_types();
-    var gh_1 = require_gh();
-    var promises_1 = require("fs/promises");
-    var config_1 = require_config();
-    var utils_1 = require_utils6();
-    var module_1 = require_module();
-    var Relasy2 = class _Relasy extends types_1.Api {
-      constructor(config) {
-        const github = new gh_1.Github(config.gh, config.user);
-        const module3 = (0, module_1.setupModule)(config.manager);
-        super(config, github, module3);
-        this.version = () => this.module.version();
-        this.initialVersion = () => {
-          const version = (0, git_1.lastTag)();
-          const projectVersion = this.module.version();
-          if (version.replace(/^v/, "") !== projectVersion.replace(/^v/, "")) {
-            throw Error(`versions does not match: ${version} ${projectVersion}`);
+    var git_1 = require_git();
+    var parseNumber = (msg) => {
+      const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
+      return num ? parseInt(num, 10) : void 0;
+    };
+    var FetchApi = class extends types_1.Api {
+      constructor() {
+        super(...arguments);
+        this.parseLabels = (t, labels) => labels.flatMap((label) => {
+          const [prefix, key, ...rest] = label.split("/");
+          if (prefix !== t)
+            return [];
+          const values = this.config[t];
+          if (rest.length || !key || !values[key]) {
+            const fields = Object.keys(values).join(", ");
+            throw new Error(`invalid label ${label}. key ${key} could not be found on object with fields: ${fields}`);
           }
-          return version;
-        };
-        this.changelog = async (save) => {
-          const version = this.initialVersion();
-          const changes = await this.fetch.changes(version);
-          await this.module.next((0, types_1.isBreaking)(changes));
-          const txt = await this.render.changes(this.module.version(), changes);
-          if (save) {
-            await (0, promises_1.writeFile)(`./${save}.md`, txt, "utf8");
+          return [key];
+        });
+        this.commits = this.github.batch((i) => `object(oid: "${i}") {
+      ... on Commit {
+        message
+        associatedPullRequests(first: 10) { 
+          nodes {
+            number
+            repository { nameWithOwner }
           }
-          return txt;
-        };
-        this.fetch = new fetch_1.FetchApi(config, github, module3);
-        this.render = new render_1.RenderAPI(config, github, module3);
+        }
       }
-      static async load() {
-        (0, utils_1.setupEnv)();
-        return new _Relasy(await (0, config_1.loadConfig)());
+    }`);
+        this.pullRequests = this.github.batch((i) => `pullRequest(number: ${i}) {
+      number
+      title
+      body
+      author { login url }
+      labels(first: 10) { nodes { name } }
+    }`);
+        this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.github.isOwner(repository))?.number ?? parseNumber(c.message);
+        this.changes = (version) => this.commits((0, git_1.commitsAfter)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
+          const labels = (0, ramda_1.pluck)("name", pr.labels.nodes);
+          return {
+            ...pr,
+            type: this.parseLabels("pr", labels).find(Boolean) ?? "chore",
+            scopes: this.parseLabels("scope", labels)
+          };
+        }));
       }
     };
-    exports2.Relasy = Relasy2;
+    exports2.FetchApi = FetchApi;
+  }
+});
+
+// ../../packages/core/dist/lib/changelog/render.js
+var require_render = __commonJS({
+  "../../packages/core/dist/lib/changelog/render.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.RenderAPI = void 0;
+    var ramda_1 = require_src();
+    var utils_1 = require_utils6();
+    var types_1 = require_types();
+    var git_1 = require_git();
+    var link = (name, url) => `[${name}](${url})`;
+    var newLine = (size) => (0, ramda_1.range)(0, size).map(() => "\n").join("");
+    var lines = (xs, size = 1) => xs.filter(Boolean).join(newLine(size));
+    var space = (n, txt = "") => `${(0, ramda_1.range)(0, n * 2).map(() => " ").join("")}${txt}`;
+    var stat = (topics) => lines(topics.filter(([_, value]) => value).map(([topic, value]) => space(1, `- ${topic} ${value}`)));
+    var indent = (txt, n = 1) => space(n, txt.replace(/\n/g, `
+${space(n)}`));
+    var RenderAPI = class extends types_1.Api {
+      constructor() {
+        super(...arguments);
+        this.pkg = (key) => {
+          const id = this.config.scope[key];
+          return link(key, this.module.pkg(id));
+        };
+        this.change = ({ number, author, title, body, scopes }) => {
+          const details = body ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1) : "";
+          const head = `* ${link(`#${number}`, this.github.issue(number))}: ${title?.trim()}`;
+          const stats = stat([
+            ["\u{1F4E6}", lines(scopes.map(this.pkg))],
+            ["\u{1F464}", link(`@${author.login}`, author.url)]
+          ]);
+          return lines([head, stats, details]);
+        };
+        this.section = (label, changes) => lines([`#### ${label}`, ...changes.map(this.change)]);
+        this.changes = (tag, changes) => {
+          const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
+          return lines([
+            `## ${tag || "Unreleased"} (${(0, git_1.getDate)()})`,
+            ...Object.entries(this.config.pr).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.section(label, groups[type]) : "")
+          ], 2);
+        };
+      }
+    };
+    exports2.RenderAPI = RenderAPI;
+  }
+});
+
+// ../../packages/core/dist/lib/changelog/index.js
+var require_changelog = __commonJS({
+  "../../packages/core/dist/lib/changelog/index.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.renderChangelog = void 0;
+    var fetch_1 = require_fetch2();
+    var render_1 = require_render();
+    var types_1 = require_types();
+    var renderChangelog = async (config, module3, github, version) => {
+      const fetch2 = new fetch_1.FetchApi(config, github, module3);
+      const render = new render_1.RenderAPI(config, github, module3);
+      const changes = await fetch2.changes(version);
+      await module3.next((0, types_1.isBreaking)(changes));
+      return render.changes(module3.version(), changes);
+    };
+    exports2.renderChangelog = renderChangelog;
   }
 });
 
@@ -59818,15 +59787,39 @@ var require_dist = __commonJS({
   "../../packages/core/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.exit = exports2.Relasy = void 0;
-    var relasy_1 = require_relasy();
-    Object.defineProperty(exports2, "Relasy", { enumerable: true, get: function() {
-      return relasy_1.Relasy;
-    } });
+    exports2.Relasy = exports2.exit = void 0;
+    var git_1 = require_git();
+    var types_1 = require_types();
+    var gh_1 = require_gh();
+    var config_1 = require_config();
     var utils_1 = require_utils6();
+    var module_1 = require_module();
+    var changelog_1 = require_changelog();
+    var utils_2 = require_utils6();
     Object.defineProperty(exports2, "exit", { enumerable: true, get: function() {
-      return utils_1.exit;
+      return utils_2.exit;
     } });
+    var Relasy2 = class _Relasy extends types_1.Api {
+      constructor(config) {
+        const github = new gh_1.Github(config.gh, config.user);
+        const module3 = (0, module_1.setupModule)(config.manager);
+        super(config, github, module3);
+        this.version = () => this.module.version();
+        this.changelog = async () => {
+          const version = (0, git_1.lastTag)();
+          const projectVersion = this.module.version();
+          if (version.replace(/^v/, "") !== projectVersion.replace(/^v/, "")) {
+            throw Error(`versions does not match: ${version} ${projectVersion}`);
+          }
+          return (0, changelog_1.renderChangelog)(this.config, this.module, this.github, version);
+        };
+      }
+      static async load() {
+        (0, utils_1.setupEnv)();
+        return new _Relasy(await (0, config_1.loadConfig)());
+      }
+    };
+    exports2.Relasy = Relasy2;
   }
 });
 
