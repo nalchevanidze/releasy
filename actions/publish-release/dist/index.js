@@ -59836,15 +59836,13 @@ async function run() {
   try {
     const relasy = await import_core2.Relasy.load();
     const octokit = new import_rest.Octokit({ auth: process.env.GITHUB_TOKEN });
-    const draft = (0, import_core.getInput)("draft", { required: false }) === "true";
     const version = relasy.version();
     const { data } = await octokit.repos.createRelease({
       owner,
       repo,
       tag_name: version,
       name: version,
-      body: getbody(),
-      draft
+      body: getbody()
     });
     (0, import_core.setOutput)("id", data.id);
     (0, import_core.setOutput)("upload_url", data.upload_url);
