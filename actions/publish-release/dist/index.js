@@ -35298,7 +35298,7 @@ var require_utils6 = __commonJS({
   "../../packages/core/dist/lib/utils.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.exit = exports2.execVoid = exports2.exec = exports2.isKey = void 0;
+    exports2.setupEnv = exports2.exit = exports2.execVoid = exports2.exec = exports2.isKey = void 0;
     var node_child_process_1 = require("node:child_process");
     var node_util_1 = require("node:util");
     var options = {
@@ -35316,6 +35316,16 @@ var require_utils6 = __commonJS({
       process.exit(1);
     };
     exports2.exit = exit;
+    var setupEnv = () => {
+      const token = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN;
+      if (!token)
+        throw new Error("Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).");
+      process.env.GITHUB_TOKEN = process.env.GITHUB_TOKEN || token;
+      process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
+      const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
+      process.chdir(cwd);
+    };
+    exports2.setupEnv = setupEnv;
   }
 });
 
@@ -54126,6 +54136,33 @@ var require_config = __commonJS({
   }
 });
 
+// ../../packages/core/dist/lib/module/custom.js
+var require_custom = __commonJS({
+  "../../packages/core/dist/lib/module/custom.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.CustomModule = void 0;
+    var utils_1 = require_utils6();
+    var CustomModule = class {
+      constructor(config) {
+        this.config = config;
+        this.version = () => (0, utils_1.exec)(this.config.version);
+        this.next = async (isBreaking) => {
+          const { next } = this.config;
+          return (0, utils_1.execVoid)(isBreaking ? `${next} -b` : next);
+        };
+        this.setup = async () => {
+          await (0, utils_1.execVoid)(this.config.setup);
+        };
+      }
+      pkg(id) {
+        return this.config.pkg.replace("{{SCOPE}}", id);
+      }
+    };
+    exports2.CustomModule = CustomModule;
+  }
+});
+
 // ../../node_modules/.pnpm/fast-glob@3.3.3/node_modules/fast-glob/out/utils/array.js
 var require_array = __commonJS({
   "../../node_modules/.pnpm/fast-glob@3.3.3/node_modules/fast-glob/out/utils/array.js"(exports2) {
@@ -59712,30 +59749,16 @@ var require_npm = __commonJS({
   }
 });
 
-// ../../packages/core/dist/lib/module/custom.js
-var require_custom = __commonJS({
-  "../../packages/core/dist/lib/module/custom.js"(exports2) {
+// ../../packages/core/dist/lib/module/index.js
+var require_module = __commonJS({
+  "../../packages/core/dist/lib/module/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.CustomModule = void 0;
-    var utils_1 = require_utils6();
-    var CustomModule = class {
-      constructor(config) {
-        this.config = config;
-        this.version = () => (0, utils_1.exec)(this.config.version);
-        this.next = async (isBreaking) => {
-          const { next } = this.config;
-          return (0, utils_1.execVoid)(isBreaking ? `${next} -b` : next);
-        };
-        this.setup = async () => {
-          await (0, utils_1.execVoid)(this.config.setup);
-        };
-      }
-      pkg(id) {
-        return this.config.pkg.replace("{{SCOPE}}", id);
-      }
-    };
-    exports2.CustomModule = CustomModule;
+    exports2.setupModule = void 0;
+    var custom_1 = require_custom();
+    var npm_1 = require_npm();
+    var setupModule = (manager) => manager.type === "npm" ? new npm_1.NpmModule() : new custom_1.CustomModule(manager);
+    exports2.setupModule = setupModule;
   }
 });
 
@@ -59752,12 +59775,12 @@ var require_relasy = __commonJS({
     var gh_1 = require_gh();
     var promises_1 = require("fs/promises");
     var config_1 = require_config();
-    var npm_1 = require_npm();
-    var custom_1 = require_custom();
+    var utils_1 = require_utils6();
+    var module_1 = require_module();
     var Relasy2 = class _Relasy extends types_1.Api {
       constructor(config) {
         const github = new gh_1.Github(config.gh, config.user);
-        const module3 = config.manager.type === "npm" ? new npm_1.NpmModule() : new custom_1.CustomModule(config.manager);
+        const module3 = (0, module_1.setupModule)(config.manager);
         super(config, github, module3);
         this.version = () => this.module.version();
         this.initialVersion = () => {
@@ -59782,13 +59805,7 @@ var require_relasy = __commonJS({
         this.render = new render_1.RenderAPI(config, github, module3);
       }
       static async load() {
-        const token = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN;
-        if (!token)
-          throw new Error("Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).");
-        process.env.GITHUB_TOKEN = process.env.GITHUB_TOKEN || token;
-        process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
-        const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
-        process.chdir(cwd);
+        (0, utils_1.setupEnv)();
         return new _Relasy(await (0, config_1.loadConfig)());
       }
     };
