@@ -54,9 +54,6 @@ importers:
       commander:
         specifier: ^10.0.1
         version: 10.0.1
-      fast-glob:
-        specifier: ^3.3.3
-        version: 3.3.3
     devDependencies:
       '@relasy/core':
         specifier: workspace:*
@@ -73,6 +70,9 @@ importers:
       axios:
         specifier: ^1.13.2
         version: 1.13.2
+      fast-glob:
+        specifier: ^3.3.3
+        version: 3.3.3
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.1

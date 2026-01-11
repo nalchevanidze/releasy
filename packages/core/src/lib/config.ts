@@ -13,15 +13,16 @@ export const ChangeTypeSchema = z.enum([
 
 export type ChangeType = z.infer<typeof ChangeTypeSchema>;
 
-export const ManagerSchema = z.union([
-  z.literal("npm"),
-  z.object({
-    type: z.literal("custom"),
-    next: z.string(),
-    version: z.string(),
-    setup: z.string(),
-  }),
-]);
+export const CustomManagerSchema = z.object({
+  type: z.literal("custom"),
+  next: z.string(),
+  version: z.string(),
+  setup: z.string(),
+});
+
+export type CustomManager = z.infer<typeof CustomManagerSchema>;
+
+export const ManagerSchema = z.union([z.literal("npm"), CustomManagerSchema]);
 
 export type Manager = z.infer<typeof ManagerSchema>;
 
@@ -30,13 +31,13 @@ export const ConfigSchema = z.object({
   scope: z.record(z.string(), z.string()),
   pr: z.record(ChangeTypeSchema, z.string()).optional(),
   pkg: z.string(),
-  manager: ManagerSchema,
   user: z
     .object({
       name: z.string(),
       email: z.string().email(),
     })
     .optional(),
+  manager: ManagerSchema,
 });
 
 type RawConfig = z.infer<typeof ConfigSchema>;
