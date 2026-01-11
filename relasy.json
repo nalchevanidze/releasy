@@ -1,8 +1,8 @@
 {
   "manager": "npm",
-  "gh": "nalchevanidze/relasy",
   "scope": {
     "core": "relasy/core"
   },
+  "gh": "nalchevanidze/relasy",
   "pkg": "https://www.npmjs.com/package/{{SCOPE}}"
 }
