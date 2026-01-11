@@ -67,7 +67,7 @@ export class NpmModule implements Module {
 
   async setup() {
     await setup();
-    await exec("npm run build");
+    await exec("pnpm run build");
   }
   
   pkg(id: string): string {
