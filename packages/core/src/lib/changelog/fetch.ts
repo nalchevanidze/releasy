@@ -33,7 +33,7 @@ export const parseLabel = <T extends LabelType>(
     return undefined;
   }
 
-  if (prefix !== prefixMap[t]) undefined;
+  if (prefix !== prefixMap[t]) return undefined;
 
   if (values[key]) return key as keyof Config[T];
 
