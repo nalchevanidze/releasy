@@ -21,21 +21,28 @@ export const parseLabel = <T extends LabelType>(
   const values: Record<string, unknown> = config[t];
   const [prefix, key, ...rest] = label.split("/");
 
-  if (key === undefined && t === "changeTypes" && values[prefix] !== undefined) {
-    return prefix as keyof Config[T];
+  if (rest.length) {
+    throw new Error(
+      `invalid label ${label}. only one '/' is allowed in labels for ${t}`
+    );
+  }
+
+  if (key === undefined) {
+    if (values[prefix] && t === "changeTypes") return prefix as keyof Config[T];
+
+    return undefined;
   }
 
   if (prefix !== prefixMap[t]) undefined;
 
-  if (rest.length || !key || !values[key]) {
-    const fields = Object.keys(values).join(", ");
+  if (values[key]) return key as keyof Config[T];
 
-    throw new Error(
-      `invalid label ${label}. key ${key} could not be found on object with fields: ${fields}`
-    );
-  }
 
-  return key as keyof Config[T];
+  const fields = Object.keys(values).join(", ");
+
+  throw new Error(
+    `invalid label ${label}. key ${key} could not be found on object with fields: ${fields}`
+  );
 };
 
 export const parseLabels = <T extends LabelType>(

@@ -59679,16 +59679,20 @@ var require_fetch2 = __commonJS({
     var parseLabel = (config, t, label) => {
       const values = config[t];
       const [prefix, key, ...rest] = label.split("/");
-      if (key === void 0 && t === "changeTypes" && values[prefix] !== void 0) {
-        return prefix;
+      if (rest.length) {
+        throw new Error(`invalid label ${label}. only one '/' is allowed in labels for ${t}`);
+      }
+      if (key === void 0) {
+        if (values[prefix] && t === "changeTypes")
+          return prefix;
+        return void 0;
       }
       if (prefix !== prefixMap[t])
         ;
-      if (rest.length || !key || !values[key]) {
-        const fields = Object.keys(values).join(", ");
-        throw new Error(`invalid label ${label}. key ${key} could not be found on object with fields: ${fields}`);
-      }
-      return key;
+      if (values[key])
+        return key;
+      const fields = Object.keys(values).join(", ");
+      throw new Error(`invalid label ${label}. key ${key} could not be found on object with fields: ${fields}`);
     };
     exports2.parseLabel = parseLabel;
     var parseLabels = (config, t, labels) => labels.map((label) => (0, exports2.parseLabel)(config, t, label)).filter((x) => x !== void 0);
