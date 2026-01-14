@@ -25,7 +25,7 @@ export type Change = PR & {
 
 export class Api {
   constructor(
-    protected config: Config,
+    public config: Config,
     public github: Github,
     public module: Module
   ) {}

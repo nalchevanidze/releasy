@@ -30,7 +30,7 @@ const indent = (txt: string, n: number = 1) =>
 
 export class RenderAPI extends Api {
   private pkg = (key: string) => {
-    const id = this.config.scope[key];
+    const id = this.config.scopes[key];
     return link(key, this.module.pkg(id));
   };
 
@@ -67,7 +67,7 @@ export class RenderAPI extends Api {
     return lines(
       [
         `## ${tag || "Unreleased"} (${getDate()})`,
-        ...Object.entries(this.config.pr).flatMap(([type, label]) =>
+        ...Object.entries(this.config.changeTypes).flatMap(([type, label]) =>
           isKey(groups, type) ? this.section(label, groups[type]) : ""
         ),
       ],

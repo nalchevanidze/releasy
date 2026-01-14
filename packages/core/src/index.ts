@@ -1,10 +1,11 @@
 import { lastTag, remote } from "./lib/git";
 import { Api } from "./lib/changelog/types";
 import { Github } from "./lib/gh";
-import { loadConfig } from "./lib/config";
+import { LabelType, loadConfig } from "./lib/config";
 import { setupEnv } from "./lib/utils";
 import { setupToolchain } from "./lib/project";
 import { renderChangelog } from "./lib/changelog";
+import { parseLabels } from "./lib/changelog/fetch";
 export { exit } from "./lib/utils";
 
 export class Relasy extends Api {
@@ -29,4 +30,9 @@ export class Relasy extends Api {
 
     return renderChangelog(this.config, this.module, this.github, version);
   };
+
+  public parseLabels<T extends LabelType>(t: T, labels: string[]) {
+    return parseLabels(this.config, t, labels);
+  }
+
 }

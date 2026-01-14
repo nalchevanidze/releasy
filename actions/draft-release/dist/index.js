@@ -45132,8 +45132,8 @@ var require_config = __commonJS({
     });
     exports2.ManagerSchema = z.union([exports2.NPMManagerSchema, exports2.CustomManagerSchema]);
     exports2.ConfigSchema = z.object({
-      scope: z.record(z.string(), z.string()),
-      pr: z.record(exports2.ChangeTypeSchema, z.string()).optional(),
+      scopes: z.record(z.string(), z.string()),
+      changeTypes: z.record(exports2.ChangeTypeSchema, z.string()).optional(),
       project: exports2.ManagerSchema
     });
     var loadConfig = async () => {
@@ -45143,13 +45143,13 @@ var require_config = __commonJS({
       return {
         ...config,
         gh,
-        pr: {
+        changeTypes: {
           major: "Major Change",
           breaking: "Breaking Change",
           feature: "New features",
           fix: "Bug Fixes",
           chore: "Minor Changes",
-          ...config.pr
+          ...config.changeTypes
         }
       };
     };
@@ -50788,7 +50788,7 @@ var require_fetch2 = __commonJS({
   "../../packages/core/dist/lib/changelog/fetch.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.FetchApi = void 0;
+    exports2.FetchApi = exports2.parseLabels = void 0;
     var ramda_1 = require_src();
     var types_1 = require_types();
     var git_1 = require_git();
@@ -50796,20 +50796,21 @@ var require_fetch2 = __commonJS({
       const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
       return num ? parseInt(num, 10) : void 0;
     };
+    var parseLabels = (config, t, labels) => labels.flatMap((label) => {
+      const [prefix, key, ...rest] = label.split("/");
+      if (prefix !== t)
+        return [];
+      const values = config[t];
+      if (rest.length || !key || !values[key]) {
+        const fields = Object.keys(values).join(", ");
+        throw new Error(`invalid label ${label}. key ${key} could not be found on object with fields: ${fields}`);
+      }
+      return [key];
+    });
+    exports2.parseLabels = parseLabels;
     var FetchApi = class extends types_1.Api {
       constructor() {
         super(...arguments);
-        this.parseLabels = (t, labels) => labels.flatMap((label) => {
-          const [prefix, key, ...rest] = label.split("/");
-          if (prefix !== t)
-            return [];
-          const values = this.config[t];
-          if (rest.length || !key || !values[key]) {
-            const fields = Object.keys(values).join(", ");
-            throw new Error(`invalid label ${label}. key ${key} could not be found on object with fields: ${fields}`);
-          }
-          return [key];
-        });
         this.commits = this.github.batch((i) => `object(oid: "${i}") {
       ... on Commit {
         message
@@ -50833,8 +50834,8 @@ var require_fetch2 = __commonJS({
           const labels = (0, ramda_1.pluck)("name", pr.labels.nodes);
           return {
             ...pr,
-            type: this.parseLabels("pr", labels).find(Boolean) ?? "chore",
-            scopes: this.parseLabels("scope", labels)
+            type: (0, exports2.parseLabels)(this.config, "changeTypes", labels).find(Boolean) ?? "chore",
+            scopes: (0, exports2.parseLabels)(this.config, "scopes", labels)
           };
         }));
       }
@@ -50864,7 +50865,7 @@ ${space(n)}`));
       constructor() {
         super(...arguments);
         this.pkg = (key) => {
-          const id = this.config.scope[key];
+          const id = this.config.scopes[key];
           return link(key, this.module.pkg(id));
         };
         this.change = ({ number, author, title, body, scopes }) => {
@@ -50881,7 +50882,7 @@ ${space(n)}`));
           const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
           return lines([
             `## ${tag || "Unreleased"} (${(0, git_1.getDate)()})`,
-            ...Object.entries(this.config.pr).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.section(label, groups[type]) : "")
+            ...Object.entries(this.config.changeTypes).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.section(label, groups[type]) : "")
           ], 2);
         };
       }
@@ -50923,6 +50924,7 @@ var require_dist = __commonJS({
     var utils_1 = require_utils3();
     var project_1 = require_project2();
     var changelog_1 = require_changelog();
+    var fetch_1 = require_fetch2();
     var utils_2 = require_utils3();
     Object.defineProperty(exports2, "exit", { enumerable: true, get: function() {
       return utils_2.exit;
@@ -50946,6 +50948,9 @@ var require_dist = __commonJS({
         const github = new gh_1.Github(config.gh);
         const project = (0, project_1.setupToolchain)(config.project);
         return new _Relasy(config, github, project);
+      }
+      parseLabels(t, labels) {
+        return (0, fetch_1.parseLabels)(this.config, t, labels);
       }
     };
     exports2.Relasy = Relasy2;

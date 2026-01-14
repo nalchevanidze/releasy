@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import * as z from "zod";
 import { remote } from "./git";
 
-export type LabelType = "pr" | "scope";
+export type LabelType = "scopes" | "changeTypes";
 
 export const ChangeTypeSchema = z.enum([
   "major",
@@ -35,15 +35,15 @@ export const ManagerSchema = z.union([NPMManagerSchema, CustomManagerSchema]);
 export type Manager = z.infer<typeof ManagerSchema>;
 
 export const ConfigSchema = z.object({
-  scope: z.record(z.string(), z.string()),
-  pr: z.record(ChangeTypeSchema, z.string()).optional(),
+  scopes: z.record(z.string(), z.string()),
+  changeTypes: z.record(ChangeTypeSchema, z.string()).optional(),
   project: ManagerSchema,
 });
 
 type RawConfig = z.infer<typeof ConfigSchema>;
 
-export type Config = Omit<RawConfig, "pr"> & {
-  pr: Record<ChangeType, string>;
+export type Config = Omit<RawConfig, "changeTypes"> & {
+  changeTypes: Record<ChangeType, string>;
   gh: string;
 };
 
@@ -55,13 +55,13 @@ export const loadConfig = async (): Promise<Config> => {
   return {
     ...config,
     gh,
-    pr: {
+    changeTypes: {
       major: "Major Change",
       breaking: "Breaking Change",
       feature: "New features",
       fix: "Bug Fixes",
       chore: "Minor Changes",
-      ...config.pr,
+      ...config.changeTypes,
     },
   };
 };

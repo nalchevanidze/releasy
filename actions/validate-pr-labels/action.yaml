@@ -1,0 +1,13 @@
+name: Validate PR Labels
+description: Validate pull request labels against relasy.json (changeTypes + scopes/pkgs)
+author: relasy
+
+inputs:
+  require_change_type:
+    description: Require at least one changeType label on the PR
+    required: false
+    default: "true"
+
+runs:
+  using: "node12"
+  main: "dist/index.js"
