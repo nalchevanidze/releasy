@@ -50812,7 +50812,7 @@ var require_fetch2 = __commonJS({
         return void 0;
       }
       if (prefix !== prefixMap[t])
-        ;
+        return void 0;
       if (values[key])
         return key;
       const fields = Object.keys(values).join(", ");
