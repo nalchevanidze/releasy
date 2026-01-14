@@ -56307,9 +56307,13 @@ var require_fetch2 = __commonJS({
       const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
       return num ? parseInt(num, 10) : void 0;
     };
+    var prefixMap = {
+      changeTypes: "type",
+      scopes: "scope"
+    };
     var parseLabels = (config, t, labels) => labels.flatMap((label) => {
       const [prefix, key, ...rest] = label.split("/");
-      if (prefix !== t)
+      if (prefix !== prefixMap[t])
         return [];
       const values = config[t];
       if (rest.length || !key || !values[key]) {
