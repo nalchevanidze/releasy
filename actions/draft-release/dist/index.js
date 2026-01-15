@@ -51019,7 +51019,7 @@ var require_dist = __commonJS({
         const add = (t) => ([n, longName]) => {
           const l = (0, labels_1.createLabel)(t, n, longName);
           if (!map.has(l.name)) {
-            l.existing = map.get(l.name)?.name;
+            map.set(l.name, l);
           }
         };
         Object.entries(this.config.changeTypes).forEach(add("changeTypes"));
