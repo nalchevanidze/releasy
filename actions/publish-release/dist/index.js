@@ -59702,7 +59702,7 @@ var require_labels = __commonJS({
     var parseLabel = (config, original) => {
       const [prefix, sub, ...rest] = original.trim().replaceAll(":", "/").replaceAll(" ", "/").split("/");
       if (rest.length) {
-        throw new Error(`invalid label ${original}. only one '/' is allowed in labels for ${sub}`);
+        throw new Error(`invalid Label "${original}". only one '/' is allowed in labels for ${sub}`);
       }
       if (sub === void 0) {
         const name = prefix;
