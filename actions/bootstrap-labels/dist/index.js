@@ -56332,9 +56332,9 @@ var require_labels = __commonJS({
           return (0, exports2.createLabel)("changeTypes", name, longName, original);
         return void 0;
       }
-      if (!(prefix in config))
-        return;
       const type = parseNameMap[prefix];
+      if (!type)
+        return;
       const longNames = config[type];
       if (longNames[sub]) {
         return (0, exports2.createLabel)(type, sub, longNames[sub], original);

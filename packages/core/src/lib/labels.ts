@@ -16,20 +16,19 @@ const printNameMap: Record<LabelType, AllowedLabelTypes> = {
   scopes: "📦",
 };
 
-const parseNameMap: Record<AllowedLabelTypes, LabelType> = {
+const parseNameMap: Record<string, LabelType> = {
   type: "changeTypes",
   scope: "scopes",
   "📦": "scopes",
 };
 
 const printName = (type: LabelType, key: string) => {
-
   if (type === "changeTypes") {
     return `${printNameMap[type]}/${key}`;
   }
-  
+
   return `${printNameMap[type]} ${key}`;
-}
+};
 
 const colors: Record<string, string> = {
   major: "B60205", // red (GitHub danger)
@@ -45,7 +44,6 @@ export const parseLabel = <T extends LabelType>(
   config: Config,
   original: string
 ): Label | undefined => {
-  
   const [prefix, sub, ...rest] = original
     .replaceAll(":", "")
     .replaceAll(" ", "")
@@ -66,9 +64,10 @@ export const parseLabel = <T extends LabelType>(
     return undefined;
   }
 
-  if (!(prefix in config)) return;
+  const type = parseNameMap[prefix];
 
-  const type = parseNameMap[prefix as AllowedLabelTypes] as LabelType;
+  if (!type) return;
+
   const longNames: Record<string, string> = config[type];
 
   if (longNames[sub]) {
