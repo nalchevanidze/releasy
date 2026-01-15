@@ -56503,6 +56503,12 @@ var COLORS = {
   minor: "FBCA04"
   // yellow
 };
+var createLabel = (type, existing, name) => ({
+  name: `${type}/${name}`,
+  color: COLORS[name] || "C5DEF5",
+  description: `Relasy ${type} label: ${name}`,
+  existing: existing.has(`${type}/${name}`)
+});
 function normalizeColor(color) {
   return color.replace(/^#/, "").trim().toUpperCase();
 }
@@ -56548,12 +56554,6 @@ async function ensureLabel(octokit, label) {
     // keep same, but explicit
   });
 }
-var createLabel = (type, existing, name) => ({
-  name: `${type}/${name}`,
-  color: COLORS[type] || "C5DEF5",
-  description: `Relasy ${type} label: ${name}`,
-  existing: existing.has(`${type}/${name}`)
-});
 async function run() {
   try {
     const relasy = await import_core2.Relasy.load();

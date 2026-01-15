@@ -4,6 +4,13 @@ import { Relasy } from "@relasy/core";
 
 const { owner, repo } = context.repo;
 
+type Label = {
+  name: string;
+  color: string; // hex without #
+  description?: string;
+  existing?: boolean;
+};
+
 const COLORS: Record<string, string> = {
   breaking: "B60205", // red
   feature: "0E8A16", // green
@@ -11,12 +18,16 @@ const COLORS: Record<string, string> = {
   minor: "FBCA04", // yellow
 };
 
-type Label = {
-  name: string;
-  color: string; // hex without #
-  description?: string;
-  existing?: boolean;
-};
+export const createLabel = (
+  type: string,
+  existing: Map<string, unknown>,
+  name: string
+): Label => ({
+  name: `${type}/${name}`,
+  color: COLORS[name] || "C5DEF5",
+  description: `Relasy ${type} label: ${name}`,
+  existing: existing.has(`${type}/${name}`),
+});
 
 function normalizeColor(color: string): string {
   return color.replace(/^#/, "").trim().toUpperCase();
@@ -77,17 +88,6 @@ export async function ensureLabel(
     new_name: label.name, // keep same, but explicit
   });
 }
-
-export const createLabel = (
-  type: string,
-  existing: Map<string, unknown>,
-  name: string
-): Label => ({
-  name: `${type}/${name}`,
-  color: COLORS[type] || "C5DEF5",
-  description: `Relasy ${type} label: ${name}`,
-  existing: existing.has(`${type}/${name}`),
-});
 
 async function run() {
   try {
