@@ -100,7 +100,7 @@ export const createLabel = (
 ): Label => ({
   type,
   key,
-  color: normalizeColor(colors[key] || colors.pkg),
+  color: colors.pkg,
   description:
     type === "changeTypes"
       ? `Relasy type label for versioning & changelog: ${longName}`
