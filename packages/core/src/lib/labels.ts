@@ -37,7 +37,7 @@ const colors: Record<string, string> = {
   fix: "1D76DB", // blue
   minor: "D4DADF", // light gray
   chore: "D4DADF", // light gray
-  pkg: "c2e0c6", // teal (package scope / grouping)
+  pkg: "FFFFFF", // teal (package scope / grouping)
 };
 
 export const parseLabel = <T extends LabelType>(
