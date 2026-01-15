@@ -56512,7 +56512,7 @@ var COLORS = {
 var createLabel = (type, existing, name, longName) => ({
   name: `${type}/${name}`,
   color: COLORS[name] || COLORS.pkg,
-  description: `Relasy label of category ${type} for: ${longName}`,
+  description: type === "type" ? `Relasy type label for versioning & changelog: ${longName}` : `Relasy scope label for grouping changes: "${longName}"`,
   existing: existing.has(`${type}/${name}`)
 });
 function normalizeColor(color) {

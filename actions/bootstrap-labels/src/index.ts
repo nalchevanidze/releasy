@@ -32,7 +32,7 @@ export const createLabel = (
   description:
     type === "type"
       ? `Relasy type label for versioning & changelog: ${longName}`
-      : `Relasy scope label for grouping changes: ${longName}`,
+      : `Relasy scope label for grouping changes: "${longName}"`,
   existing: existing.has(`${type}/${name}`),
 });
 
