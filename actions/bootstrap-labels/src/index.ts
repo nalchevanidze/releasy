@@ -8,7 +8,7 @@ type Label = {
   name: string;
   color: string; // hex without #
   description?: string;
-  existing?: boolean;
+  existingName?: string;
 };
 
 const COLORS: Record<string, string> = {
@@ -23,7 +23,7 @@ const COLORS: Record<string, string> = {
 
 export const createLabel = (
   type: string,
-  existing: Map<string, unknown>,
+  existing: Map<string, { name: string }>,
   name: string,
   longName: string
 ): Label => ({
@@ -33,7 +33,9 @@ export const createLabel = (
     type === "type"
       ? `Relasy type label for versioning & changelog: ${longName}`
       : `Relasy scope label for grouping changes: "${longName}"`,
-  existing: existing.has(`${type}/${name}`),
+  existingName: existing.has(`${type}/${name}`)
+    ? existing.get(`${type}/${name}`)?.name
+    : undefined,
 });
 
 function normalizeColor(color: string): string {
@@ -70,30 +72,30 @@ export async function ensureLabel(
   octokit: ReturnType<typeof getOctokit>,
   label: Label
 ) {
-  if (!label.existing) {
-    try {
-      await octokit.rest.issues.createLabel({
+  try {
+    if (label.existingName) {
+      await octokit.rest.issues.updateLabel({
         owner,
         repo,
-        name: label.name,
-        color: label.color,
+        name: label.existingName,
+        color: normalizeColor(label.color),
         description: label.description,
+        new_name: label.name, // keep same, but explicit
       });
-      return;
-    } catch (e: any) {
-      // If it was created concurrently, treat as unchanged
-      throw e;
     }
-  }
 
-  await octokit.rest.issues.updateLabel({
-    owner,
-    repo,
-    name: label.name, // current label name
-    color: normalizeColor(label.color),
-    description: label.description,
-    new_name: label.name, // keep same, but explicit
-  });
+    await octokit.rest.issues.createLabel({
+      owner,
+      repo,
+      name: label.name,
+      color: label.color,
+      description: label.description,
+    });
+    return;
+  } catch (e: any) {
+    // If it was created concurrently, treat as unchanged
+    throw e;
+  }
 }
 
 async function run() {
