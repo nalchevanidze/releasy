@@ -1,5 +1,5 @@
 name: Bootstrap Labels
-on: [workflow_dispatch, pull_request]
+on: [workflow_dispatch]
 
 permissions:
   contents: read
@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Create/ensure required labels exist
-        uses: nalchevanidze/relasy/actions/bootstrap-labels@bootstrap
+        uses: nalchevanidze/relasy/actions/bootstrap-labels@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
