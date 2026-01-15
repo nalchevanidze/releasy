@@ -59905,7 +59905,7 @@ var require_dist = __commonJS({
         };
         Object.entries(this.config.changeTypes).forEach(add("changeTypes"));
         Object.entries(this.config.scopes).forEach(add("scopes"));
-        console.log(`Using remote: ${[...map.keys()]}`);
+        console.log(`changes: ${JSON.stringify([...map.keys()])}`);
         return [...map.values()];
       }
       parseLabels(t, labels) {
