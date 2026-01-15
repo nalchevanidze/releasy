@@ -26,7 +26,7 @@ export const createLabel = (
   name: string
 ): Label => ({
   name: `${type}/${name}`,
-  color: COLORS[name] || "C5DEF5",
+  color: COLORS[name] || "C8A165",
   description: `Relasy ${type} label: ${name}`,
   existing: existing.has(`${type}/${name}`),
 });
