@@ -56567,8 +56567,10 @@ async function run() {
         per_page: 100
       }
     );
+    const ls = labels.map((l) => l.name);
+    console.log(`fetched labels: ${JSON.stringify(ls)}`);
     Promise.all(
-      relasy.labels(labels.map((l) => l.name)).map(async (label) => {
+      relasy.labels(ls).map(async (label) => {
         console.log(`Processing label: ${label.name}`);
         if (label?.existing) {
           return octokit.rest.issues.updateLabel({
