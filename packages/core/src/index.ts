@@ -5,9 +5,9 @@ import { LabelType, loadConfig } from "./lib/config";
 import { setupEnv } from "./lib/utils";
 import { setupToolchain } from "./lib/project";
 import { renderChangelog } from "./lib/changelog";
-import { parseLabels } from "./lib/labels";
+import { parseLabel, parseLabels } from "./lib/labels";
 export { exit } from "./lib/utils";
-export { Label } from "./lib/labels";
+export { Label, createLabel } from "./lib/labels";
 
 export class Relasy extends Api {
   public static async load() {
@@ -34,5 +34,9 @@ export class Relasy extends Api {
 
   public parseLabels<T extends LabelType>(t: T, labels: string[]) {
     return parseLabels(this.config, t, labels);
+  }
+
+  public parseLabel(original: string) {
+    return parseLabel(this.config, original);
   }
 }

@@ -56299,7 +56299,7 @@ var require_labels = __commonJS({
   "../../packages/core/dist/lib/labels.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.parseLabels = exports2.createLabel = void 0;
+    exports2.parseLabels = exports2.createLabel = exports2.parseLabel = void 0;
     var colors = {
       major: "B60205",
       breaking: "B60205",
@@ -56336,6 +56336,7 @@ var require_labels = __commonJS({
       const fields = Object.keys(longNames).join(", ");
       throw new Error(`invalid label ${original}. key ${sub} could not be found on object with fields: ${fields}`);
     };
+    exports2.parseLabel = parseLabel;
     var createLabel2 = (type, key, longName, existing) => ({
       type,
       key,
@@ -56345,7 +56346,7 @@ var require_labels = __commonJS({
       existing
     });
     exports2.createLabel = createLabel2;
-    var parseLabels = (config, target, labels) => labels.map((label) => parseLabel(config, label)).filter((label) => label?.type === target).map((label) => label.key);
+    var parseLabels = (config, target, labels) => labels.map((label) => (0, exports2.parseLabel)(config, label)).filter((label) => label?.type === target).map((label) => label.key);
     exports2.parseLabels = parseLabels;
   }
 });
@@ -56472,7 +56473,7 @@ var require_dist = __commonJS({
   "../../packages/core/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.Relasy = exports2.exit = void 0;
+    exports2.Relasy = exports2.createLabel = exports2.exit = void 0;
     var git_1 = require_git();
     var types_1 = require_types();
     var gh_1 = require_gh();
@@ -56484,6 +56485,10 @@ var require_dist = __commonJS({
     var utils_2 = require_utils6();
     Object.defineProperty(exports2, "exit", { enumerable: true, get: function() {
       return utils_2.exit;
+    } });
+    var labels_2 = require_labels();
+    Object.defineProperty(exports2, "createLabel", { enumerable: true, get: function() {
+      return labels_2.createLabel;
     } });
     var Relasy2 = class _Relasy extends types_1.Api {
       constructor() {
@@ -56508,6 +56513,9 @@ var require_dist = __commonJS({
       parseLabels(t, labels) {
         return (0, labels_1.parseLabels)(this.config, t, labels);
       }
+      parseLabel(original) {
+        return (0, labels_1.parseLabel)(this.config, original);
+      }
     };
     exports2.Relasy = Relasy2;
   }
@@ -56516,8 +56524,7 @@ var require_dist = __commonJS({
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
-  ensureLabel: () => ensureLabel,
-  listExistingLabels: () => listExistingLabels
+  ensureLabel: () => ensureLabel
 });
 module.exports = __toCommonJS(index_exports);
 var import_core = __toESM(require_core());
@@ -56526,18 +56533,6 @@ var import_core2 = __toESM(require_dist());
 var { owner, repo } = import_github.context.repo;
 function normalizeColor(color) {
   return color.replace(/^#/, "").trim().toUpperCase();
-}
-async function listExistingLabels(octokit) {
-  const labels = await octokit.paginate(octokit.rest.issues.listLabelsForRepo, {
-    owner,
-    repo,
-    per_page: 100
-  });
-  const map = /* @__PURE__ */ new Map();
-  for (const l of labels) {
-    map.set(l.name, { name: l.name });
-  }
-  return map;
 }
 async function ensureLabel(octokit, label) {
   try {
@@ -56568,12 +56563,24 @@ async function run() {
   try {
     const relasy = await import_core2.Relasy.load();
     const octokit = (0, import_github.getOctokit)(process.env.GITHUB_TOKEN || "");
-    const existingLabels = await listExistingLabels(octokit);
+    const labels = await octokit.paginate(
+      octokit.rest.issues.listLabelsForRepo,
+      {
+        owner,
+        repo,
+        per_page: 100
+      }
+    );
+    const map = /* @__PURE__ */ new Map();
+    for (const l of labels) {
+      const label = relasy.parseLabel(l.name);
+      map.set(l.name, { name: l.name });
+    }
     const changeTypes = Object.entries(relasy.config.changeTypes).map(
-      ([name, longName]) => createLabel("type", existingLabels, name, longName)
+      ([name, longName]) => (0, import_core2.createLabel)("changeTypes", name, longName)
     );
     const scopes = Object.entries(relasy.config.scopes).map(
-      ([name, longName]) => createLabel("scope", existingLabels, name, longName)
+      ([name, longName]) => (0, import_core2.createLabel)("scopes", name, longName)
     );
     Promise.all(
       [...changeTypes, ...scopes].map((label) => ensureLabel(octokit, label))
@@ -56591,8 +56598,7 @@ if (require.main === module) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  ensureLabel,
-  listExistingLabels
+  ensureLabel
 });
 /*! Bundled license information:
 

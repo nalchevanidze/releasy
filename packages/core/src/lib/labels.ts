@@ -24,7 +24,7 @@ const prefixMap = {
   scopes: "scope",
 };
 
-const parseLabel = <T extends LabelType>(
+export const parseLabel = <T extends LabelType>(
   config: Config,
   original: string
 ): Label | undefined => {

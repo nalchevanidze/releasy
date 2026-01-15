@@ -56299,7 +56299,7 @@ var require_labels = __commonJS({
   "../../packages/core/dist/lib/labels.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.parseLabels = exports2.createLabel = void 0;
+    exports2.parseLabels = exports2.createLabel = exports2.parseLabel = void 0;
     var colors = {
       major: "B60205",
       breaking: "B60205",
@@ -56336,6 +56336,7 @@ var require_labels = __commonJS({
       const fields = Object.keys(longNames).join(", ");
       throw new Error(`invalid label ${original}. key ${sub} could not be found on object with fields: ${fields}`);
     };
+    exports2.parseLabel = parseLabel;
     var createLabel = (type, key, longName, existing) => ({
       type,
       key,
@@ -56345,7 +56346,7 @@ var require_labels = __commonJS({
       existing
     });
     exports2.createLabel = createLabel;
-    var parseLabels = (config, target, labels) => labels.map((label) => parseLabel(config, label)).filter((label) => label?.type === target).map((label) => label.key);
+    var parseLabels = (config, target, labels) => labels.map((label) => (0, exports2.parseLabel)(config, label)).filter((label) => label?.type === target).map((label) => label.key);
     exports2.parseLabels = parseLabels;
   }
 });
@@ -56472,7 +56473,7 @@ var require_dist = __commonJS({
   "../../packages/core/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.Relasy = exports2.exit = void 0;
+    exports2.Relasy = exports2.createLabel = exports2.exit = void 0;
     var git_1 = require_git();
     var types_1 = require_types();
     var gh_1 = require_gh();
@@ -56484,6 +56485,10 @@ var require_dist = __commonJS({
     var utils_2 = require_utils6();
     Object.defineProperty(exports2, "exit", { enumerable: true, get: function() {
       return utils_2.exit;
+    } });
+    var labels_2 = require_labels();
+    Object.defineProperty(exports2, "createLabel", { enumerable: true, get: function() {
+      return labels_2.createLabel;
     } });
     var Relasy2 = class _Relasy extends types_1.Api {
       constructor() {
@@ -56507,6 +56512,9 @@ var require_dist = __commonJS({
       }
       parseLabels(t, labels) {
         return (0, labels_1.parseLabels)(this.config, t, labels);
+      }
+      parseLabel(original) {
+        return (0, labels_1.parseLabel)(this.config, original);
       }
     };
     exports2.Relasy = Relasy2;
