@@ -56326,7 +56326,6 @@ var require_labels = __commonJS({
       // teal (package scope / grouping)
     };
     var parseLabel = (config, original) => {
-      console.log(`parsing label: ${original}`);
       const [prefix, sub, ...rest] = original.replaceAll(":", "").replaceAll(" ", "").split("/");
       if (rest.length) {
         throw new Error(`invalid label ${original}. only one '/' is allowed in labels for ${sub}`);
@@ -56528,7 +56527,9 @@ var require_dist = __commonJS({
       labels(ls) {
         const map = /* @__PURE__ */ new Map();
         ls.forEach((l) => {
+          console.log(`parsing label: ${l}`);
           const parsed = (0, labels_1.parseLabel)(this.config, l);
+          console.log(`parsed label: ${JSON.stringify(parsed)}`);
           if (parsed) {
             map.set(parsed.name, parsed);
           }

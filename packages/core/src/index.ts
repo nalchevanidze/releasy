@@ -35,7 +35,12 @@ export class Relasy extends Api {
   public labels(ls: string[]) {
     const map = new Map<string, Label>();
     ls.forEach((l) => {
+         console.log(`parsing label: ${l}`);
+
       const parsed = parseLabel(this.config, l);
+
+      console.log(`parsed label: ${JSON.stringify(parsed)}`);
+
       if (parsed) {
         map.set(parsed.name, parsed);
       }

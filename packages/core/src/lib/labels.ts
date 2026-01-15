@@ -45,7 +45,6 @@ export const parseLabel = <T extends LabelType>(
   config: Config,
   original: string
 ): Label | undefined => {
-  console.log(`parsing label: ${original}`);
   
   const [prefix, sub, ...rest] = original
     .replaceAll(":", "")
