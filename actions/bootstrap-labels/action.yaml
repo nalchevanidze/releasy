@@ -1,0 +1,7 @@
+name: Bootstrap Labels
+description: Create/ensure Relasy required labels exist based on relasy.json (changeTypes + scopes/pkgs)
+author: relasy
+
+runs:
+  using: node20
+  main: dist/index.js
