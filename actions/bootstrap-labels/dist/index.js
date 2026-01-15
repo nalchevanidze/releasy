@@ -56549,10 +56549,10 @@ async function ensureLabel(octokit, label) {
   });
 }
 var createLabel = (type, existing, name) => ({
-  name: `${type}${name}`,
+  name: `${type}/${name}`,
   color: COLORS[type] || "C5DEF5",
   description: `Relasy ${type} label: ${name}`,
-  existing: existing.has(`${type}${name}`)
+  existing: existing.has(`${type}/${name}`)
 });
 async function run() {
   try {
