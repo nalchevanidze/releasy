@@ -56,7 +56,7 @@ export const parseLabel = <T extends LabelType>(
     .replaceAll(" ", "/")
     .split("/");
 
-  if (rest.length) {
+  if (rest.length && parseNameMap[prefix]) {
     throw new Error(
       `invalid Label "${original}". only one '/' is allowed in labels for ${sub}`
     );
