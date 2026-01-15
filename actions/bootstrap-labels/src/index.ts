@@ -18,7 +18,7 @@ const COLORS: Record<string, string> = {
   fix: "1D76DB",      // blue
   minor: "D4DADF",    // light gray
   chore: "D4DADF",    // light gray
-  pkg: "D4C5F9",      // lavender (package scope / grouping)
+  pkg: "0AA6A6",      // teal (package scope / grouping)
 };
 
 export const createLabel = (
