@@ -59674,8 +59674,8 @@ var require_labels = __commonJS({
       major: "\u{1F6A8}"
     };
     var parseNameMap = {
-      type: "changeTypes",
       scope: "scopes",
+      type: "changeTypes",
       "\u{1F4E6}": "scopes",
       "\u{1F4A5}": "changeTypes",
       "\u2728": "changeTypes",
