@@ -83,10 +83,10 @@ export const createLabel = (
   existing: Map<string, unknown>,
   name: string
 ): Label => ({
-  name: `${type}${name}`,
+  name: `${type}/${name}`,
   color: COLORS[type] || "C5DEF5",
   description: `Relasy ${type} label: ${name}`,
-  existing: existing.has(`${type}${name}`),
+  existing: existing.has(`${type}/${name}`),
 });
 
 async function run() {
