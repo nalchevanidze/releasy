@@ -56506,13 +56506,13 @@ var COLORS = {
   // light gray
   chore: "D4DADF",
   // light gray
-  pkg: "0AA6A6"
+  pkg: "c2e0c6"
   // teal (package scope / grouping)
 };
-var createLabel = (type, existing, name) => ({
+var createLabel = (type, existing, name, longName) => ({
   name: `${type}/${name}`,
   color: COLORS[name] || COLORS.pkg,
-  description: `Relasy ${type} label: ${name}`,
+  description: `Relasy label of category ${type} for: ${longName}`,
   existing: existing.has(`${type}/${name}`)
 });
 function normalizeColor(color) {
@@ -56565,11 +56565,11 @@ async function run() {
     const relasy = await import_core2.Relasy.load();
     const octokit = (0, import_github.getOctokit)(process.env.GITHUB_TOKEN || "");
     const existingLabels = await listExistingLabels(octokit);
-    const changeTypes = Object.keys(relasy.config.changeTypes).map(
-      (name) => createLabel("type", existingLabels, name)
+    const changeTypes = Object.entries(relasy.config.changeTypes).map(
+      ([name, longName]) => createLabel("type", existingLabels, name, longName)
     );
-    const scopes = Object.keys(relasy.config.scopes).map(
-      (name) => createLabel("scope", existingLabels, name)
+    const scopes = Object.entries(relasy.config.scopes).map(
+      ([name, longName]) => createLabel("scope", existingLabels, name, longName)
     );
     Promise.all(
       [...changeTypes, ...scopes].map((label) => ensureLabel(octokit, label))
