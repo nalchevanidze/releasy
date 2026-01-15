@@ -20,6 +20,8 @@ async function run() {
 
     Promise.all(
       relasy.labels(labels.map((l) => l.name)).map(async (label) => {
+        console.log(`Processing label: ${label.name}`);
+
         if (label?.existing) {
           return octokit.rest.issues.updateLabel({
             owner,
