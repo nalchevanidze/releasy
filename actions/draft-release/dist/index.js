@@ -51013,7 +51013,7 @@ var require_dist = __commonJS({
         ls.forEach((l) => {
           const parsed = (0, labels_1.parseLabel)(this.config, l);
           if (parsed) {
-            map.set(l, parsed);
+            map.set(parsed.name, parsed);
           }
         });
         const add = (t) => ([n, longName]) => {

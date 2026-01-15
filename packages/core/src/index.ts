@@ -37,7 +37,7 @@ export class Relasy extends Api {
     ls.forEach((l) => {
       const parsed = parseLabel(this.config, l);
       if (parsed) {
-        map.set(l, parsed);
+        map.set(parsed.name, parsed);
       }
     });
 
