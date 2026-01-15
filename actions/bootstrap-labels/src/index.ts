@@ -12,13 +12,13 @@ type Label = {
 };
 
 const COLORS: Record<string, string> = {
-  major: "B60205",    // red (GitHub danger)
+  major: "B60205", // red (GitHub danger)
   breaking: "B60205", // red (same as major)
-  feature: "0E8A16",  // green
-  fix: "1D76DB",      // blue
-  minor: "D4DADF",    // light gray
-  chore: "D4DADF",    // light gray
-  pkg: "c2e0c6",      // teal (package scope / grouping)
+  feature: "0E8A16", // green
+  fix: "1D76DB", // blue
+  minor: "D4DADF", // light gray
+  chore: "D4DADF", // light gray
+  pkg: "c2e0c6", // teal (package scope / grouping)
 };
 
 export const createLabel = (
@@ -29,7 +29,10 @@ export const createLabel = (
 ): Label => ({
   name: `${type}/${name}`,
   color: COLORS[name] || COLORS.pkg,
-  description: `Relasy label of category ${type} for: ${longName}`,
+  description:
+    type === "type"
+      ? `Relasy type label for versioning & changelog: ${longName}`
+      : `Relasy scope label for grouping changes: ${longName}`,
   existing: existing.has(`${type}/${name}`),
 });
 
@@ -99,11 +102,11 @@ async function run() {
     const octokit = getOctokit(process.env.GITHUB_TOKEN || "");
     const existingLabels = await listExistingLabels(octokit);
 
-    const changeTypes = Object.entries(relasy.config.changeTypes).map(([name, longName]) =>
-      createLabel("type", existingLabels, name, longName)
+    const changeTypes = Object.entries(relasy.config.changeTypes).map(
+      ([name, longName]) => createLabel("type", existingLabels, name, longName)
     );
-    const scopes = Object.entries(relasy.config.scopes).map(([name, longName]) =>
-      createLabel("scope", existingLabels, name, longName)
+    const scopes = Object.entries(relasy.config.scopes).map(
+      ([name, longName]) => createLabel("scope", existingLabels, name, longName)
     );
 
     Promise.all(
