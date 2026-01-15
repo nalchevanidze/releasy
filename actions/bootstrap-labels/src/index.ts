@@ -18,6 +18,7 @@ const COLORS: Record<string, string> = {
   fix: "1D76DB", // blue
   minor: "FBCA04", // yellow
   chore: "006B75", // teal
+  pkg: "C8A165"
 };
 
 export const createLabel = (
@@ -26,7 +27,7 @@ export const createLabel = (
   name: string
 ): Label => ({
   name: `${type}/${name}`,
-  color: COLORS[name] || "C8A165",
+  color: COLORS[name] || COLORS.pkg,
   description: `Relasy ${type} label: ${name}`,
   existing: existing.has(`${type}/${name}`),
 });
