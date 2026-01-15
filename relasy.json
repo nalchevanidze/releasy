@@ -3,7 +3,7 @@
     "draft": "actions/draft-release",
     "publish": "actions/publish-release",
     "labels": "actions/validate-pr-labels",
-    "setup": "actions/setup"
+    "bootstrap": "actions/bootstrap-labels"
   },
   "project": {
     "type": "npm"

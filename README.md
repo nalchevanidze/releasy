@@ -347,9 +347,19 @@ Suggested workflow:
 
 ```yaml
 name: Validate PR Labels
+
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled, edited]
+    types:
+      [
+        opened,
+        reopened,
+        labeled,
+        unlabeled,
+        synchronize,
+        edited,
+        ready_for_review,
+      ]
 
 permissions:
   contents: read
@@ -361,13 +371,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate PR labels
-        uses: nalchevanidze/relasy/actions/validate-pr-labels@0.1.5
-        with:
-          type_prefix: "type:"
-          scope_prefix: "scope:"
-          require_scope: "false"
-          config_path: "relasy.json"
+      - name: Validate PR Labels 
+        uses: nalchevanidze/relasy/actions/validate-pr-labels@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ````
 
 > Tip: You can also run this in a “warn-only” mode (comment / log without failing) if you want a softer rollout.

@@ -1,17 +1,6 @@
 name: Validate PR Labels
 
-on:
-  pull_request:
-    types:
-      [
-        opened,
-        reopened,
-        labeled,
-        unlabeled,
-        synchronize,
-        edited,
-        ready_for_review,
-      ]
+on: [pull_request]
 
 permissions:
   contents: read
@@ -23,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate PR Labels 
+      - name: Validate PR Labels
         uses: nalchevanidze/relasy/actions/validate-pr-labels@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
