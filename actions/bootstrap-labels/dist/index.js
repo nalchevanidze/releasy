@@ -56504,12 +56504,13 @@ var COLORS = {
   // blue
   minor: "FBCA04",
   // yellow
-  chore: "006B75"
+  chore: "006B75",
   // teal
+  pkg: "C8A165"
 };
 var createLabel = (type, existing, name) => ({
   name: `${type}/${name}`,
-  color: COLORS[name] || "C5DEF5",
+  color: COLORS[name] || COLORS.pkg,
   description: `Relasy ${type} label: ${name}`,
   existing: existing.has(`${type}/${name}`)
 });

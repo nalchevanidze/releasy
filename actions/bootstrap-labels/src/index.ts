@@ -18,7 +18,7 @@ const COLORS: Record<string, string> = {
   fix: "1D76DB", // blue
   minor: "FBCA04", // yellow
   chore: "006B75", // teal
-  pkg: "C8A165"
+  pkg: "C8A165",
 };
 
 export const createLabel = (
