@@ -19679,7 +19679,7 @@ var require_core = __commonJS({
       process.env["PATH"] = `${inputPath}${path.delimiter}${process.env["PATH"]}`;
     }
     exports2.addPath = addPath;
-    function getInput2(name, options) {
+    function getInput(name, options) {
       const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
       if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
@@ -19689,9 +19689,9 @@ var require_core = __commonJS({
       }
       return val.trim();
     }
-    exports2.getInput = getInput2;
+    exports2.getInput = getInput;
     function getMultilineInput(name, options) {
-      const inputs = getInput2(name, options).split("\n").filter((x) => x !== "");
+      const inputs = getInput(name, options).split("\n").filter((x) => x !== "");
       if (options && options.trimWhitespace === false) {
         return inputs;
       }
@@ -19701,7 +19701,7 @@ var require_core = __commonJS({
     function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
-      const val = getInput2(name, options);
+      const val = getInput(name, options);
       if (trueValue.includes(val))
         return true;
       if (falseValue.includes(val))
@@ -19710,7 +19710,7 @@ var require_core = __commonJS({
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
     exports2.getBooleanInput = getBooleanInput;
-    function setOutput2(name, value) {
+    function setOutput(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
         return (0, file_command_1.issueFileCommand)("OUTPUT", (0, file_command_1.prepareKeyValueMessage)(name, value));
@@ -19718,7 +19718,7 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       process.stdout.write(os.EOL);
       (0, command_1.issueCommand)("set-output", { name }, (0, utils_1.toCommandValue)(value));
     }
-    exports2.setOutput = setOutput2;
+    exports2.setOutput = setOutput;
     function setCommandEcho(enabled) {
       (0, command_1.issue)("echo", enabled ? "on" : "off");
     }
@@ -56484,55 +56484,90 @@ var require_dist = __commonJS({
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
-  getCurrentPrLabels: () => getCurrentPrLabels
+  createLabel: () => createLabel,
+  ensureLabel: () => ensureLabel,
+  listExistingLabels: () => listExistingLabels
 });
 module.exports = __toCommonJS(index_exports);
 var import_core = __toESM(require_core());
 var import_github = __toESM(require_github());
 var import_core2 = __toESM(require_dist());
 var { owner, repo } = import_github.context.repo;
-async function getCurrentPrLabels(params = {}) {
-  const prFromPayload = import_github.context.payload.pull_request;
-  const toName = (l) => typeof l === "string" ? l : l?.name;
-  if (prFromPayload && !params.refetch) {
-    return (prFromPayload.labels ?? []).map(toName).filter(Boolean);
-  }
-  const token = params.token ?? process.env.GITHUB_TOKEN;
-  if (!token) {
-    throw new Error(
-      "No GitHub token provided. Pass `token` or set env GITHUB_TOKEN."
-    );
-  }
-  const prNumber = prFromPayload?.number ?? import_github.context.issue.number;
-  if (!prNumber) {
-    throw new Error(
-      "Could not determine PR number. Ensure this runs on a PR-related event."
-    );
-  }
-  const octokit = (0, import_github.getOctokit)(token);
-  const { data: pr } = await octokit.rest.pulls.get({
+var COLORS = {
+  breaking: "B60205",
+  // red
+  feature: "0E8A16",
+  // green
+  fix: "1D76DB",
+  // blue
+  minor: "FBCA04"
+  // yellow
+};
+function normalizeColor(color) {
+  return color.replace(/^#/, "").trim().toUpperCase();
+}
+async function listExistingLabels(octokit) {
+  const labels = await octokit.paginate(octokit.rest.issues.listLabelsForRepo, {
     owner,
     repo,
-    pull_number: prNumber
+    per_page: 100
   });
-  return (pr.labels ?? []).map(toName).filter(Boolean);
+  const map = /* @__PURE__ */ new Map();
+  for (const l of labels) {
+    map.set(l.name, {
+      name: l.name,
+      color: (l.color || "").toUpperCase(),
+      description: l.description
+    });
+  }
+  return map;
 }
+async function ensureLabel(octokit, label) {
+  if (!label.existing) {
+    try {
+      await octokit.rest.issues.createLabel({
+        owner,
+        repo,
+        name: label.name,
+        color: label.color,
+        description: label.description
+      });
+      return;
+    } catch (e) {
+      throw e;
+    }
+  }
+  await octokit.rest.issues.updateLabel({
+    owner,
+    repo,
+    name: label.name,
+    // current label name
+    color: normalizeColor(label.color),
+    description: label.description,
+    new_name: label.name
+    // keep same, but explicit
+  });
+}
+var createLabel = (type, existing, name) => ({
+  name: `${type}${name}`,
+  color: COLORS[type] || "C5DEF5",
+  description: `Relasy ${type} label: ${name}`,
+  existing: existing.has(`${type}${name}`)
+});
 async function run() {
   try {
     const relasy = await import_core2.Relasy.load();
-    const requireChangeType = (0, import_core.getInput)("require_change_type", {
-      required: false
-    }) === "true";
-    const labels = await getCurrentPrLabels();
-    const changeTypes = relasy.parseLabels("changeTypes", labels);
-    if (requireChangeType && changeTypes.length === 0) {
-      throw new Error(
-        `PR is missing a change type label. Expected one of: ${Object.keys(
-          relasy.config.changeTypes
-        ).join(", ")}`
-      );
-    }
-    relasy.parseLabels("scopes", labels);
+    const octokit = (0, import_github.getOctokit)(process.env.GITHUB_TOKEN || "");
+    const existingLabels = await listExistingLabels(octokit);
+    const changeTypes = Object.keys(relasy.config.changeTypes).map(
+      (name) => createLabel("type", existingLabels, name)
+    );
+    const scopes = Object.keys(relasy.config.scopes).map(
+      (name) => createLabel("scope", existingLabels, name)
+    );
+    Promise.all(
+      [...changeTypes, ...scopes].map((label) => ensureLabel(octokit, label))
+    );
   } catch (error) {
     if (error instanceof Error) {
       (0, import_core.setFailed)(error.message);
@@ -56546,7 +56581,9 @@ if (require.main === module) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  getCurrentPrLabels
+  createLabel,
+  ensureLabel,
+  listExistingLabels
 });
 /*! Bundled license information:
 
