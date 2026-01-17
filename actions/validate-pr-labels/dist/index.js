@@ -57195,14 +57195,11 @@ var require_dist = __commonJS({
       labels(ls) {
         const map = /* @__PURE__ */ new Map();
         ls.forEach((l) => {
-          console.log(`parsing label: ${l}`);
           const parsed = (0, labels_1.parseLabel)(this.config, l);
-          console.log(`parsed label: ${JSON.stringify(parsed)}`);
           if (parsed) {
             map.set(parsed.name, parsed);
           }
         });
-        console.log(`existing: ${JSON.stringify([...map.values()])}`);
         const add = (t) => ([n, longName]) => {
           const l = (0, labels_1.createLabel)(t, n, longName);
           if (!map.has(l.name)) {
@@ -57211,7 +57208,6 @@ var require_dist = __commonJS({
         };
         Object.entries(this.config.changeTypes).forEach(add("changeTypes"));
         Object.entries(this.config.scopes).forEach(add("scopes"));
-        console.log(`changes: ${JSON.stringify([...map.values()])}`);
         return [...map.values()];
       }
       parseLabels(t, labels) {
