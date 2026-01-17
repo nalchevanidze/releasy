@@ -10,6 +10,7 @@
     "build:core": "npm -w @relasy/core run build",
     "build:action": "npm -w @relasy/draft-release-action run build && npm -w @relasy/publish-release-action run build && npm -w @relasy/validate-pr-labels-action run build && npm -w @relasy/bootstrap-labels-action run build",
     "build:cli": "npm -w @relasy/cli run build",
-    "build": "npm run build:core && npm run build:action && npm run build:cli"
+    "build": "npm run build:core && npm run build:action && npm run build:cli",
+    "test": "npm -w @relasy/core run test"
   }
 }
