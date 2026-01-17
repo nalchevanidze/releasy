@@ -1,13 +1,12 @@
-import { lastTag, remote } from "./lib/git";
+import { lastTag } from "./lib/git";
 import { Api } from "./lib/changelog/types";
 import { Github } from "./lib/gh";
-import { ChangeType, LabelType, loadConfig } from "./lib/config";
+import { LabelType, loadConfig } from "./lib/config";
 import { setupEnv } from "./lib/utils";
 import { setupToolchain } from "./lib/project";
 import { renderChangelog } from "./lib/changelog";
 import { createLabel, Label, parseLabel, parseLabels } from "./lib/labels";
 export { exit } from "./lib/utils";
-export { Label, createLabel } from "./lib/labels";
 
 export class Relasy extends Api {
   public static async load() {
