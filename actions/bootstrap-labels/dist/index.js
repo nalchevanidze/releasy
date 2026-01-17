@@ -57018,7 +57018,7 @@ var require_labels = __commonJS({
   "../../packages/core/dist/lib/labels/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.parseLabels = exports2.createLabel = exports2.parseLabel = void 0;
+    exports2.genLabels = exports2.parseLabels = exports2.createLabel = exports2.parseLabel = void 0;
     var parse_1 = require_parse4();
     var parse_2 = require_parse4();
     Object.defineProperty(exports2, "parseLabel", { enumerable: true, get: function() {
@@ -57029,6 +57029,25 @@ var require_labels = __commonJS({
     } });
     var parseLabels = (config, target, labels) => labels.map((label) => (0, parse_1.parseLabel)(config, label)).filter((label) => label?.type === target).map((label) => label.key);
     exports2.parseLabels = parseLabels;
+    var genLabels = (config, ls) => {
+      const map = /* @__PURE__ */ new Map();
+      ls.forEach((l) => {
+        const parsed = (0, parse_1.parseLabel)(config, l);
+        if (parsed) {
+          map.set(parsed.name, parsed);
+        }
+      });
+      const add = (t) => ([n, longName]) => {
+        const l = (0, parse_1.createLabel)(t, n, longName);
+        if (!map.has(l.name)) {
+          map.set(l.name, l);
+        }
+      };
+      Object.entries(config.changeTypes).forEach(add("changeTypes"));
+      Object.entries(config.scopes).forEach(add("scopes"));
+      return [...map.values()];
+    };
+    exports2.genLabels = genLabels;
   }
 });
 
@@ -57188,22 +57207,7 @@ var require_dist = __commonJS({
         return new _Relasy(config, github, project);
       }
       labels(ls) {
-        const map = /* @__PURE__ */ new Map();
-        ls.forEach((l) => {
-          const parsed = (0, labels_1.parseLabel)(this.config, l);
-          if (parsed) {
-            map.set(parsed.name, parsed);
-          }
-        });
-        const add = (t) => ([n, longName]) => {
-          const l = (0, labels_1.createLabel)(t, n, longName);
-          if (!map.has(l.name)) {
-            map.set(l.name, l);
-          }
-        };
-        Object.entries(this.config.changeTypes).forEach(add("changeTypes"));
-        Object.entries(this.config.scopes).forEach(add("scopes"));
-        return [...map.values()];
+        return (0, labels_1.genLabels)(this.config, ls);
       }
       parseLabels(t, labels) {
         return (0, labels_1.parseLabels)(this.config, t, labels);

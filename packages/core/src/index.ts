@@ -5,7 +5,7 @@ import { LabelType, loadConfig } from "./lib/config";
 import { setupEnv } from "./lib/utils";
 import { setupToolchain } from "./lib/project";
 import { renderChangelog } from "./lib/changelog";
-import { createLabel, Label, parseLabel, parseLabels } from "./lib/labels";
+import { createLabel, genLabels, Label, parseLabel, parseLabels } from "./lib/labels";
 export { exit } from "./lib/utils";
 
 export class Relasy extends Api {
@@ -32,28 +32,7 @@ export class Relasy extends Api {
   };
 
   public labels(ls: string[]) {
-    const map = new Map<string, Label>();
-
-    ls.forEach((l) => {
-      const parsed = parseLabel(this.config, l);
-      if (parsed) {
-        map.set(parsed.name, parsed);
-      }
-    });
-
-    const add =
-      (t: LabelType) =>
-      ([n, longName]: [string, string]) => {
-        const l = createLabel(t, n, longName);
-        if (!map.has(l.name)) {
-          map.set(l.name, l);
-        }
-      };
-
-    Object.entries(this.config.changeTypes).forEach(add("changeTypes"));
-    Object.entries(this.config.scopes).forEach(add("scopes"));
-
-    return [...map.values()];
+    return genLabels(this.config, ls);
   }
 
   public parseLabels<T extends LabelType>(t: T, labels: string[]) {
