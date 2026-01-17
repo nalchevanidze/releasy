@@ -24,7 +24,6 @@ async function run() {
 
     Promise.all(
       relasy.labels(ls).map(async (label) => {
-        console.log(`Processing label: ${label.name}`);
 
         if (label?.existing) {
           return octokit.rest.issues.updateLabel({
