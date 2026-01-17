@@ -17,4 +17,9 @@ export type ChangeTypeLabel = BaseLabel & {
   changeType: ChangeType;
 };
 
+export type LABELS = {
+  changeTypes: ChangeTypeLabel;
+  scopes: ScopeLabel;
+};
+
 export type Label = ChangeTypeLabel | ScopeLabel;

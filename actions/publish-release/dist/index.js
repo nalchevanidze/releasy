@@ -60404,14 +60404,14 @@ var require_labels = __commonJS({
             break;
         }
       });
-      Object.entries(config.changeTypes).forEach(([n, longName]) => {
-        const l = (0, parse_1.createLabel)("changeTypes", n, longName);
+      Object.entries(config.changeTypes).forEach(([name, longName]) => {
+        const l = (0, parse_1.createLabel)("changeTypes", name, longName);
         if (!changeTypes.has(l.name)) {
           changeTypes.set(l.name, l);
         }
       });
-      Object.entries(config.scopes).forEach(([n, longName]) => {
-        const l = (0, parse_1.createLabel)("scopes", n, longName);
+      Object.entries(config.scopes).forEach(([name, longName]) => {
+        const l = (0, parse_1.createLabel)("scopes", name, longName);
         if (!scopes.has(l.name)) {
           scopes.set(l.name, l);
         }

@@ -1,5 +1,5 @@
 import { ChangeType, Config, LabelType } from "../config";
-import { Label } from "./label";
+import { Label, LABELS } from "./label";
 
 const emojies: Record<string, string> = {
   package: "📦",
@@ -82,12 +82,12 @@ export const parseLabel = <T extends LabelType>(
   );
 };
 
-export const createLabel = (
-  type: LabelType,
+export const createLabel = <T extends LabelType>(
+  type: T,
   key: string,
   longName: string,
   existing?: string,
-): Label =>
+): LABELS[T] =>
   ({
     type,
     scope: key,
@@ -98,4 +98,4 @@ export const createLabel = (
         : `Label for affected scope: "${longName}"`,
     name: printName(type, key),
     existing,
-  }) as Label;
+  }) as LABELS[T];
