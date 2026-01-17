@@ -57209,8 +57209,7 @@ var require_dist = __commonJS({
       static async load() {
         (0, utils_1.setupEnv)();
         const config = await (0, config_1.loadConfig)();
-        const github = new gh_1.Github(config.gh);
-        return new _Relasy(config, github, (0, project_1.setupToolchain)(config.project));
+        return new _Relasy(config, new gh_1.Github(config.gh), (0, project_1.setupToolchain)(config.project));
       }
       changelog() {
         return (0, changelog_1.renderChangelog)(this);
