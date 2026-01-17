@@ -10,7 +10,7 @@ type Params = {
 const { owner, repo } = context.repo;
 
 export async function getCurrentPrLabels(
-  params: Params = {}
+  params: Params = {},
 ): Promise<string[]> {
   const prFromPayload = context.payload.pull_request as any | undefined;
 
@@ -25,14 +25,14 @@ export async function getCurrentPrLabels(
   const token = params.token ?? process.env.GITHUB_TOKEN;
   if (!token) {
     throw new Error(
-      "No GitHub token provided. Pass `token` or set env GITHUB_TOKEN."
+      "No GitHub token provided. Pass `token` or set env GITHUB_TOKEN.",
     );
   }
 
   const prNumber = prFromPayload?.number ?? context.issue.number;
   if (!prNumber) {
     throw new Error(
-      "Could not determine PR number. Ensure this runs on a PR-related event."
+      "Could not determine PR number. Ensure this runs on a PR-related event.",
     );
   }
 
@@ -56,19 +56,15 @@ async function run() {
         required: false,
       }) === "true";
 
-    const labels = await getCurrentPrLabels();
-
-    const changeTypes = relasy.parseLabels("changeTypes", labels);
+    const { changeTypes } = relasy.parseLabels(await getCurrentPrLabels());
 
     if (requireChangeType && changeTypes.length === 0) {
       throw new Error(
         `PR is missing a change type label. Expected one of: ${Object.keys(
-          relasy.config.changeTypes
-        ).join(", ")}`
+          relasy.config.changeTypes,
+        ).join(", ")}`,
       );
     }
-
-    relasy.parseLabels("scopes", labels);
   } catch (error) {
     if (error instanceof Error) {
       setFailed(error.message);

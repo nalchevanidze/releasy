@@ -21,7 +21,7 @@ export class FetchApi extends Api {
           }
         }
       }
-    }`
+    }`,
   );
 
   private pullRequests = this.github.batch<PR>(
@@ -32,12 +32,12 @@ export class FetchApi extends Api {
       body
       author { login url }
       labels(first: 10) { nodes { name } }
-    }`
+    }`,
   );
 
   private toPRNumber = (c: Commit): number | undefined =>
     c.associatedPullRequests.nodes.find(({ repository }) =>
-      this.github.isOwner(repository)
+      this.github.isOwner(repository),
     )?.number ?? parseNumber(c.message);
 
   public changes = (version: string) =>
@@ -46,15 +46,16 @@ export class FetchApi extends Api {
       .then(this.pullRequests)
       .then(
         map((pr): Change => {
-          const labels = pluck("name", pr.labels.nodes);
+          const { changeTypes, scopes } = parseLabels(
+            this.config,
+            pluck("name", pr.labels.nodes),
+          );
 
           return {
             ...pr,
-            type:
-              parseLabels(this.config, "changeTypes", labels).find(Boolean) ??
-              "chore",
-            scopes: parseLabels(this.config, "scopes", labels),
+            type: changeTypes.find(Boolean)?.changeType ?? "chore",
+            scopes: scopes.map(({ scope }) => scope),
           };
-        })
+        }),
       );
 }

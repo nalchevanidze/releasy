@@ -60373,7 +60373,7 @@ var require_parse4 = __commonJS({
     exports2.parseLabel = parseLabel;
     var createLabel = (type, key, longName, existing) => ({
       type,
-      key,
+      scope: key,
       color: colors[key] || colors.pkg,
       description: type === "changeTypes" ? `Label for versioning: ${longName}` : `Label for affected scope: "${longName}"`,
       name: printName(type, key),
@@ -60388,10 +60388,8 @@ var require_labels = __commonJS({
   "../../packages/core/dist/lib/labels/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.genLabels = exports2.parseLabels = void 0;
+    exports2.parseLabels = exports2.genLabels = void 0;
     var parse_1 = require_parse4();
-    var parseLabels = (config, target, labels) => labels.map((label) => (0, parse_1.parseLabel)(config, label)).filter((label) => label?.type === target).map((label) => label.key);
-    exports2.parseLabels = parseLabels;
     var genLabels = (config, ls) => {
       const map = /* @__PURE__ */ new Map();
       ls.forEach((l) => {
@@ -60411,6 +60409,14 @@ var require_labels = __commonJS({
       return [...map.values()];
     };
     exports2.genLabels = genLabels;
+    var parseLabels = (config, labels) => {
+      const ls = labels.map((label) => (0, parse_1.parseLabel)(config, label));
+      return {
+        changeTypes: ls.filter((x) => x?.type === "changeTypes"),
+        scopes: ls.filter((x) => x?.type === "scopes")
+      };
+    };
+    exports2.parseLabels = parseLabels;
   }
 });
 
@@ -60451,11 +60457,11 @@ var require_fetch2 = __commonJS({
     }`);
         this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.github.isOwner(repository))?.number ?? parseNumber(c.message);
         this.changes = (version) => this.commits((0, git_1.commitsAfter)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
-          const labels = (0, ramda_1.pluck)("name", pr.labels.nodes);
+          const { changeTypes, scopes } = (0, labels_1.parseLabels)(this.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           return {
             ...pr,
-            type: (0, labels_1.parseLabels)(this.config, "changeTypes", labels).find(Boolean) ?? "chore",
-            scopes: (0, labels_1.parseLabels)(this.config, "scopes", labels)
+            type: changeTypes.find(Boolean)?.changeType ?? "chore",
+            scopes: scopes.map(({ scope }) => scope)
           };
         }));
       }
@@ -60572,8 +60578,8 @@ var require_dist = __commonJS({
       labels(ls) {
         return (0, labels_1.genLabels)(this.config, ls);
       }
-      parseLabels(t, labels) {
-        return (0, labels_1.parseLabels)(this.config, t, labels);
+      parseLabels(labels) {
+        return (0, labels_1.parseLabels)(this.config, labels);
       }
     };
     exports2.Relasy = Relasy2;

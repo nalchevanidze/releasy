@@ -1,13 +1,5 @@
 import { ChangeType, Config, LabelType } from "../config";
-
-export type Label = {
-  type: LabelType;
-  key: string;
-  name: string;
-  color: string; // hex without #
-  description?: string;
-  existing?: string;
-};
+import { Label } from "./label";
 
 const emojies: Record<string, string> = {
   package: "📦",
@@ -50,7 +42,7 @@ const colors: Record<string, string> = {
 
 export const parseLabel = <T extends LabelType>(
   config: Config,
-  original: string
+  original: string,
 ): Label | undefined => {
   const [prefix, sub, ...rest] = original
     .trim()
@@ -60,7 +52,7 @@ export const parseLabel = <T extends LabelType>(
 
   if (rest.length && parseNameMap[prefix]) {
     throw new Error(
-      `invalid Label "${original}". only one '/' is allowed in labels for ${sub}`
+      `invalid Label "${original}". only one '/' is allowed in labels for ${sub}`,
     );
   }
 
@@ -86,7 +78,7 @@ export const parseLabel = <T extends LabelType>(
   const fields = Object.keys(longNames).join(", ");
 
   throw new Error(
-    `invalid label ${original}. key ${sub} could not be found on object with fields: ${fields}`
+    `invalid label ${original}. key ${sub} could not be found on object with fields: ${fields}`,
   );
 };
 
@@ -94,15 +86,16 @@ export const createLabel = (
   type: LabelType,
   key: string,
   longName: string,
-  existing?: string
-): Label => ({
-  type,
-  key,
-  color: colors[key] || colors.pkg, // Use specific color or fallback to pkg
-  description:
-    type === "changeTypes"
-      ? `Label for versioning: ${longName}`
-      : `Label for affected scope: "${longName}"`,
-  name: printName(type, key),
-  existing,
-});
+  existing?: string,
+): Label =>
+  ({
+    type,
+    scope: key,
+    color: colors[key] || colors.pkg, // Use specific color or fallback to pkg
+    description:
+      type === "changeTypes"
+        ? `Label for versioning: ${longName}`
+        : `Label for affected scope: "${longName}"`,
+    name: printName(type, key),
+    existing,
+  }) as Label;
