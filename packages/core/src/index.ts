@@ -11,9 +11,12 @@ export class Relasy extends Api {
   public static async load() {
     setupEnv();
     const config = await loadConfig();
-    const github = new Github(config.gh);
 
-    return new Relasy(config, github, setupToolchain(config.project));
+    return new Relasy(
+      config,
+      new Github(config.gh),
+      setupToolchain(config.project),
+    );
   }
 
   public version = () => this.module.version();
