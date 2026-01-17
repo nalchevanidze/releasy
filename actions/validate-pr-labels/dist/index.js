@@ -57281,6 +57281,14 @@ async function run() {
         ).join(", ")}`
       );
     }
+    if (changeTypes.length > 1) {
+      throw new Error(
+        `PR has multiple change type labels. Expected only one of: ${Object.keys(
+          relasy.config.changeTypes
+        ).join(", ")}`
+      );
+    }
+    (0, import_core.setOutput)("change_type", changeTypes[0] || "");
   } catch (error) {
     if (error instanceof Error) {
       (0, import_core.setFailed)(error.message);
