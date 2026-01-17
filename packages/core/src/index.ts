@@ -59,8 +59,4 @@ export class Relasy extends Api {
   public parseLabels<T extends LabelType>(t: T, labels: string[]) {
     return parseLabels(this.config, t, labels);
   }
-
-  public parseLabel(original: string) {
-    return parseLabel(this.config, original);
-  }
 }
