@@ -23,62 +23,72 @@ describe("parseLabel", () => {
   describe("changeTypes parsing", () => {
     test("parses simple change type label", () => {
       const label = parseLabel(mockConfig, "feature");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "feature",
-        color: "0E8A16",
-        description: "Label for versioning: Feature",
-        name: "✨ feature",
-        existing: "feature",
-      });
+      expect(label).toMatchInlineSnapshot(`
+         {
+           "changeType": "feature",
+           "color": "0E8A16",
+           "description": "Label for versioning: Feature",
+           "existing": "feature",
+           "name": "✨ feature",
+           "type": "changeTypes",
+         }
+       `);
     });
 
     test("parses fix change type with correct color", () => {
       const label = parseLabel(mockConfig, "fix");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "fix",
-        color: "1D76DB",
-        description: "Label for versioning: Bug Fix",
-        name: "🐛 fix",
-        existing: "fix",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "changeType": "fix",
+          "color": "1D76DB",
+          "description": "Label for versioning: Bug Fix",
+          "existing": "fix",
+          "name": "🐛 fix",
+          "type": "changeTypes",
+        }
+      `);
     });
 
     test("parses major change type with red color", () => {
       const label = parseLabel(mockConfig, "major");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "major",
-        color: "B60205",
-        description: "Label for versioning: Major Change",
-        name: "🚨 major",
-        existing: "major",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "changeType": "major",
+          "color": "B60205",
+          "description": "Label for versioning: Major Change",
+          "existing": "major",
+          "name": "🚨 major",
+          "type": "changeTypes",
+        }
+      `);
     });
 
     test("parses breaking change type with red color", () => {
       const label = parseLabel(mockConfig, "breaking");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "breaking",
-        color: "B60205",
-        description: "Label for versioning: Breaking Change",
-        name: "💥 breaking",
-        existing: "breaking",
-      });
+      expect(label).toMatchInlineSnapshot(`
+            {
+              "changeType": "breaking",
+              "color": "B60205",
+              "description": "Label for versioning: Breaking Change",
+              "existing": "breaking",
+              "name": "💥 breaking",
+              "type": "changeTypes",
+            }
+          `);
     });
 
     test("parses chore with light gray color", () => {
       const label = parseLabel(mockConfig, "chore");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "chore",
-        color: "D4DADF",
-        description: "Label for versioning: Chore",
-        name: "🧹 chore",
-        existing: "chore",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "changeType": "chore",
+          "color": "D4DADF",
+          "description": "Label for versioning: Chore",
+          "existing": "chore",
+          "name": "🧹 chore",
+          "type": "changeTypes",
+        }
+      `);
     });
 
     test("returns undefined for non-existent change type", () => {
@@ -90,14 +100,16 @@ describe("parseLabel", () => {
   describe("scopes parsing", () => {
     test("parses scope with 'scope/' prefix", () => {
       const label = parseLabel(mockConfig, "scope/core");
-      expect(label).toEqual({
-        type: "scopes",
-        key: "core",
-        color: "FFFFFF",
-        description: 'Label for affected scope: "Core Module"',
-        name: "📦 core",
-        existing: "scope/core",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "color": "FFFFFF",
+          "description": "Label for affected scope: \\"Core Module\\"",
+          "existing": "scope/core",
+          "name": "📦 core",
+          "scope": "core",
+          "type": "scopes",
+        }
+      `);
     });
 
     test("parses scope with 'type/' prefix", () => {
@@ -108,14 +120,16 @@ describe("parseLabel", () => {
 
     test("parses scope with package emoji prefix", () => {
       const label = parseLabel(mockConfig, "📦/docs");
-      expect(label).toEqual({
-        type: "scopes",
-        key: "docs",
-        color: "FFFFFF",
-        description: 'Label for affected scope: "Documentation"',
-        name: "📦 docs",
-        existing: "📦/docs",
-      });
+      expect(label).toMatchInlineSnapshot(`
+         {
+           "color": "FFFFFF",
+           "description": "Label for affected scope: \\"Documentation\\"",
+           "existing": "📦/docs",
+           "name": "📦 docs",
+           "scope": "docs",
+           "type": "scopes",
+         }
+       `);
     });
 
     test("throws error for non-existent scope key", () => {
@@ -130,76 +144,88 @@ describe("parseLabel", () => {
   describe("input normalization", () => {
     test("handles colons by converting to slashes", () => {
       const label = parseLabel(mockConfig, "scope:core");
-      expect(label).toEqual({
-        type: "scopes",
-        key: "core",
-        color: "FFFFFF",
-        description: 'Label for affected scope: "Core Module"',
-        name: "📦 core",
-        existing: "scope:core",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "color": "FFFFFF",
+          "description": "Label for affected scope: \\"Core Module\\"",
+          "existing": "scope:core",
+          "name": "📦 core",
+          "scope": "core",
+          "type": "scopes",
+        }
+      `);
     });
 
     test("handles spaces by converting to slashes", () => {
       const label = parseLabel(mockConfig, "scope core");
-      expect(label).toEqual({
-        type: "scopes",
-        key: "core",
-        color: "FFFFFF",
-        description: 'Label for affected scope: "Core Module"',
-        name: "📦 core",
-        existing: "scope core",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "color": "FFFFFF",
+          "description": "Label for affected scope: \\"Core Module\\"",
+          "existing": "scope core",
+          "name": "📦 core",
+          "scope": "core",
+          "type": "scopes",
+        }
+      `);
     });
 
     test("trims whitespace", () => {
       const label = parseLabel(mockConfig, "  feature  ");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "feature",
-        color: "0E8A16",
-        description: "Label for versioning: Feature",
-        name: "✨ feature",
-        existing: "  feature  ",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "changeType": "feature",
+          "color": "0E8A16",
+          "description": "Label for versioning: Feature",
+          "existing": "  feature  ",
+          "name": "✨ feature",
+          "type": "changeTypes",
+        }
+      `);
     });
   });
 
   describe("emoji prefix parsing", () => {
     test("parses with feature emoji prefix", () => {
       const label = parseLabel(mockConfig, "✨/feature");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "feature",
-        color: "0E8A16",
-        description: "Label for versioning: Feature",
-        name: "✨ feature",
-        existing: "✨/feature",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "changeType": "feature",
+          "color": "0E8A16",
+          "description": "Label for versioning: Feature",
+          "existing": "✨/feature",
+          "name": "✨ feature",
+          "type": "changeTypes",
+        }
+      `);
     });
 
     test("parses with fix emoji prefix", () => {
       const label = parseLabel(mockConfig, "🐛/fix");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "fix",
-        color: "1D76DB",
-        description: "Label for versioning: Bug Fix",
-        name: "🐛 fix",
-        existing: "🐛/fix",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "changeType": "fix",
+          "color": "1D76DB",
+          "description": "Label for versioning: Bug Fix",
+          "existing": "🐛/fix",
+          "name": "🐛 fix",
+          "type": "changeTypes",
+        }
+      `);
     });
 
     test("parses with breaking change emoji prefix", () => {
       const label = parseLabel(mockConfig, "💥/breaking");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "breaking",
-        color: "B60205",
-        description: "Label for versioning: Breaking Change",
-        name: "💥 breaking",
-        existing: "💥/breaking",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "changeType": "breaking",
+          "color": "B60205",
+          "description": "Label for versioning: Breaking Change",
+          "existing": "💥/breaking",
+          "name": "💥 breaking",
+          "type": "changeTypes",
+        }
+      `);
     });
   });
 
@@ -234,14 +260,16 @@ describe("parseLabel", () => {
       };
 
       const label = parseLabel(configWithCustomType, "custom");
-      expect(label).toEqual({
-        type: "changeTypes",
-        key: "custom",
-        color: "FFFFFF", // Falls back to pkg color
-        description: "Label for versioning: Custom Type",
-        name: "🏷️ custom", // Falls back to feature emoji since custom isn't in emojies map
-        existing: "custom",
-      });
+      expect(label).toMatchInlineSnapshot(`
+        {
+          "changeType": "custom",
+          "color": "FFFFFF",
+          "description": "Label for versioning: Custom Type",
+          "existing": "custom",
+          "name": "🏷️ custom",
+          "type": "changeTypes",
+        }
+      `);
     });
   });
 });
