@@ -32,7 +32,7 @@ const printName = (type: LabelType, key: string) => {
 
 const colors: Record<string, string> = {
   major: "B60205", // red (GitHub danger)
-  breaking: "B60205", // red (same as major)
+  breaking: "FBCA04", // orange (same as major)
   feature: "0E8A16", // green
   pkg: "FFFFFF",
 };

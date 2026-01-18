@@ -66,15 +66,15 @@ describe("parseLabel", () => {
     test("parses breaking change type with red color", () => {
       const label = parseLabel(mockConfig, "breaking");
       expect(label).toMatchInlineSnapshot(`
-            {
-              "changeType": "breaking",
-              "color": "B60205",
-              "description": "Label for versioning: Breaking Change",
-              "existing": "breaking",
-              "name": "💥 breaking",
-              "type": "changeTypes",
-            }
-          `);
+        {
+          "changeType": "breaking",
+          "color": "FBCA04",
+          "description": "Label for versioning: Breaking Change",
+          "existing": "breaking",
+          "name": "💥 breaking",
+          "type": "changeTypes",
+        }
+      `);
     });
 
     test("parses chore with light gray color", () => {
@@ -219,7 +219,7 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "changeType": "breaking",
-          "color": "B60205",
+          "color": "FBCA04",
           "description": "Label for versioning: Breaking Change",
           "existing": "💥/breaking",
           "name": "💥 breaking",

@@ -60340,7 +60340,7 @@ var require_parse4 = __commonJS({
     };
     var colors = {
       major: "B60205",
-      breaking: "B60205",
+      breaking: "FBCA04",
       feature: "0E8A16",
       pkg: "FFFFFF"
     };
