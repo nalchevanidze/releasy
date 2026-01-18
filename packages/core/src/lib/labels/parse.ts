@@ -1,5 +1,5 @@
 import { ChangeType, Config, LabelType } from "../config";
-import { Label, LABELS } from "./label";
+import { Label } from "./label";
 
 const emojies: Record<string, string> = {
   package: "📦",
@@ -87,15 +87,28 @@ export const createLabel = <T extends LabelType>(
   key: string,
   longName: string,
   existing?: string,
-): LABELS[T] =>
-  ({
-    type,
-    scope: key,
-    color: colors[key] || colors.pkg, // Use specific color or fallback to pkg
-    description:
-      type === "changeTypes"
-        ? `Label for versioning: ${longName}`
-        : `Label for affected scope: "${longName}"`,
-    name: printName(type, key),
-    existing,
-  }) as LABELS[T];
+): Label => {
+  switch (type) {
+    case "changeTypes":
+      return {
+        type: "changeTypes",
+        changeType: key as ChangeType,
+        color: colors[key] || colors.pkg,
+        description: `Label for versioning: ${longName}`,
+        name: printName(type, key),
+        existing,
+      };
+
+    case "scopes":
+      return {
+        type: "scopes",
+        scope: key,
+        color: colors.pkg,
+        description: `Label for affected scope: "${longName}"`,
+        name: printName(type, key),
+        existing,
+      };
+    default:
+      throw new Error(`unsupported label type: ${type}`);
+  }
+};

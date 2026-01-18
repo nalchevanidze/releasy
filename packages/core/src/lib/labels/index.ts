@@ -19,14 +19,14 @@ export const genLabels = (config: Config, ls: string[]) => {
   });
 
   Object.entries(config.changeTypes).forEach(([name, longName]) => {
-    const l = createLabel("changeTypes", name, longName);
+    const l = createLabel("changeTypes", name, longName) as ChangeTypeLabel;
     if (!changeTypes.has(l.name)) {
       changeTypes.set(l.name, l);
     }
   });
 
   Object.entries(config.scopes).forEach(([name, longName]) => {
-    const l = createLabel("scopes", name, longName);
+    const l = createLabel("scopes", name, longName) as ScopeLabel;
     if (!scopes.has(l.name)) {
       scopes.set(l.name, l);
     }

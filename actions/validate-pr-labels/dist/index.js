@@ -57006,14 +57006,30 @@ var require_parse4 = __commonJS({
       throw new Error(`invalid label ${original}. key ${sub} could not be found on object with fields: ${fields}`);
     };
     exports2.parseLabel = parseLabel;
-    var createLabel = (type, key, longName, existing) => ({
-      type,
-      scope: key,
-      color: colors[key] || colors.pkg,
-      description: type === "changeTypes" ? `Label for versioning: ${longName}` : `Label for affected scope: "${longName}"`,
-      name: printName(type, key),
-      existing
-    });
+    var createLabel = (type, key, longName, existing) => {
+      switch (type) {
+        case "changeTypes":
+          return {
+            type: "changeTypes",
+            changeType: key,
+            color: colors[key] || colors.pkg,
+            description: `Label for versioning: ${longName}`,
+            name: printName(type, key),
+            existing
+          };
+        case "scopes":
+          return {
+            type: "scopes",
+            scope: key,
+            color: colors.pkg,
+            description: `Label for affected scope: "${longName}"`,
+            name: printName(type, key),
+            existing
+          };
+        default:
+          throw new Error(`unsupported label type: ${type}`);
+      }
+    };
     exports2.createLabel = createLabel;
   }
 });
