@@ -40,7 +40,7 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "changeType": "fix",
-          "color": "1D76DB",
+          "color": "FFFFFF",
           "description": "Label for versioning: Bug Fix",
           "existing": "fix",
           "name": "🐛 fix",
@@ -82,7 +82,7 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "changeType": "chore",
-          "color": "D4DADF",
+          "color": "FFFFFF",
           "description": "Label for versioning: Chore",
           "existing": "chore",
           "name": "🧹 chore",
@@ -205,7 +205,7 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "changeType": "fix",
-          "color": "1D76DB",
+          "color": "FFFFFF",
           "description": "Label for versioning: Bug Fix",
           "existing": "🐛/fix",
           "name": "🐛 fix",
