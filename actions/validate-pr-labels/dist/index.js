@@ -56977,11 +56977,7 @@ var require_parse4 = __commonJS({
       major: "B60205",
       breaking: "B60205",
       feature: "0E8A16",
-      fix: "1D76DB",
-      minor: "D4DADF",
-      chore: "D4DADF",
       pkg: "FFFFFF"
-      // teal (package scope / grouping)
     };
     var parseLabel = (config, original) => {
       const [prefix, sub, ...rest] = original.trim().replaceAll(":", "/").replaceAll(" ", "/").split("/");

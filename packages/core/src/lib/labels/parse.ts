@@ -34,10 +34,7 @@ const colors: Record<string, string> = {
   major: "B60205", // red (GitHub danger)
   breaking: "B60205", // red (same as major)
   feature: "0E8A16", // green
-  fix: "1D76DB", // blue
-  minor: "D4DADF", // light gray
-  chore: "D4DADF", // light gray
-  pkg: "FFFFFF", // teal (package scope / grouping)
+  pkg: "FFFFFF",
 };
 
 export const parseLabel = <T extends LabelType>(
