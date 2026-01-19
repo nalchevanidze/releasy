@@ -39221,7 +39221,7 @@ var require_custom = __commonJS({
         };
       }
       pkg(id) {
-        return this.config.pkg.replace("{{SCOPE}}", id);
+        return this.config.pkg.replace("{{PKG}}", id);
       }
     };
     exports2.CustomModule = CustomModule;
