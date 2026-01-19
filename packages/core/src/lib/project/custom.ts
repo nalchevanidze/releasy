@@ -17,6 +17,6 @@ export class CustomModule implements Module {
   };
 
   pkg(id: string): string {
-    return this.config.pkg.replace("{{SCOPE}}", id);
+    return this.config.pkg.replace("{{PKG}}", id);
   }
 }

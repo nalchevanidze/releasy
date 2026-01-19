@@ -112,13 +112,13 @@ describe("parseLabel", () => {
       `);
     });
 
-    test("parses scope with 'type/' prefix", () => {
+    test("parses pkg with 'type/' prefix", () => {
       expect(() => parseLabel(mockConfig, "type/cli")).toThrow(
         "invalid label type/cli. key cli could not be found on object with fields: major, breaking, feature, fix, chore",
       );
     });
 
-    test("parses scope with package emoji prefix", () => {
+    test("parses pkg with package emoji prefix", () => {
       const label = parseLabel(mockConfig, "📦/docs");
       expect(label).toMatchInlineSnapshot(`
         {
@@ -132,11 +132,11 @@ describe("parseLabel", () => {
       `);
     });
 
-    test("throws error for non-existent scope key", () => {
+    test("throws error for non-existent pkg key", () => {
       expect(() => {
-        parseLabel(mockConfig, "scope/nonexistent");
+        parseLabel(mockConfig, "pkg/nonexistent");
       }).toThrow(
-        "invalid label scope/nonexistent. key nonexistent could not be found on object with fields: core, cli, docs, api",
+        "invalid label pkg/nonexistent. key nonexistent could not be found on object with fields: core, cli, docs, api",
       );
     });
   });
