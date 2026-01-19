@@ -1,5 +1,5 @@
 import { Config, LabelType } from "../config";
-import { ChangeTypeLabel, Label, PkgLabel } from "./label";
+import { ChangeTypeLabel, PkgLabel } from "./label";
 import { createLabel, parseLabel } from "./parse";
 
 export const genLabels = (config: Config, ls: string[]) => {

@@ -34849,7 +34849,7 @@ var require_git = __commonJS({
   "../../packages/core/dist/lib/git.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.isUserSet = exports2.commitsAfter = exports2.lastTag = exports2.getDate = exports2.git = exports2.remote = void 0;
+    exports2.isUserSet = exports2.commitsAfter = exports2.getDate = exports2.git = exports2.lastTag = exports2.remote = void 0;
     var utils_1 = require_utils3();
     var git = (...cmd) => (0, utils_1.exec)(["git", ...cmd].join(" "));
     exports2.git = git;
@@ -34933,7 +34933,7 @@ var require_gh = __commonJS({
         }).then(({ repository }) => Object.values(repository)))).then((x) => x.flat().filter(Boolean));
         this.issue = (n) => `https://${this.path}/issues/${n}`;
         this.release = async (version, body) => {
-          const name = `release-${version}`;
+          const name = `release-${version.toString()}`;
           (0, git_1.git)("add", ".");
           (0, git_1.git)("status");
           (0, git_1.git)("commit", "-m", `"${name}"`);
@@ -39200,6 +39200,32 @@ var require_config = __commonJS({
   }
 });
 
+// ../../packages/core/dist/lib/version.js
+var require_version = __commonJS({
+  "../../packages/core/dist/lib/version.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.Version = void 0;
+    var Version = class _Version {
+      constructor(value) {
+        this.value = value;
+      }
+      static parse(input) {
+        return new _Version(input.replace(/^v/, ""));
+      }
+      toString() {
+        return `v${this.value}`;
+      }
+      isEqual(v) {
+        if (this.value !== v.replace(/^v/, "")) {
+          throw Error(`versions does not match: ${this.value} ${v}`);
+        }
+      }
+    };
+    exports2.Version = Version;
+  }
+});
+
 // ../../packages/core/dist/lib/project/custom.js
 var require_custom = __commonJS({
   "../../packages/core/dist/lib/project/custom.js"(exports2) {
@@ -39207,10 +39233,11 @@ var require_custom = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.CustomModule = void 0;
     var utils_1 = require_utils3();
+    var version_1 = require_version();
     var CustomModule = class {
       constructor(config) {
         this.config = config;
-        this.version = () => (0, utils_1.exec)(this.config.version);
+        this.version = () => version_1.Version.parse(this.config.version);
         this.next = async (option) => {
           const { next } = this.config;
           return (0, utils_1.execVoid)(option ? `${next} ${option}` : next);
@@ -44749,6 +44776,7 @@ var require_npm = __commonJS({
     var node_fs_1 = __importDefault(require("node:fs"));
     var fast_glob_1 = __importDefault(require_out4());
     var utils_1 = require_utils3();
+    var version_1 = require_version();
     function readJson(p) {
       return JSON.parse(node_fs_1.default.readFileSync(p, "utf8"));
     }
@@ -44801,8 +44829,7 @@ var require_npm = __commonJS({
         };
       }
       version() {
-        const rootPkg = readJson("package.json");
-        return rootPkg.version;
+        return version_1.Version.parse(readJson("package.json").version);
       }
       async setup() {
         await setup();
@@ -51566,6 +51593,12 @@ var require_fetch2 = __commonJS({
       const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
       return num ? parseInt(num, 10) : void 0;
     };
+    var commitsAfterRelease = (version) => {
+      const basic = (0, git_1.commitsAfter)(version.toString());
+      if (basic.length > 0)
+        return basic;
+      return (0, git_1.commitsAfter)(version.value);
+    };
     var FetchApi = class {
       constructor(api) {
         this.api = api;
@@ -51588,7 +51621,7 @@ var require_fetch2 = __commonJS({
       labels(first: 10) { nodes { name } }
     }`);
         this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? parseNumber(c.message);
-        this.changes = (version) => this.commits((0, git_1.commitsAfter)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
+        this.changes = (version) => this.commits(commitsAfterRelease(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
           const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           return {
             ...pr,
@@ -51638,7 +51671,7 @@ ${space(n)}`));
         this.changes = (tag, changes) => {
           const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
           return lines([
-            `## ${tag || "Unreleased"} (${(0, git_1.getDate)()})`,
+            `## ${tag.toString() || "Unreleased"} (${(0, git_1.getDate)()})`,
             ...Object.entries(this.api.config.changeTypes).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.section(label, groups[type]) : "")
           ], 2);
         };
@@ -51667,11 +51700,8 @@ var require_changelog = __commonJS({
       return "patch";
     };
     var renderChangelog = async (api) => {
-      const version = (0, git_1.lastTag)();
-      const projectVersion = api.module.version();
-      if (version.replace(/^v/, "") !== projectVersion.replace(/^v/, "")) {
-        throw Error(`versions does not match: ${version} ${projectVersion}`);
-      }
+      const version = api.module.version();
+      version.isEqual((0, git_1.lastTag)());
       const changes = await new fetch_1.FetchApi(api).changes(version);
       await api.module.next(detectChangeType(changes));
       return new render_1.RenderAPI(api).changes(api.module.version(), changes);

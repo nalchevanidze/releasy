@@ -1,5 +1,6 @@
 import axios from "axios";
 import { git, isUserSet } from "./git";
+import { Version } from "./version";
 
 export const chunks = <T>(xs: T[]): T[][] => {
   const batches: T[][] = [];
@@ -84,8 +85,8 @@ export class Github {
 
   public issue = (n: number) => `https://${this.path}/issues/${n}`;
 
-  public release = async (version: string, body: string) => {
-    const name = `release-${version}`;
+  public release = async (version: Version, body: string) => {
+    const name = `release-${version.toString()}`;
 
     git("add", ".");
     git("status");

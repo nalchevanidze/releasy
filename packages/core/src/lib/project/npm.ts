@@ -2,6 +2,8 @@ import fs from "node:fs";
 import fg from "fast-glob";
 import { Module } from "./types";
 import { exec } from "../utils";
+import { Version } from "../version";
+import { ar } from "vitest/dist/global-58e8e951";
 
 function readJson(p: string) {
   return JSON.parse(fs.readFileSync(p, "utf8"));
@@ -54,9 +56,8 @@ export async function setup() {
 }
 
 export class NpmModule implements Module {
-  version(): string {
-    const rootPkg = readJson("package.json");
-    return rootPkg.version;
+  version() {
+    return Version.parse(readJson("package.json").version);
   }
 
   next = async (option: "major" | "minor" | "patch") => {
