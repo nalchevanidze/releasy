@@ -15,7 +15,7 @@ export type ChangeType = keyof typeof changeTypes;
 
 export const CustomManagerSchema = z.object({
   type: z.literal("custom"),
-  next: z.string(),
+  bump: z.string(),
   version: z.string(),
   setup: z.string(),
   pkg: z.string(),

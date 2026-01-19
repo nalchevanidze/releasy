@@ -1,16 +1,15 @@
 import { CustomManager, Manager } from "../config";
 import { exec, execVoid } from "../utils";
 import { Version } from "../version";
-import { Module, VersionChangeType } from "./types";
+import { Module, BumpType } from "./types";
 
 export class CustomModule implements Module {
   constructor(private config: CustomManager) {}
 
   public version = () => Version.parse(this.config.version);
 
-  public next = async (option: VersionChangeType) => {
-    const { next } = this.config;
-    return execVoid(option ? `${next} ${option}` : next);
+  public bump = async (option: BumpType) => {
+    return execVoid(this.config.bump.replace("{{BUMP}}", option));
   };
 
   public setup = async () => {

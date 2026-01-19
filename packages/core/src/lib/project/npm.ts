@@ -60,7 +60,7 @@ export class NpmModule implements Module {
     return Version.parse(readJson("package.json").version);
   }
 
-  next = async (option: "major" | "minor" | "patch") => {
+  bump = async (option: "major" | "minor" | "patch") => {
     const args = {
       major: "major",
       minor: "minor",

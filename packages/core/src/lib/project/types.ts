@@ -1,10 +1,10 @@
 import { Version } from "../version";
 
-export type VersionChangeType = "major" | "minor" | "patch";
+export type BumpType = "major" | "minor" | "patch";
 
 export type Module = {
   version(): Version;
   setup(): Promise<void>;
-  next(option: VersionChangeType): Promise<void>;
+  bump(bump: BumpType): Promise<void>;
   pkg(id: string): string;
 };

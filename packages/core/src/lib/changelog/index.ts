@@ -22,7 +22,7 @@ export const renderChangelog = async (api: Api) => {
 
   const changes = await new FetchApi(api).changes(version);
 
-  await api.module.next(detectChangeType(changes));
+  await api.module.bump(detectChangeType(changes));
 
   return new RenderAPI(api).changes(api.module.version(), changes);
 };
