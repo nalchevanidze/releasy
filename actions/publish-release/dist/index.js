@@ -43820,7 +43820,7 @@ var require_gh = __commonJS({
             base: "main",
             owner: this.org,
             repo: this.repo,
-            title: `Publish Release ${version}`,
+            title: `Publish Release ${version.toString()}`,
             body
           });
         };
@@ -60644,7 +60644,7 @@ async function run() {
   try {
     const relasy = await import_core2.Relasy.load();
     const octokit = new import_rest.Octokit({ auth: process.env.GITHUB_TOKEN });
-    const version = relasy.version();
+    const version = relasy.version().toString();
     const { data } = await octokit.repos.createRelease({
       owner,
       repo,

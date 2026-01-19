@@ -40455,7 +40455,7 @@ var require_gh = __commonJS({
             base: "main",
             owner: this.org,
             repo: this.repo,
-            title: `Publish Release ${version}`,
+            title: `Publish Release ${version.toString()}`,
             body
           });
         };
