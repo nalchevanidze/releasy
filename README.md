@@ -73,15 +73,6 @@ When multiple PRs are included in a release, Relasy applies the **highest bump**
 
 ---
 
-## Monorepo support (optional)
-
-If you use scope labels like `📦 client` / `📦 server`, Relasy can:
-
-- group changelog entries by package
-- keep the release notes readable even with many PRs
-
----
-
 ## Configuration (`relasy.json`)
 
 Relasy reads configuration from `relasy.json` to adapt to your repo conventions without changing action code.
@@ -89,8 +80,7 @@ Relasy reads configuration from `relasy.json` to adapt to your repo conventions 
 At a high level, `relasy.json` describes:
 
 - the **pkgs** in your repo (single package or many packages/modules)
-- optional headings for changelog grouping (`changeTypes`)
-- which **manager** is used to resolve versioning/publishing details (`project`)
+- which **tooling** is used to resolve versioning/publishing details (`project`)
 
 ### Schema overview
 
