@@ -164,7 +164,7 @@ If `type` is `"custom"`, the following fields are required:
 
 **Notes:**
 
-- In custom mode, `{{SCOPE}}` is substituted with the resolved scope identifier
+- In custom mode, `{{PKG}}` is substituted with the resolved scope identifier
   (e.g. `morpheus-graphql-core`).
 
 ---
