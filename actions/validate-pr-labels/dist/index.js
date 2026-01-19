@@ -44730,9 +44730,7 @@ var require_custom = __commonJS({
         this.setup = async () => {
           await (0, utils_1.execVoid)(this.config.setup);
         };
-      }
-      pkg(id) {
-        return this.config.pkg.replace("{{PKG}}", id);
+        this.pkg = (id) => this.config.pkg.replace("{{PKG}}", id);
       }
     };
     exports2.CustomModule = CustomModule;
