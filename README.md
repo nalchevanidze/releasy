@@ -15,9 +15,11 @@ Relasy is a set of GitHub Actions for **label-driven releases**. It automates th
 ## How it works (Draft → Release PR → Publish)
 
 ### 1) Draft release (`draft-release` action)
+
 Triggered manually (usually via `workflow_dispatch`).
 
 `draft-release` will:
+
 - collect merged PRs since the last GitHub Release (or tag)
 - compute the **next version** using PR labels (semver bump rules)
 - update version files (based on your config), and **commit** the version bump
@@ -30,16 +32,20 @@ Triggered manually (usually via `workflow_dispatch`).
 ✅ You **do not** need to bump versions manually.
 
 ### 2) Review the release PR
+
 Before merging, you can optionally edit the PR body to:
+
 - polish wording
 - reorder sections
 - remove internal notes, etc.
 - commit additional changes if needed (manual fixes, etc.)
 
 ### 3) Publish release (`publish-release` action)
+
 Triggered when the release PR is merged.
 
 `publish-release` will:
+
 - detect merged PRs where:
   - base branch is `main`
   - head branch starts with `release-`
@@ -51,11 +57,13 @@ Triggered when the release PR is merged.
 ## Labels drive versioning & changelogs
 
 Relasy uses PR labels to decide:
+
 - **what bump** a change represents (major/minor/patch)
 - **where it appears** in the changelog (Breaking / Features / Fixes / etc.)
 - optional **scope** (package/module grouping for monorepos)
 
 Typical mapping:
+
 - `type:breaking` → **major**
 - `type:feature` → **minor**
 - `type:fix` → **patch**
@@ -68,6 +76,7 @@ When multiple PRs are included in a release, Relasy applies the **highest bump**
 ## Monorepo support (optional)
 
 If you use scope labels like `📦 client` / `📦 server`, Relasy can:
+
 - group changelog entries by package
 - keep the release notes readable even with many PRs
 
@@ -78,6 +87,7 @@ If you use scope labels like `📦 client` / `📦 server`, Relasy can:
 Relasy reads configuration from `relasy.json` to adapt to your repo conventions without changing action code.
 
 At a high level, `relasy.json` describes:
+
 - the **scopes** in your repo (single package or many packages/modules)
 - optional headings for changelog grouping (`changeTypes`)
 - which **manager** is used to resolve versioning/publishing details (`project`)
@@ -98,14 +108,14 @@ At a high level, `relasy.json` describes:
     "type": "npm"
   }
 }
-````
+```
 
 ### `scope`
 
 `scope` is a mapping of logical **scope keys** to a **package identifier**.
 
-* For **npm** projects, the value is typically the npm package name (often scoped).
-* For **custom** projects, the value is whatever identifier the custom workflow expects.
+- For **npm** projects, the value is typically the npm package name (often scoped).
+- For **custom** projects, the value is whatever identifier the custom workflow expects.
 
 The `scopes` keys (`core`, `server`, `client`, etc.) are the handles you reference when you need to act on a specific module/package.
 
@@ -116,19 +126,19 @@ The `scopes` keys (`core`, `server`, `client`, etc.) are the handles you referen
 
 Supported change types:
 
-* `major`
-* `breaking`
-* `feature`
-* `fix`
-* `chore`
+- `major`
+- `breaking`
+- `feature`
+- `fix`
+- `chore`
 
 If `changeTypes` is omitted, Relasy uses these defaults:
 
-* `major`: `Major Change`
-* `breaking`: `Breaking Change`
-* `feature`: `New features`
-* `fix`: `Bug Fixes`
-* `chore`: `Minor Changes`
+- `major`: `Major Change`
+- `breaking`: `Breaking Change`
+- `feature`: `New features`
+- `fix`: `Bug Fixes`
+- `chore`: `Minor Changes`
 
 You can override any subset by providing only those keys.
 
@@ -138,15 +148,15 @@ You can override any subset by providing only those keys.
 
 Supported managers:
 
-* `type: "npm"`
-* `type: "custom"`
+- `type: "npm"`
+- `type: "custom"`
 
 If `type` is `"custom"`, the following fields are required:
 
-* `pkg` (string): a package reference or URL template (can include `{{SCOPE}}`)
-* `version` (string): command to retrieve the current version
-* `next` (string): command to compute the next version
-* `setup` (string): command to prepare tooling/environment
+- `pkg` (string): a package reference or URL template (can include `{{SCOPE}}`)
+- `version` (string): command to retrieve the current version
+- `next` (string): command to compute the next version
+- `setup` (string): command to prepare tooling/environment
 
 ---
 
@@ -190,7 +200,7 @@ If `type` is `"custom"`, the following fields are required:
 
 **Notes:**
 
-* In custom mode, `{{SCOPE}}` is substituted with the resolved scope identifier
+- In custom mode, `{{SCOPE}}` is substituted with the resolved scope identifier
   (e.g. `morpheus-graphql-core`).
 
 ---
@@ -201,8 +211,8 @@ If `type` is `"custom"`, the following fields are required:
 
 When `project.type` is `"npm"`:
 
-* versioning is typically **centralized** (e.g. one version source of truth)
-* best suited when packages share a version
+- versioning is typically **centralized** (e.g. one version source of truth)
+- best suited when packages share a version
 
 ✅ easiest to operate
 ⚠️ not suitable if each package needs independent versions
@@ -211,7 +221,7 @@ When `project.type` is `"npm"`:
 
 When `project.type` is `"custom"`:
 
-* use it when you need custom versioning rules or publishing commands
+- use it when you need custom versioning rules or publishing commands
 
 ✅ best for complex repos / bespoke pipelines
 
@@ -225,25 +235,29 @@ Example output (placeholders only):
 ## 1.4.0 (2026-01-14)
 
 #### Breaking Changes
-* [#123](https://github.com/acme/awesome-monorepo/pull/123): Remove legacy auth middleware
+
+- [#123](https://github.com/acme/awesome-monorepo/pull/123): Remove legacy auth middleware
   - 📦 server
   - 👤 @contributor-1
 
 #### New features
-* [#141](https://github.com/acme/awesome-monorepo/pull/141): Add caching for search endpoint
+
+- [#141](https://github.com/acme/awesome-monorepo/pull/141): Add caching for search endpoint
   - 📦 server
   - 👤 @contributor-2
-* [#155](https://github.com/acme/awesome-monorepo/pull/155): Add dark mode toggle
+- [#155](https://github.com/acme/awesome-monorepo/pull/155): Add dark mode toggle
   - 📦 client
   - 👤 @contributor-3
 
 #### Bug Fixes
-* [#160](https://github.com/acme/awesome-monorepo/pull/160): Fix pagination edge case for empty results
+
+- [#160](https://github.com/acme/awesome-monorepo/pull/160): Fix pagination edge case for empty results
   - 📦 client
   - 👤 @contributor-4
 
 #### Minor Changes
-* [#166](https://github.com/acme/awesome-monorepo/pull/166): Update local dev docs
+
+- [#166](https://github.com/acme/awesome-monorepo/pull/166): Update local dev docs
   - 📦 docs
   - 👤 @contributor-5
 ```
@@ -314,22 +328,26 @@ jobs:
 
 To keep changelogs predictable, it helps if each PR has:
 
-* **exactly one** “type” label (breaking/feature/fix/etc.)
-* optional scope labels for monorepos (`📦 <name>`)
+- **exactly one** “type” label (breaking/feature/fix/etc.)
+- optional scope labels for monorepos (`📦 <name>`)
 
 Example labels:
 
-* `type:breaking`
-* `type:feature`
-* `type:fix`
-* `type:chore`
-* `📦 client`, `📦 server`, `📦 docs`
+- change/type(version bump):
+  - `🚨 major`
+  - `💥 breaking`
+  - `✨ feature`
+  - `🐛 fix`
+  - `🧹 chore`
+- scope (packages/modules):
+  - `📦 client`
+  - `📦 server`
+  - `📦 docs`
 
 Relasy may also include helper actions to:
 
-* bootstrap/standardize labels
-* validate that PR labels are allowed (so changelog generation stays clean)
-
+- bootstrap/standardize labels
+- validate that PR labels are allowed (so changelog generation stays clean)
 
 ## Helper Actions (recommended)
 
@@ -340,7 +358,8 @@ Relasy works best when PR labels are consistent. To make that easy, add these op
 This action enforces the “label contract” on every PR so releases don’t get blocked or produce messy changelogs.
 
 What it checks (recommended defaults):
-- **Exactly one** change/type label (e.g. `type:breaking`, `type:feature`, `type:fix`, `type:chore`)
+
+- **Exactly one** change/type label (e.g. `🚨 major`, `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`)
 - **Zero or one** scope label for monorepos (e.g. `📦 client`, `📦 server`)
 - If a scope label is present, it must match a key in `relasy.json` → `scope` (prevents typos like `📦 frontend`)
 
@@ -372,11 +391,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate PR Labels 
+      - name: Validate PR Labels
         uses: nalchevanidze/relasy/actions/validate-pr-labels@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-````
+```
 
 ---
 
@@ -386,8 +405,8 @@ This action creates the labels Relasy expects in a repository (useful for onboar
 
 What it creates (typical):
 
-* Type labels: `type:breaking`, `type:feature`, `type:fix`, `type:chore`
-* Scope labels from `relasy.json`: `📦 <scopeKey>` for each key under `scope`
+- Type labels: `type:breaking`, `type:feature`, `type:fix`, `type:chore`
+- Scope labels from `relasy.json`: `📦 <scopeKey>` for each key under `scope`
 
 Suggested workflow:
 
@@ -408,7 +427,6 @@ jobs:
       - name: Create/ensure required labels exist
         uses: nalchevanidze/relasy/actions/bootstrap-labels@0.1.5
 ```
-
 
 ## Contributing
 
