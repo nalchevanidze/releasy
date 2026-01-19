@@ -134,8 +134,8 @@ If `type` is `"custom"`, the following fields are required:
 
 * `pkg` (string): a package reference or URL template (can include `{{PKG}}`)
 * `version` (string): command to retrieve the current version
-* `next` (string): command to compute the next version
-* `setup` (string): command to prepare tooling/environment
+* `bump` (string): command to compute the next version
+* `postBump` (string): command to prepare tooling/environment
 
 ---
 
@@ -171,8 +171,8 @@ If `type` is `"custom"`, the following fields are required:
     "type": "custom",
     "pkg": "https://hackage.haskell.org/package/{{PKG}}",
     "version": "hconf version",
-    "next": "hconf next",
-    "setup": "hconf setup 9.6.3"
+    "bump": "hconf next {{BUMP}}",
+    "postBump": "hconf setup 9.6.3"
   }
 }
 ```
