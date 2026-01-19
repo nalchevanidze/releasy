@@ -4,11 +4,11 @@ import { RenderAPI } from "./render";
 import { Api, Change } from "./types";
 
 const detectChangeType = (changes: Change[]) => {
-  if (changes.find((c) => c.type === "major")) {
+  if (changes.find((c) => c.type === "breaking")) {
     return "major";
   }
 
-  if (changes.find((c) => c.type === "breaking")) {
+  if (changes.find((c) => c.type === "feature")) {
     return "minor";
   }
 

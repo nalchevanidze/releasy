@@ -4,7 +4,6 @@ import { parseLabel } from "./parse";
 describe("parseLabel", () => {
   const mockConfig = {
     changeTypes: {
-      major: "Major Change",
       breaking: "Breaking Change",
       feature: "Feature",
       fix: "Bug Fix",
@@ -49,26 +48,12 @@ describe("parseLabel", () => {
       `);
     });
 
-    test("parses major change type with red color", () => {
-      const label = parseLabel(mockConfig, "major");
-      expect(label).toMatchInlineSnapshot(`
-        {
-          "changeType": "major",
-          "color": "B60205",
-          "description": "Label for versioning: Major Change",
-          "existing": "major",
-          "name": "🚨 major",
-          "type": "changeTypes",
-        }
-      `);
-    });
-
     test("parses breaking change type with red color", () => {
       const label = parseLabel(mockConfig, "breaking");
       expect(label).toMatchInlineSnapshot(`
         {
           "changeType": "breaking",
-          "color": "FBCA04",
+          "color": "B60205",
           "description": "Label for versioning: Breaking Change",
           "existing": "breaking",
           "name": "💥 breaking",
@@ -114,7 +99,7 @@ describe("parseLabel", () => {
 
     test("parses pkg with 'type/' prefix", () => {
       expect(() => parseLabel(mockConfig, "type/cli")).toThrow(
-        "invalid label type/cli. key cli could not be found on object with fields: major, breaking, feature, fix, chore",
+        "invalid label type/cli. key cli could not be found on object with fields: breaking, feature, fix, chore",
       );
     });
 
@@ -219,7 +204,7 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "changeType": "breaking",
-          "color": "FBCA04",
+          "color": "B60205",
           "description": "Label for versioning: Breaking Change",
           "existing": "💥/breaking",
           "name": "💥 breaking",
