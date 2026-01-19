@@ -16,12 +16,9 @@ const detectChangeType = (changes: Change[]) => {
 };
 
 export const renderChangelog = async (api: Api) => {
-  const version = lastTag();
-  const projectVersion = api.module.version();
+  const version = api.module.version();
 
-  if (version.replace(/^v/, "") !== projectVersion.replace(/^v/, "")) {
-    throw Error(`versions does not match: ${version} ${projectVersion}`);
-  }
+  version.isEqual(lastTag());
 
   const changes = await new FetchApi(api).changes(version);
 

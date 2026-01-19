@@ -20,7 +20,7 @@ async function run() {
     const relasy = await Relasy.load();
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
-    const version = relasy.version();
+    const version = relasy.version().toString();
 
     const { data } = await octokit.repos.createRelease({
       owner,

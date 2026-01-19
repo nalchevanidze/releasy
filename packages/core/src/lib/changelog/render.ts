@@ -2,6 +2,7 @@ import { groupBy, range } from "ramda";
 import { isKey } from "../utils";
 import { Change, Api } from "./types";
 import { getDate } from "../git";
+import { Version } from "../version";
 
 const link = (name: string, url: string) => `[${name}](${url})`;
 
@@ -57,12 +58,12 @@ export class RenderAPI {
   private section = (label: string, changes: Change[]) =>
     lines([`#### ${label}`, ...changes.map(this.change)]);
 
-  public changes = (tag: string, changes: Change[]) => {
+  public changes = (tag: Version, changes: Change[]) => {
     const groups = groupBy(({ type }) => type, changes);
 
     return lines(
       [
-        `## ${tag || "Unreleased"} (${getDate()})`,
+        `## ${tag.toString() || "Unreleased"} (${getDate()})`,
         ...Object.entries(this.api.config.changeTypes).flatMap(
           ([type, label]) =>
             isKey(groups, type) ? this.section(label, groups[type]) : "",

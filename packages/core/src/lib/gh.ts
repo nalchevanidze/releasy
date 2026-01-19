@@ -1,5 +1,6 @@
 import axios from "axios";
 import { git, isUserSet } from "./git";
+import { Version } from "./version";
 
 export const chunks = <T>(xs: T[]): T[][] => {
   const batches: T[][] = [];
@@ -45,7 +46,7 @@ export class Github {
 
   constructor(
     path: string,
-    user: { name: string; email: string } = defaultUser
+    user: { name: string; email: string } = defaultUser,
   ) {
     const [org, repo] = path.split("/");
     this.org = org;
@@ -78,14 +79,14 @@ export class Github {
           ${chunk.map((n) => `item_${n}:${f(n)}`).join("\n")}
         }
       }`,
-          }).then(({ repository }) => Object.values(repository))
-        )
+          }).then(({ repository }) => Object.values(repository)),
+        ),
       ).then((x) => x.flat().filter(Boolean) as O[]);
 
   public issue = (n: number) => `https://${this.path}/issues/${n}`;
 
-  public release = async (version: string, body: string) => {
-    const name = `release-${version}`;
+  public release = async (version: Version, body: string) => {
+    const name = `release-${version.toString()}`;
 
     git("add", ".");
     git("status");
@@ -98,7 +99,7 @@ export class Github {
       base: "main",
       owner: this.org,
       repo: this.repo,
-      title: `Publish Release ${version}`,
+      title: `Publish Release ${version.toString()}`,
       body,
     });
   };
