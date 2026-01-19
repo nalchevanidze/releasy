@@ -59,7 +59,7 @@ Typical mapping:
 - `type:breaking` → **major**
 - `type:feature` → **minor**
 - `type:fix` → **patch**
-- `scope:<name>` → scope/grouping in changelog for monorepos
+- `📦 <name>` → scope/grouping in changelog for monorepos
 
 When multiple PRs are included in a release, Relasy applies the **highest bump** needed across them (major > minor > patch).
 
@@ -67,7 +67,7 @@ When multiple PRs are included in a release, Relasy applies the **highest bump**
 
 ## Monorepo support (optional)
 
-If you use scope labels like `scope:client` / `scope:server`, Relasy can:
+If you use scope labels like `📦 client` / `📦 server`, Relasy can:
 - group changelog entries by package
 - keep the release notes readable even with many PRs
 
@@ -226,25 +226,25 @@ Example output (placeholders only):
 
 #### Breaking Changes
 * [#123](https://github.com/acme/awesome-monorepo/pull/123): Remove legacy auth middleware
-  - 📦 scope:server
+  - 📦 server
   - 👤 @contributor-1
 
 #### New features
 * [#141](https://github.com/acme/awesome-monorepo/pull/141): Add caching for search endpoint
-  - 📦 scope:server
+  - 📦 server
   - 👤 @contributor-2
 * [#155](https://github.com/acme/awesome-monorepo/pull/155): Add dark mode toggle
-  - 📦 scope:client
+  - 📦 client
   - 👤 @contributor-3
 
 #### Bug Fixes
 * [#160](https://github.com/acme/awesome-monorepo/pull/160): Fix pagination edge case for empty results
-  - 📦 scope:client
+  - 📦 client
   - 👤 @contributor-4
 
 #### Minor Changes
 * [#166](https://github.com/acme/awesome-monorepo/pull/166): Update local dev docs
-  - 📦 scope:docs
+  - 📦 docs
   - 👤 @contributor-5
 ```
 
@@ -315,7 +315,7 @@ jobs:
 To keep changelogs predictable, it helps if each PR has:
 
 * **exactly one** “type” label (breaking/feature/fix/etc.)
-* optional scope labels for monorepos (`scope:<name>`)
+* optional scope labels for monorepos (`📦 <name>`)
 
 Example labels:
 
@@ -323,7 +323,7 @@ Example labels:
 * `type:feature`
 * `type:fix`
 * `type:chore`
-* `scope:client`, `scope:server`, `scope:docs`
+* `📦 client`, `📦 server`, `📦 docs`
 
 Relasy may also include helper actions to:
 
@@ -341,8 +341,8 @@ This action enforces the “label contract” on every PR so releases don’t ge
 
 What it checks (recommended defaults):
 - **Exactly one** change/type label (e.g. `type:breaking`, `type:feature`, `type:fix`, `type:chore`)
-- **Zero or one** scope label for monorepos (e.g. `scope:client`, `scope:server`)
-- If a scope label is present, it must match a key in `relasy.json` → `scope` (prevents typos like `scope:frontend`)
+- **Zero or one** scope label for monorepos (e.g. `📦 client`, `📦 server`)
+- If a scope label is present, it must match a key in `relasy.json` → `scope` (prevents typos like `📦 frontend`)
 
 Suggested workflow:
 
@@ -389,7 +389,7 @@ This action creates the labels Relasy expects in a repository (useful for onboar
 What it creates (typical):
 
 * Type labels: `type:breaking`, `type:feature`, `type:fix`, `type:chore`
-* Scope labels from `relasy.json`: `scope:<scopeKey>` for each key under `scope`
+* Scope labels from `relasy.json`: `📦 <scopeKey>` for each key under `scope`
 
 Suggested workflow:
 
