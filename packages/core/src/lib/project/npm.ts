@@ -70,7 +70,7 @@ export class NpmModule implements Module {
     await exec(`npm version ${args[option]} --no-git-tag-version`);
   };
 
-  async setup() {
+  async postBump() {
     await setup();
     await exec("pnpm run build");
   }

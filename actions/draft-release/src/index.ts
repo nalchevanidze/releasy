@@ -5,7 +5,7 @@ async function run() {
   try {
     const easy = await Relasy.load();
     const body = await easy.changelog();
-    await easy.module.setup();
+    await easy.module.postBump();
     easy.github.setup();
     await easy.github.release(await easy.module.version(), body);
 

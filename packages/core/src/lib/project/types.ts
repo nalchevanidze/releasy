@@ -4,7 +4,7 @@ export type BumpType = "major" | "minor" | "patch";
 
 export type Module = {
   version(): Version;
-  setup(): Promise<void>;
+  postBump(): Promise<void>;
   bump(bump: BumpType): Promise<void>;
   pkg(id: string): string;
 };

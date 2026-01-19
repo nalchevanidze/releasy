@@ -17,7 +17,7 @@ export const CustomManagerSchema = z.object({
   type: z.literal("custom"),
   bump: z.string(),
   version: z.string(),
-  setup: z.string(),
+  postBump: z.string(),
   pkg: z.string(),
 });
 

@@ -39186,7 +39186,7 @@ var require_config = __commonJS({
       type: z.literal("custom"),
       bump: z.string(),
       version: z.string(),
-      setup: z.string(),
+      postBump: z.string(),
       pkg: z.string()
     });
     exports2.NPMManagerSchema = z.object({
@@ -39248,8 +39248,8 @@ var require_custom = __commonJS({
         this.bump = async (option) => {
           return (0, utils_1.execVoid)(this.config.bump.replace("{{BUMP}}", option));
         };
-        this.setup = async () => {
-          await (0, utils_1.execVoid)(this.config.setup);
+        this.postBump = async () => {
+          await (0, utils_1.execVoid)(this.config.postBump);
         };
         this.pkg = (id) => this.config.pkg.replace("{{PKG}}", id);
       }
@@ -44837,7 +44837,7 @@ var require_npm = __commonJS({
       version() {
         return version_1.Version.parse(readJson("package.json").version);
       }
-      async setup() {
+      async postBump() {
         await setup();
         await (0, utils_1.exec)("pnpm run build");
       }
@@ -51758,7 +51758,7 @@ async function run() {
   try {
     const easy = await import_core2.Relasy.load();
     const body = await easy.changelog();
-    await easy.module.setup();
+    await easy.module.postBump();
     easy.github.setup();
     await easy.github.release(await easy.module.version(), body);
     (0, import_core.info)("Draft release finished.");
