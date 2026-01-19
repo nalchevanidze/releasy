@@ -378,8 +378,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ````
 
-> Tip: You can also run this in a “warn-only” mode (comment / log without failing) if you want a softer rollout.
-
 ---
 
 ### Bootstrap labels (`bootstrap-labels`)
