@@ -414,8 +414,4 @@ jobs:
 
 ## Contributing
 
-Issues and PRs are welcome. If you’re proposing a behavior change, include:
-
-* your label taxonomy (type + scope)
-* expected version bump behavior
-* expected changelog output structure
+Issues and PRs are welcome
