@@ -252,7 +252,7 @@ jobs:
           fetch-depth: 0
 
       - name: Draft Release PR (compute version + commit bump + changelog + open PR)
-        uses: nalchevanidze/relasy/actions/draft-release@0.2.1
+        uses: nalchevanidze/relasy/actions/draft-release@0.3.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -280,7 +280,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Publish GitHub Release (from merged release PR)
-        uses: nalchevanidze/relasy/actions/publish-release@0.2.1
+        uses: nalchevanidze/relasy/actions/publish-release@0.3.0
         id: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -356,7 +356,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Validate PR Labels
-        uses: nalchevanidze/relasy/actions/validate-pr-labels@main
+        uses: nalchevanidze/relasy/actions/validate-pr-labels@0.3.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -389,7 +389,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create/ensure required labels exist
-        uses: nalchevanidze/relasy/actions/bootstrap-labels@0.2.1
+        uses: nalchevanidze/relasy/actions/bootstrap-labels@0.3.0
 ```
 
 ## Contributing
