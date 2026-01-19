@@ -40355,7 +40355,7 @@ var require_git = __commonJS({
   "../../packages/core/dist/lib/git.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.isUserSet = exports2.commitsAfter = exports2.getDate = exports2.git = exports2.lastTag = exports2.remote = void 0;
+    exports2.isUserSet = exports2.getDate = exports2.git = exports2.commitsAfterVersion = exports2.lastTag = exports2.remote = void 0;
     var utils_1 = require_utils6();
     var git = (...cmd) => (0, utils_1.exec)(["git", ...cmd].join(" "));
     exports2.git = git;
@@ -40370,7 +40370,6 @@ var require_git = __commonJS({
     var lastTag = () => git("describe", "--abbrev=0", "--tags");
     exports2.lastTag = lastTag;
     var commitsAfter = (tag) => git("rev-list", "--reverse", `${tag}..`).split("\n");
-    exports2.commitsAfter = commitsAfter;
     var isUserSet = () => {
       try {
         const user = `${git("config", "user.name")}${git("config", "user.email")}`.trim();
@@ -40380,6 +40379,14 @@ var require_git = __commonJS({
       }
     };
     exports2.isUserSet = isUserSet;
+    var commitsAfterVersion = (version) => {
+      try {
+        return commitsAfter(version.toString());
+      } catch {
+        return commitsAfter(version.value);
+      }
+    };
+    exports2.commitsAfterVersion = commitsAfterVersion;
   }
 });
 
@@ -57093,17 +57100,11 @@ var require_fetch2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.FetchApi = void 0;
     var ramda_1 = require_src2();
-    var git_1 = require_git();
     var labels_1 = require_labels();
+    var git_1 = require_git();
     var parseNumber = (msg) => {
       const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
       return num ? parseInt(num, 10) : void 0;
-    };
-    var commitsAfterRelease = (version) => {
-      const basic = (0, git_1.commitsAfter)(version.toString());
-      if (basic.length > 0)
-        return basic;
-      return (0, git_1.commitsAfter)(version.value);
     };
     var FetchApi = class {
       constructor(api) {
@@ -57127,7 +57128,7 @@ var require_fetch2 = __commonJS({
       labels(first: 10) { nodes { name } }
     }`);
         this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? parseNumber(c.message);
-        this.changes = (version) => this.commits(commitsAfterRelease(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
+        this.changes = (version) => this.commits((0, git_1.commitsAfterVersion)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
           const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           return {
             ...pr,

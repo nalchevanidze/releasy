@@ -1,20 +1,12 @@
 import { isNil, map, pluck, reject, uniq } from "ramda";
 import { Change, Api, Commit, PR } from "./types";
-import { commitsAfter } from "../git";
 import { parseLabels } from "../labels";
 import { Version } from "../version";
+import { commitsAfterVersion } from "../git";
 
 const parseNumber = (msg: string) => {
   const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
   return num ? parseInt(num, 10) : undefined;
-};
-
-const commitsAfterRelease = (version: Version) => {
-  const basic = commitsAfter(version.toString());
-
-  if (basic.length > 0) return basic;
-
-  return commitsAfter(version.value);
 };
 
 export class FetchApi {
@@ -52,7 +44,7 @@ export class FetchApi {
     )?.number ?? parseNumber(c.message);
 
   public changes = (version: Version) =>
-    this.commits(commitsAfterRelease(version))
+    this.commits(commitsAfterVersion(version))
       .then((c) => uniq(reject(isNil, c.map(this.toPRNumber))))
       .then(this.pullRequests)
       .then(

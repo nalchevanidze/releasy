@@ -1,4 +1,5 @@
 import { exec } from "./utils";
+import { Version } from "./version";
 
 const git = (...cmd: string[]) => exec(["git", ...cmd].join(" "));
 
@@ -15,6 +16,7 @@ export const remote = () => {
 
 const getDate = () => git("log", "-1", "--format=%cd", "--date=short");
 export const lastTag = () => git("describe", "--abbrev=0", "--tags");
+
 const commitsAfter = (tag: string) =>
   git("rev-list", "--reverse", `${tag}..`).split("\n");
 
@@ -31,4 +33,12 @@ const isUserSet = () => {
   }
 };
 
-export { git, getDate, commitsAfter, isUserSet };
+export const commitsAfterVersion = (version: Version) => {
+  try {
+    return commitsAfter(version.toString());
+  } catch {
+    return commitsAfter(version.value);
+  }
+};
+
+export { git, getDate, isUserSet };
