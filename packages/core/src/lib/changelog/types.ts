@@ -27,9 +27,6 @@ export class Api {
   constructor(
     public config: Config,
     public github: Github,
-    public module: Module
+    public module: Module,
   ) {}
 }
-
-export const isBreaking = (changes: Change[]) =>
-  Boolean(changes.find(propEq("type", "breaking")));
