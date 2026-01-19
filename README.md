@@ -294,6 +294,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Publish to Registry
+        run: # Commands to publish package to registry
+
       - name: Publish GitHub Release (from merged release PR)
         uses: nalchevanidze/relasy/actions/publish-release@v1.0.0
         id: publish
@@ -371,6 +374,8 @@ jobs:
 
       - name: Create/ensure required labels exist
         uses: nalchevanidze/relasy/actions/bootstrap-labels@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ---

@@ -3,6 +3,9 @@ on:
   pull_request:
     types: [closed]
 
+permissions:
+  contents: write
+  
 jobs:
   publish_release:
     if: ${{ github.base_ref == 'main' && startsWith(github.head_ref, 'release-') && github.event.pull_request.merged == true  }}
