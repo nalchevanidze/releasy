@@ -1,10 +1,10 @@
 import { Config, LabelType } from "../config";
-import { ChangeTypeLabel, Label, ScopeLabel } from "./label";
+import { ChangeTypeLabel, Label, PkgLabel } from "./label";
 import { createLabel, parseLabel } from "./parse";
 
 export const genLabels = (config: Config, ls: string[]) => {
   const changeTypes: Map<string, ChangeTypeLabel> = new Map();
-  const scopes: Map<string, ScopeLabel> = new Map();
+  const pkgs: Map<string, PkgLabel> = new Map();
 
   ls.forEach((l) => {
     const parsed = parseLabel(config, l);
@@ -12,8 +12,8 @@ export const genLabels = (config: Config, ls: string[]) => {
       case "changeTypes":
         changeTypes.set(parsed.name, parsed);
         break;
-      case "scopes":
-        scopes.set(parsed.name, parsed);
+      case "pkgs":
+        pkgs.set(parsed.name, parsed);
         break;
     }
   });
@@ -25,26 +25,26 @@ export const genLabels = (config: Config, ls: string[]) => {
     }
   });
 
-  Object.entries(config.scopes).forEach(([name, longName]) => {
-    const l = createLabel("scopes", name, longName) as ScopeLabel;
-    if (!scopes.has(l.name)) {
-      scopes.set(l.name, l);
+  Object.entries(config.pkgs).forEach(([name, longName]) => {
+    const l = createLabel("pkgs", name, longName) as PkgLabel;
+    if (!pkgs.has(l.name)) {
+      pkgs.set(l.name, l);
     }
   });
 
-  return [...changeTypes.values(), ...scopes.values()];
+  return [...changeTypes.values(), ...pkgs.values()];
 };
 
 export const parseLabels = <T extends LabelType>(
   config: Config,
   labels: string[],
-): { changeTypes: ChangeTypeLabel[]; scopes: ScopeLabel[] } => {
+): { changeTypes: ChangeTypeLabel[]; pkgs: PkgLabel[] } => {
   const ls = labels.map((label) => parseLabel(config, label));
 
   return {
     changeTypes: ls.filter(
       (x) => x?.type === "changeTypes",
     ) as ChangeTypeLabel[],
-    scopes: ls.filter((x) => x?.type === "scopes") as ScopeLabel[],
+    pkgs: ls.filter((x) => x?.type === "pkgs") as PkgLabel[],
   };
 };

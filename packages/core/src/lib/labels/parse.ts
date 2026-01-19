@@ -11,9 +11,10 @@ const emojies: Record<string, string> = {
 };
 
 const parseNameMap: Record<string, LabelType> = {
-  scope: "scopes",
+  pkg: "pkgs",
+  scope: "pkgs",
   type: "changeTypes",
-  "📦": "scopes",
+  "📦": "pkgs",
   "💥": "changeTypes",
   "✨": "changeTypes",
   "🐛": "changeTypes",
@@ -32,7 +33,7 @@ const printName = (type: LabelType, key: string) => {
 
 const colors: Record<string, string> = {
   major: "B60205", // red (GitHub danger)
-  breaking: "FBCA04", // orange 
+  breaking: "FBCA04", // orange
   feature: "0E8A16", // green
   pkg: "FFFFFF",
 };
@@ -96,12 +97,12 @@ export const createLabel = <T extends LabelType>(
         existing,
       };
 
-    case "scopes":
+    case "pkgs":
       return {
-        type: "scopes",
-        scope: key,
+        type: "pkgs",
+        pkg: key,
         color: colors.pkg,
-        description: `Label for affected scope: "${longName}"`,
+        description: `Label for affected Package: "${longName}"`,
         name: printName(type, key),
         existing,
       };

@@ -10,7 +10,7 @@ describe("parseLabel", () => {
       fix: "Bug Fix",
       chore: "Chore",
     },
-    scopes: {
+    pkgs: {
       core: "Core Module",
       cli: "Command Line Interface",
       docs: "Documentation",
@@ -97,17 +97,17 @@ describe("parseLabel", () => {
     });
   });
 
-  describe("scopes parsing", () => {
-    test("parses scope with 'scope/' prefix", () => {
-      const label = parseLabel(mockConfig, "scope/core");
+  describe("pkgs parsing", () => {
+    test("parses pkg with 'pkg/' prefix", () => {
+      const label = parseLabel(mockConfig, "pkg/core");
       expect(label).toMatchInlineSnapshot(`
         {
           "color": "FFFFFF",
-          "description": "Label for affected scope: \\"Core Module\\"",
-          "existing": "scope/core",
+          "description": "Label for affected pkg: \\"Core Module\\"",
+          "existing": "pkg/core",
           "name": "📦 core",
-          "scope": "core",
-          "type": "scopes",
+          "pkg": "core",
+          "type": "pkgs",
         }
       `);
     });

@@ -48,7 +48,7 @@ export class FetchApi {
       .then(this.pullRequests)
       .then(
         map((pr): Change => {
-          const { changeTypes, scopes } = parseLabels(
+          const { changeTypes, pkgs } = parseLabels(
             this.api.config,
             pluck("name", pr.labels.nodes),
           );
@@ -56,7 +56,7 @@ export class FetchApi {
           return {
             ...pr,
             type: changeTypes.find(Boolean)?.changeType ?? "chore",
-            scopes: scopes.map(({ scope }) => scope),
+            pkgs: pkgs.map(({ pkg }) => pkg),
           };
         }),
       );

@@ -88,7 +88,7 @@ Relasy reads configuration from `relasy.json` to adapt to your repo conventions 
 
 At a high level, `relasy.json` describes:
 
-- the **scopes** in your repo (single package or many packages/modules)
+- the **pkgs** in your repo (single package or many packages/modules)
 - optional headings for changelog grouping (`changeTypes`)
 - which **manager** is used to resolve versioning/publishing details (`project`)
 
@@ -96,13 +96,8 @@ At a high level, `relasy.json` describes:
 
 ```json
 {
-  "scopes": { "scopeKey": "packageIdentifier" },
-  "changeTypes": {
-    "major": "Major Change",
-    "breaking": "Breaking Change",
-    "feature": "New features",
-    "fix": "Bug Fixes",
-    "chore": "Minor Changes"
+  "pkgs": {
+    "shortName": "long-package-identifier"
   },
   "project": {
     "type": "npm"
@@ -110,35 +105,14 @@ At a high level, `relasy.json` describes:
 }
 ```
 
-### `scope`
+### `pkgs`
 
-`scope` is a mapping of logical **scope keys** to a **package identifier**.
+`pkgs` is a mapping of logical **pkg keys** to a **package identifier**.
 
 - For **npm** projects, the value is typically the npm package name (often scoped).
 - For **custom** projects, the value is whatever identifier the custom workflow expects.
 
-The `scopes` keys (`core`, `server`, `client`, etc.) are the handles you reference when you need to act on a specific module/package.
-
-### `changeTypes` (optional)
-
-`changeTypes` is an optional mapping from change type → human-readable heading used for grouping changes
-(e.g. in release notes / changelog sections).
-
-Supported change types:
-
-- `major`
-- `breaking`
-- `feature`
-- `fix`
-- `chore`
-
-If `changeTypes` is omitted, Relasy uses these defaults:
-
-- `major`: `Major Change`
-- `breaking`: `Breaking Change`
-- `feature`: `New features`
-- `fix`: `Bug Fixes`
-- `chore`: `Minor Changes`
+The `pkgs` keys (`core`, `server`, `client`, etc.) are the handles you reference when you need to act on a specific module/package.
 
 You can override any subset by providing only those keys.
 
@@ -166,7 +140,7 @@ If `type` is `"custom"`, the following fields are required:
 
 ```json
 {
-  "scopes": {
+  "pkgs": {
     "core": "relasy/core"
   },
   "project": {
@@ -179,7 +153,7 @@ If `type` is `"custom"`, the following fields are required:
 
 ```json
 {
-  "scopes": {
+  "pkgs": {
     "server": "morpheus-graphql",
     "client": "morpheus-graphql-client",
     "core": "morpheus-graphql-core",
@@ -190,7 +164,7 @@ If `type` is `"custom"`, the following fields are required:
   },
   "project": {
     "type": "custom",
-    "pkg": "https://hackage.haskell.org/package/{{SCOPE}}",
+    "pkg": "https://hackage.haskell.org/package/{{PKG}}",
     "version": "hconf version",
     "next": "hconf next",
     "setup": "hconf setup 9.6.3"

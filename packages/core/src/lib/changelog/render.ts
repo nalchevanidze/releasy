@@ -32,17 +32,11 @@ export class RenderAPI {
   constructor(private api: Api) {}
 
   private pkg = (key: string) => {
-    const id = this.api.config.scopes[key];
+    const id = this.api.config.pkgs[key];
     return link(key, this.api.module.pkg(id));
   };
 
-  private change = ({
-    number,
-    author,
-    title,
-    body,
-    scopes,
-  }: Change): string => {
+  private change = ({ number, author, title, body, pkgs }: Change): string => {
     const details = body
       ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1)
       : "";
@@ -53,7 +47,7 @@ export class RenderAPI {
     )}: ${title?.trim()}`;
 
     const stats = stat([
-      ["📦", lines(scopes.map(this.pkg))],
+      ["📦", lines(pkgs.map(this.pkg))],
       ["👤", link(`@${author.login}`, author.url)],
     ]);
 
