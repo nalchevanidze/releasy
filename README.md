@@ -23,7 +23,7 @@ Triggered manually (usually via `workflow_dispatch`).
 - collect merged PRs since the last GitHub Release (or tag)
 - compute the **next version** using PR labels (semver bump rules)
 - update version files (based on your config), and **commit** the version bump
-- generate a changelog grouped by labels (and optionally by package scope)
+- generate a changelog grouped by labels (and optionally by package in monorepos)
 - open a **release PR** to `main`:
   - **title:** `release-<version>`
   - **body:** generated changelog
@@ -60,14 +60,14 @@ Relasy uses PR labels to decide:
 
 - **what bump** a change represents (major/minor/patch)
 - **where it appears** in the changelog (Breaking / Features / Fixes / etc.)
-- optional **scope** (package/module grouping for monorepos)
+- optional **pkg** (package/module grouping for monorepos)
 
 Typical mapping:
 
 - `🚨 major` → **major**
 - `✨ feature` → **minor**
 - `🐛 fix`, `🧹 chore` → **patch**
-- `📦 <name>` → scope/grouping in changelog for monorepos
+- `📦 <name>` → pkg grouping in changelog for monorepos
 
 When multiple PRs are included in a release, Relasy applies the **highest bump** needed across them (major > minor > patch).
 
@@ -126,7 +126,7 @@ If `type` is `"custom"`, the following fields are required:
 
 ## Configuration examples
 
-### npm project (single scope)
+### npm project (single pkg)
 
 ```json
 {
@@ -139,7 +139,7 @@ If `type` is `"custom"`, the following fields are required:
 }
 ```
 
-### custom project (multi-scope)
+### custom project (multiple pkgs)
 
 ```json
 {
@@ -164,7 +164,7 @@ If `type` is `"custom"`, the following fields are required:
 
 **Notes:**
 
-- In custom mode, `{{PKG}}` is substituted with the resolved scope identifier
+- In custom mode, `{{PKG}}` is substituted with the resolved pkg identifier
   (e.g. `morpheus-graphql-core`).
 
 ---
@@ -293,7 +293,7 @@ jobs:
 To keep changelogs predictable, it helps if each PR has:
 
 - **exactly one** “type” label (breaking/feature/fix/etc.)
-- optional scope labels for monorepos (`📦 <name>`)
+- optional pkg labels for monorepos (`📦 <name>`)
 
 Example labels:
 
@@ -303,7 +303,7 @@ Example labels:
   - `✨ feature`
   - `🐛 fix`
   - `🧹 chore`
-- scope (packages/modules):
+- packages/modules:
   - `📦 client`
   - `📦 server`
   - `📦 docs`
@@ -324,8 +324,8 @@ This action enforces the “label contract” on every PR so releases don’t ge
 What it checks (recommended defaults):
 
 - **Exactly one** change/type label (e.g. `🚨 major`, `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`)
-- **Zero or one** scope label for monorepos (e.g. `📦 client`, `📦 server`)
-- If a scope label is present, it must match a key in `relasy.json` → `scope` (prevents typos like `📦 frontend`)
+- **Zero or one** pkg label for monorepos (e.g. `📦 client`, `📦 server`)
+- If a pkg label is present, it must match a key in `relasy.json` → `pkg` (prevents typos like `📦 frontend`)
 
 Suggested workflow:
 
@@ -370,7 +370,7 @@ This action creates the labels Relasy expects in a repository (useful for onboar
 What it creates (typical):
 
 - Type labels: `🚨 major`, `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`
-- Scope labels from `relasy.json`: `📦 <scopeKey>` for each key under `scope`
+- Pkg labels from `relasy.json`: `📦 <pkgKey>` for each key under `pkgs`
 
 Suggested workflow:
 
