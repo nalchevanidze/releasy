@@ -39170,11 +39170,10 @@ var require_config = __commonJS({
     var z = __importStar(require_zod());
     var git_1 = require_git();
     var changeTypes = {
-      major: "Major Change",
-      breaking: "Breaking Change",
-      feature: "New features",
-      fix: "Bug Fixes",
-      chore: "Minor Changes"
+      breaking: "Breaking change (major bump)",
+      feature: "New feature (minor bump)",
+      fix: "Bug fix (patch bump)",
+      chore: "Minor / maintenance change (patch bump)"
     };
     exports2.CustomManagerSchema = z.object({
       type: z.literal("custom"),
@@ -51452,8 +51451,7 @@ var require_parse4 = __commonJS({
       return `\u{1F4E6} ${key}`;
     };
     var colors = {
-      major: "B60205",
-      breaking: "FBCA04",
+      breaking: "B60205",
       feature: "0E8A16",
       pkg: "FFFFFF"
     };
@@ -51660,10 +51658,10 @@ var require_changelog = __commonJS({
     var fetch_1 = require_fetch2();
     var render_1 = require_render();
     var detectChangeType = (changes) => {
-      if (changes.find((c) => c.type === "major")) {
+      if (changes.find((c) => c.type === "breaking")) {
         return "major";
       }
-      if (changes.find((c) => c.type === "breaking")) {
+      if (changes.find((c) => c.type === "feature")) {
         return "minor";
       }
       return "patch";

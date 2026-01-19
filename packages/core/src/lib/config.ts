@@ -5,11 +5,10 @@ import { remote } from "./git";
 export type LabelType = "pkgs" | "changeTypes";
 
 const changeTypes = {
-  major: "Major Change",
-  breaking: "Breaking Change",
-  feature: "New features",
-  fix: "Bug Fixes",
-  chore: "Minor Changes",
+  breaking: "Breaking change (major bump)",
+  feature: "New feature (minor bump)",
+  fix: "Bug fix (patch bump)",
+  chore: "Minor / maintenance change (patch bump)",
 };
 
 export type ChangeType = keyof typeof changeTypes;

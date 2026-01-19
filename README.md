@@ -23,7 +23,7 @@ Triggered manually (usually via `workflow_dispatch`).
 - collect merged PRs since the last GitHub Release (or tag)
 - compute the **next version** using PR labels (semver bump rules)
 - update version files (based on your config), and **commit** the version bump
-- generate a changelog grouped by labels (and optionally by package in monorepos)
+- generate a changelog grouped by **change/type labels**
 - open a **release PR** to `main`:
   - **title:** `release-<version>`
   - **body:** generated changelog
@@ -63,7 +63,7 @@ Relasy uses PR labels to decide:
 
 - **what bump** a change represents (major/minor/patch)
 - **where it appears** in the changelog (Breaking / Features / Fixes / etc.)
-- optional **pkg** grouping for monorepos (`📦 <pkgKey>`)
+- optional **package tags** for monorepos (`📦 <pkgKey>`)
 
 When multiple PRs are included in a release, Relasy applies the **highest bump** needed across them (major > minor > patch).
 
@@ -78,9 +78,11 @@ Every PR should have **exactly one** change/type label:
 | 🐛 fix | bug fix | patch | Bug Fixes |
 | 🧹 chore | maintenance | patch | Minor Changes |
 
-Optional (monorepos): **at most one** package label:
+Optional (monorepos): **zero or more** package labels:
 
-- `📦 <pkgKey>` — where `<pkgKey>` must match a key in `relasy.json` → `pkgs`
+- `📦 <pkgKey>` — each `<pkgKey>` must match a key in `relasy.json` → `pkgs`
+
+> If a PR touches multiple packages, add multiple `📦` labels. Relasy will include them as tags on the changelog entry (no package grouping required).
 
 ---
 
@@ -223,6 +225,10 @@ Example output (placeholders only):
 - [#155](https://github.com/acme/awesome-monorepo/pull/155): Add dark mode toggle
   - 📦 client
   - 👤 @contributor-3
+- [#162](https://github.com/acme/awesome-monorepo/pull/162): Share auth types across apps
+  - 📦 client
+  - 📦 server
+  - 👤 @contributor-6
 
 #### Bug Fixes
 - [#160](https://github.com/acme/awesome-monorepo/pull/160): Fix pagination edge case for empty results
@@ -308,8 +314,8 @@ This action enforces the label contract on every PR so releases don’t get bloc
 What it checks (recommended defaults):
 
 * **Exactly one** change/type label (e.g. `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`)
-* **Zero or one** pkg label for monorepos (e.g. `📦 client`, `📦 server`)
-* If a pkg label is present, it must match a key in `relasy.json` → `pkgs` (prevents typos like `📦 frontend`)
+* **Zero or more** pkg labels for monorepos (e.g. `📦 client`, `📦 server`)
+* If any pkg labels are present, each must match a key in `relasy.json` → `pkgs` (prevents typos like `📦 frontend`)
 
 Suggested workflow:
 
