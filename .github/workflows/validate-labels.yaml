@@ -1,6 +1,17 @@
 name: Validate PR Labels
 
-on: [pull_request]
+on:
+  pull_request:
+    types:
+      [
+        opened,
+        reopened,
+        labeled,
+        unlabeled,
+        synchronize,
+        edited,
+        ready_for_review,
+      ]
 
 permissions:
   contents: read
