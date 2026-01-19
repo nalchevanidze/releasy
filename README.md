@@ -117,7 +117,7 @@ Supported managers:
 
 If `type` is `"custom"`, the following fields are required:
 
-- `pkg` (string): a package reference or URL template (can include `{{SCOPE}}`)
+- `pkg` (string): a package reference or URL template (can include `{{PKG}}`)
 - `version` (string): command to retrieve the current version
 - `next` (string): command to compute the next version
 - `setup` (string): command to prepare tooling/environment
