@@ -23,14 +23,14 @@ export async function setup() {
     patterns = patterns.packages;
   } else {
     throw new Error(
-      'Root package.json must contain "workspaces": ["..."] or "workspaces": { "packages": ["..."] }.'
+      'Root package.json must contain "workspaces": ["..."] or "workspaces": { "packages": ["..."] }.',
     );
   }
 
   if (patterns.length === 0) throw new Error("workspaces patterns are empty.");
 
   const pkgJsonGlobs = patterns.map((p: string) =>
-    p.endsWith("/package.json") ? p : `${p}/package.json`
+    p.endsWith("/package.json") ? p : `${p}/package.json`,
   );
 
   const packageJsonPaths = await fg(pkgJsonGlobs, {
@@ -59,17 +59,21 @@ export class NpmModule implements Module {
     return rootPkg.version;
   }
 
-  next = async (isBreaking: boolean) => {
-    await exec(
-      `npm version ${isBreaking ? "major" : "patch --no-git-tag-version"}`
-    );
+  next = async (option: "major" | "minor" | "patch") => {
+    const args = {
+      major: "major",
+      minor: "minor",
+      patch: "patch",
+    };
+
+    await exec(`npm version ${args[option]} --no-git-tag-version`);
   };
 
   async setup() {
     await setup();
     await exec("pnpm run build");
   }
-  
+
   pkg(id: string): string {
     return `https://www.npmjs.com/package/${id}`;
   }

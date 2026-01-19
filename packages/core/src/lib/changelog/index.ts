@@ -1,7 +1,19 @@
 import { lastTag } from "../git";
 import { FetchApi } from "./fetch";
 import { RenderAPI } from "./render";
-import { Api, isBreaking } from "./types";
+import { Api, Change } from "./types";
+
+const detectChangeType = (changes: Change[]) => {
+  if (changes.find((c) => c.type === "major")) {
+    return "major";
+  }
+
+  if (changes.find((c) => c.type === "breaking")) {
+    return "minor";
+  }
+
+  return "patch";
+};
 
 export const renderChangelog = async (api: Api) => {
   const version = lastTag();
@@ -13,7 +25,7 @@ export const renderChangelog = async (api: Api) => {
 
   const changes = await new FetchApi(api).changes(version);
 
-  await api.module.next(isBreaking(changes));
+  await api.module.next(detectChangeType(changes));
 
   return new RenderAPI(api).changes(api.module.version(), changes);
 };

@@ -1,15 +1,15 @@
 import { CustomManager, Manager } from "../config";
 import { exec, execVoid } from "../utils";
-import { Module } from "./types";
+import { Module, VersionChangeType } from "./types";
 
 export class CustomModule implements Module {
   constructor(private config: CustomManager) {}
 
   version = () => exec(this.config.version);
 
-  next = async (isBreaking: boolean) => {
+  next = async (option: VersionChangeType) => {
     const { next } = this.config;
-    return execVoid(isBreaking ? `${next} -b` : next);
+    return execVoid(option ? `${next} ${option}` : next);
   };
 
   setup = async () => {
