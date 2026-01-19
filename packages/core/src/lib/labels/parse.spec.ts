@@ -103,7 +103,7 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "color": "FFFFFF",
-          "description": "Label for affected pkg: \\"Core Module\\"",
+          "description": "Label for affected Package: \\"Core Module\\"",
           "existing": "pkg/core",
           "name": "📦 core",
           "pkg": "core",
@@ -121,15 +121,15 @@ describe("parseLabel", () => {
     test("parses scope with package emoji prefix", () => {
       const label = parseLabel(mockConfig, "📦/docs");
       expect(label).toMatchInlineSnapshot(`
-         {
-           "color": "FFFFFF",
-           "description": "Label for affected scope: \\"Documentation\\"",
-           "existing": "📦/docs",
-           "name": "📦 docs",
-           "scope": "docs",
-           "type": "scopes",
-         }
-       `);
+        {
+          "color": "FFFFFF",
+          "description": "Label for affected Package: \\"Documentation\\"",
+          "existing": "📦/docs",
+          "name": "📦 docs",
+          "pkg": "docs",
+          "type": "pkgs",
+        }
+      `);
     });
 
     test("throws error for non-existent scope key", () => {
@@ -147,11 +147,11 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "color": "FFFFFF",
-          "description": "Label for affected scope: \\"Core Module\\"",
+          "description": "Label for affected Package: \\"Core Module\\"",
           "existing": "scope:core",
           "name": "📦 core",
-          "scope": "core",
-          "type": "scopes",
+          "pkg": "core",
+          "type": "pkgs",
         }
       `);
     });
@@ -161,11 +161,11 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "color": "FFFFFF",
-          "description": "Label for affected scope: \\"Core Module\\"",
+          "description": "Label for affected Package: \\"Core Module\\"",
           "existing": "scope core",
           "name": "📦 core",
-          "scope": "core",
-          "type": "scopes",
+          "pkg": "core",
+          "type": "pkgs",
         }
       `);
     });
