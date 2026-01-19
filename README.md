@@ -64,9 +64,9 @@ Relasy uses PR labels to decide:
 
 Typical mapping:
 
-- `type:breaking` → **major**
-- `type:feature` → **minor**
-- `type:fix` → **patch**
+- `🚨 major` → **major**
+- `✨ feature` → **minor**
+- `🐛 fix`, `🧹 chore` → **patch**
 - `📦 <name>` → scope/grouping in changelog for monorepos
 
 When multiple PRs are included in a release, Relasy applies the **highest bump** needed across them (major > minor > patch).
@@ -405,7 +405,7 @@ This action creates the labels Relasy expects in a repository (useful for onboar
 
 What it creates (typical):
 
-- Type labels: `type:breaking`, `type:feature`, `type:fix`, `type:chore`
+- Type labels: `🚨 major`, `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`
 - Scope labels from `relasy.json`: `📦 <scopeKey>` for each key under `scope`
 
 Suggested workflow:
