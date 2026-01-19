@@ -31,6 +31,9 @@ Triggered manually (usually via `workflow_dispatch`).
 
 ✅ You **do not** need to bump versions manually.
 
+> Note: if `draft-release` fails with a **403** while creating the PR, ensure the repo setting
+> **“Allow GitHub Actions to create and approve pull requests”** is enabled.
+
 ### 2) Review the release PR
 
 Before merging, you can optionally edit the PR body to:
@@ -60,16 +63,24 @@ Relasy uses PR labels to decide:
 
 - **what bump** a change represents (major/minor/patch)
 - **where it appears** in the changelog (Breaking / Features / Fixes / etc.)
-- optional **pkg** (package/module grouping for monorepos)
-
-Typical mapping:
-
-- `🚨 major` → **major**
-- `✨ feature` → **minor**
-- `🐛 fix`, `🧹 chore` → **patch**
-- `📦 <name>` → pkg grouping in changelog for monorepos
+- optional **pkg** grouping for monorepos (`📦 <pkgKey>`)
 
 When multiple PRs are included in a release, Relasy applies the **highest bump** needed across them (major > minor > patch).
+
+### Label contract (recommended defaults)
+
+Every PR should have **exactly one** change/type label:
+
+| Label | Meaning | Version bump | Changelog section |
+|------:|---------|--------------|-------------------|
+| 💥 breaking | breaking change | major | Breaking Changes |
+| ✨ feature | new feature | minor | New Features |
+| 🐛 fix | bug fix | patch | Bug Fixes |
+| 🧹 chore | maintenance | patch | Minor Changes |
+
+Optional (monorepos): **at most one** package label:
+
+- `📦 <pkgKey>` — where `<pkgKey>` must match a key in `relasy.json` → `pkgs`
 
 ---
 
@@ -93,16 +104,18 @@ At a high level, `relasy.json` describes:
     "type": "npm"
   }
 }
-```
+````
 
 ### `pkgs`
 
 `pkgs` is a mapping of logical **pkg keys** to a **package identifier**.
 
-- For **npm** projects, the value is typically the npm package name (often scoped).
-- For **custom** projects, the value is whatever identifier the custom workflow expects.
+* For **npm** projects, the value is typically the npm package name (often scoped).
+* For **custom** projects, the value is whatever identifier the custom workflow expects.
 
 The `pkgs` keys (`core`, `server`, `client`, etc.) are the handles you reference when you need to act on a specific module/package.
+
+> In monorepos, package labels use the format `📦 <pkgKey>`, where `<pkgKey>` must be a key in `pkgs`.
 
 You can override any subset by providing only those keys.
 
@@ -112,15 +125,15 @@ You can override any subset by providing only those keys.
 
 Supported managers:
 
-- `type: "npm"`
-- `type: "custom"`
+* `type: "npm"`
+* `type: "custom"`
 
 If `type` is `"custom"`, the following fields are required:
 
-- `pkg` (string): a package reference or URL template (can include `{{PKG}}`)
-- `version` (string): command to retrieve the current version
-- `next` (string): command to compute the next version
-- `setup` (string): command to prepare tooling/environment
+* `pkg` (string): a package reference or URL template (can include `{{PKG}}`)
+* `version` (string): command to retrieve the current version
+* `next` (string): command to compute the next version
+* `setup` (string): command to prepare tooling/environment
 
 ---
 
@@ -164,7 +177,7 @@ If `type` is `"custom"`, the following fields are required:
 
 **Notes:**
 
-- In custom mode, `{{PKG}}` is substituted with the resolved pkg identifier
+* In custom mode, `{{PKG}}` is substituted with the resolved pkg identifier
   (e.g. `morpheus-graphql-core`).
 
 ---
@@ -175,8 +188,8 @@ If `type` is `"custom"`, the following fields are required:
 
 When `project.type` is `"npm"`:
 
-- versioning is typically **centralized** (e.g. one version source of truth)
-- best suited when packages share a version
+* versioning is typically **centralized** (e.g. one version source of truth)
+* best suited when packages share a version
 
 ✅ easiest to operate
 ⚠️ not suitable if each package needs independent versions
@@ -185,7 +198,7 @@ When `project.type` is `"npm"`:
 
 When `project.type` is `"custom"`:
 
-- use it when you need custom versioning rules or publishing commands
+* use it when you need custom versioning rules or publishing commands
 
 ✅ best for complex repos / bespoke pipelines
 
@@ -199,13 +212,11 @@ Example output (placeholders only):
 ## 1.4.0 (2026-01-14)
 
 #### Breaking Changes
-
 - [#123](https://github.com/acme/awesome-monorepo/pull/123): Remove legacy auth middleware
   - 📦 server
   - 👤 @contributor-1
 
-#### New features
-
+#### New Features
 - [#141](https://github.com/acme/awesome-monorepo/pull/141): Add caching for search endpoint
   - 📦 server
   - 👤 @contributor-2
@@ -214,13 +225,11 @@ Example output (placeholders only):
   - 👤 @contributor-3
 
 #### Bug Fixes
-
 - [#160](https://github.com/acme/awesome-monorepo/pull/160): Fix pagination edge case for empty results
   - 📦 client
   - 👤 @contributor-4
 
 #### Minor Changes
-
 - [#166](https://github.com/acme/awesome-monorepo/pull/166): Update local dev docs
   - 📦 docs
   - 👤 @contributor-5
@@ -288,44 +297,19 @@ jobs:
 
 ---
 
-## Recommended labeling rules
-
-To keep changelogs predictable, it helps if each PR has:
-
-- **exactly one** “type” label (breaking/feature/fix/etc.)
-- optional pkg labels for monorepos (`📦 <name>`)
-
-Example labels:
-
-- change/type(version bump):
-  - `🚨 major`
-  - `💥 breaking`
-  - `✨ feature`
-  - `🐛 fix`
-  - `🧹 chore`
-- packages/modules:
-  - `📦 client`
-  - `📦 server`
-  - `📦 docs`
-
-Relasy may also include helper actions to:
-
-- bootstrap/standardize labels
-- validate that PR labels are allowed (so changelog generation stays clean)
-
 ## Helper Actions (recommended)
 
 Relasy works best when PR labels are consistent. To make that easy, add these optional helper actions to your workflows.
 
 ### Validate PR labels (`validate-pr-labels`)
 
-This action enforces the “label contract” on every PR so releases don’t get blocked or produce messy changelogs.
+This action enforces the label contract on every PR so releases don’t get blocked or produce messy changelogs.
 
 What it checks (recommended defaults):
 
-- **Exactly one** change/type label (e.g. `🚨 major`, `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`)
-- **Zero or one** pkg label for monorepos (e.g. `📦 client`, `📦 server`)
-- If a pkg label is present, it must match a key in `relasy.json` → `pkg` (prevents typos like `📦 frontend`)
+* **Exactly one** change/type label (e.g. `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`)
+* **Zero or one** pkg label for monorepos (e.g. `📦 client`, `📦 server`)
+* If a pkg label is present, it must match a key in `relasy.json` → `pkgs` (prevents typos like `📦 frontend`)
 
 Suggested workflow:
 
@@ -334,16 +318,7 @@ name: Validate PR Labels
 
 on:
   pull_request:
-    types:
-      [
-        opened,
-        reopened,
-        labeled,
-        unlabeled,
-        synchronize,
-        edited,
-        ready_for_review,
-      ]
+    types: [opened, reopened, labeled, unlabeled, synchronize, edited, ready_for_review]
 
 permissions:
   contents: read
@@ -369,8 +344,8 @@ This action creates the labels Relasy expects in a repository (useful for onboar
 
 What it creates (typical):
 
-- Type labels: `🚨 major`, `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`
-- Pkg labels from `relasy.json`: `📦 <pkgKey>` for each key under `pkgs`
+* Type labels: `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`
+* Pkg labels from `relasy.json`: `📦 <pkgKey>` for each key under `pkgs`
 
 Suggested workflow:
 
@@ -392,6 +367,8 @@ jobs:
         uses: nalchevanidze/relasy/actions/bootstrap-labels@0.3.0
 ```
 
+---
+
 ## Contributing
 
-Issues and PRs are welcome
+Issues and PRs are welcome.
