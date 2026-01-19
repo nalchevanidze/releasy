@@ -10,7 +10,7 @@ describe("parseLabel", () => {
       fix: "Bug Fix",
       chore: "Chore",
     },
-    scopes: {
+    pkgs: {
       core: "Core Module",
       cli: "Command Line Interface",
       docs: "Documentation",
@@ -97,46 +97,46 @@ describe("parseLabel", () => {
     });
   });
 
-  describe("scopes parsing", () => {
-    test("parses scope with 'scope/' prefix", () => {
-      const label = parseLabel(mockConfig, "scope/core");
+  describe("pkgs parsing", () => {
+    test("parses pkg with 'pkg/' prefix", () => {
+      const label = parseLabel(mockConfig, "pkg/core");
       expect(label).toMatchInlineSnapshot(`
         {
           "color": "FFFFFF",
-          "description": "Label for affected scope: \\"Core Module\\"",
-          "existing": "scope/core",
+          "description": "Label for affected Package: \\"Core Module\\"",
+          "existing": "pkg/core",
           "name": "📦 core",
-          "scope": "core",
-          "type": "scopes",
+          "pkg": "core",
+          "type": "pkgs",
         }
       `);
     });
 
-    test("parses scope with 'type/' prefix", () => {
+    test("parses pkg with 'type/' prefix", () => {
       expect(() => parseLabel(mockConfig, "type/cli")).toThrow(
         "invalid label type/cli. key cli could not be found on object with fields: major, breaking, feature, fix, chore",
       );
     });
 
-    test("parses scope with package emoji prefix", () => {
+    test("parses pkg with package emoji prefix", () => {
       const label = parseLabel(mockConfig, "📦/docs");
       expect(label).toMatchInlineSnapshot(`
-         {
-           "color": "FFFFFF",
-           "description": "Label for affected scope: \\"Documentation\\"",
-           "existing": "📦/docs",
-           "name": "📦 docs",
-           "scope": "docs",
-           "type": "scopes",
-         }
-       `);
+        {
+          "color": "FFFFFF",
+          "description": "Label for affected Package: \\"Documentation\\"",
+          "existing": "📦/docs",
+          "name": "📦 docs",
+          "pkg": "docs",
+          "type": "pkgs",
+        }
+      `);
     });
 
-    test("throws error for non-existent scope key", () => {
+    test("throws error for non-existent pkg key", () => {
       expect(() => {
-        parseLabel(mockConfig, "scope/nonexistent");
+        parseLabel(mockConfig, "pkg/nonexistent");
       }).toThrow(
-        "invalid label scope/nonexistent. key nonexistent could not be found on object with fields: core, cli, docs, api",
+        "invalid label pkg/nonexistent. key nonexistent could not be found on object with fields: core, cli, docs, api",
       );
     });
   });
@@ -147,11 +147,11 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "color": "FFFFFF",
-          "description": "Label for affected scope: \\"Core Module\\"",
+          "description": "Label for affected Package: \\"Core Module\\"",
           "existing": "scope:core",
           "name": "📦 core",
-          "scope": "core",
-          "type": "scopes",
+          "pkg": "core",
+          "type": "pkgs",
         }
       `);
     });
@@ -161,11 +161,11 @@ describe("parseLabel", () => {
       expect(label).toMatchInlineSnapshot(`
         {
           "color": "FFFFFF",
-          "description": "Label for affected scope: \\"Core Module\\"",
+          "description": "Label for affected Package: \\"Core Module\\"",
           "existing": "scope core",
           "name": "📦 core",
-          "scope": "core",
-          "type": "scopes",
+          "pkg": "core",
+          "type": "pkgs",
         }
       `);
     });

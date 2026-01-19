@@ -2,17 +2,17 @@ import { readFile } from "fs/promises";
 import * as z from "zod";
 import { remote } from "./git";
 
-export type LabelType = "scopes" | "changeTypes";
+export type LabelType = "pkgs" | "changeTypes";
 
-export const ChangeTypeSchema = z.enum([
-  "major",
-  "breaking",
-  "feature",
-  "fix",
-  "chore",
-]);
+const changeTypes = {
+  major: "Major Change",
+  breaking: "Breaking Change",
+  feature: "New features",
+  fix: "Bug Fixes",
+  chore: "Minor Changes",
+};
 
-export type ChangeType = z.infer<typeof ChangeTypeSchema>;
+export type ChangeType = keyof typeof changeTypes;
 
 export const CustomManagerSchema = z.object({
   type: z.literal("custom"),
@@ -35,33 +35,23 @@ export const ManagerSchema = z.union([NPMManagerSchema, CustomManagerSchema]);
 export type Manager = z.infer<typeof ManagerSchema>;
 
 export const ConfigSchema = z.object({
-  scopes: z.record(z.string(), z.string()),
-  changeTypes: z.record(ChangeTypeSchema, z.string()).optional(),
+  pkgs: z.record(z.string(), z.string()),
   project: ManagerSchema,
 });
 
 type RawConfig = z.infer<typeof ConfigSchema>;
 
-export type Config = Omit<RawConfig, "changeTypes"> & {
-  changeTypes: Record<ChangeType, string>;
+type ExtraConfig = {
   gh: string;
+  changeTypes: Record<ChangeType, string>;
 };
+
+export type Config = RawConfig & ExtraConfig;
 
 export const loadConfig = async (): Promise<Config> => {
   const data = await readFile("./relasy.json", "utf8").then(JSON.parse);
   const config = ConfigSchema.parse(data);
   const gh = remote();
 
-  return {
-    ...config,
-    gh,
-    changeTypes: {
-      major: "Major Change",
-      breaking: "Breaking Change",
-      feature: "New features",
-      fix: "Bug Fixes",
-      chore: "Minor Changes",
-      ...config.changeTypes,
-    },
-  };
+  return { ...config, gh, changeTypes };
 };

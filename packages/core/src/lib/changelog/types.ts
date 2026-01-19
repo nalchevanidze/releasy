@@ -20,7 +20,7 @@ export type PR = {
 
 export type Change = PR & {
   type: ChangeType;
-  scopes: string[];
+  pkgs: string[];
 };
 
 export class Api {

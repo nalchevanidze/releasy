@@ -7,9 +7,9 @@ type BaseLabel = {
   existing?: string;
 };
 
-export type ScopeLabel = BaseLabel & {
-  type: "scopes";
-  scope: string;
+export type PkgLabel = BaseLabel & {
+  type: "pkgs";
+  pkg: string;
 };
 
 export type ChangeTypeLabel = BaseLabel & {
@@ -17,9 +17,4 @@ export type ChangeTypeLabel = BaseLabel & {
   changeType: ChangeType;
 };
 
-export type LABELS = {
-  changeTypes: ChangeTypeLabel;
-  scopes: ScopeLabel;
-};
-
-export type Label = ChangeTypeLabel | ScopeLabel;
+export type Label = ChangeTypeLabel | PkgLabel;

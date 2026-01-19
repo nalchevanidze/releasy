@@ -39165,17 +39165,17 @@ var require_config = __commonJS({
       return result;
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadConfig = exports2.ConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.ChangeTypeSchema = void 0;
+    exports2.loadConfig = exports2.ConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = void 0;
     var promises_1 = require("fs/promises");
     var z = __importStar(require_zod());
     var git_1 = require_git();
-    exports2.ChangeTypeSchema = z.enum([
-      "major",
-      "breaking",
-      "feature",
-      "fix",
-      "chore"
-    ]);
+    var changeTypes = {
+      major: "Major Change",
+      breaking: "Breaking Change",
+      feature: "New features",
+      fix: "Bug Fixes",
+      chore: "Minor Changes"
+    };
     exports2.CustomManagerSchema = z.object({
       type: z.literal("custom"),
       next: z.string(),
@@ -39188,26 +39188,14 @@ var require_config = __commonJS({
     });
     exports2.ManagerSchema = z.union([exports2.NPMManagerSchema, exports2.CustomManagerSchema]);
     exports2.ConfigSchema = z.object({
-      scopes: z.record(z.string(), z.string()),
-      changeTypes: z.record(exports2.ChangeTypeSchema, z.string()).optional(),
+      pkgs: z.record(z.string(), z.string()),
       project: exports2.ManagerSchema
     });
     var loadConfig = async () => {
       const data = await (0, promises_1.readFile)("./relasy.json", "utf8").then(JSON.parse);
       const config = exports2.ConfigSchema.parse(data);
       const gh = (0, git_1.remote)();
-      return {
-        ...config,
-        gh,
-        changeTypes: {
-          major: "Major Change",
-          breaking: "Breaking Change",
-          feature: "New features",
-          fix: "Bug Fixes",
-          chore: "Minor Changes",
-          ...config.changeTypes
-        }
-      };
+      return { ...config, gh, changeTypes };
     };
     exports2.loadConfig = loadConfig;
   }
@@ -39233,7 +39221,7 @@ var require_custom = __commonJS({
         };
       }
       pkg(id) {
-        return this.config.pkg.replace("{{SCOPE}}", id);
+        return this.config.pkg.replace("{{PKG}}", id);
       }
     };
     exports2.CustomModule = CustomModule;
@@ -51448,9 +51436,10 @@ var require_parse4 = __commonJS({
       major: "\u{1F6A8}"
     };
     var parseNameMap = {
-      scope: "scopes",
+      pkg: "pkgs",
+      scope: "pkgs",
       type: "changeTypes",
-      "\u{1F4E6}": "scopes",
+      "\u{1F4E6}": "pkgs",
       "\u{1F4A5}": "changeTypes",
       "\u2728": "changeTypes",
       "\u{1F41B}": "changeTypes",
@@ -51504,12 +51493,12 @@ var require_parse4 = __commonJS({
             name: printName(type, key),
             existing
           };
-        case "scopes":
+        case "pkgs":
           return {
-            type: "scopes",
-            scope: key,
+            type: "pkgs",
+            pkg: key,
             color: colors.pkg,
-            description: `Label for affected scope: "${longName}"`,
+            description: `Label for affected Package: "${longName}"`,
             name: printName(type, key),
             existing
           };
@@ -51530,15 +51519,15 @@ var require_labels = __commonJS({
     var parse_1 = require_parse4();
     var genLabels = (config, ls) => {
       const changeTypes = /* @__PURE__ */ new Map();
-      const scopes = /* @__PURE__ */ new Map();
+      const pkgs = /* @__PURE__ */ new Map();
       ls.forEach((l) => {
         const parsed = (0, parse_1.parseLabel)(config, l);
         switch (parsed?.type) {
           case "changeTypes":
             changeTypes.set(parsed.name, parsed);
             break;
-          case "scopes":
-            scopes.set(parsed.name, parsed);
+          case "pkgs":
+            pkgs.set(parsed.name, parsed);
             break;
         }
       });
@@ -51548,20 +51537,20 @@ var require_labels = __commonJS({
           changeTypes.set(l.name, l);
         }
       });
-      Object.entries(config.scopes).forEach(([name, longName]) => {
-        const l = (0, parse_1.createLabel)("scopes", name, longName);
-        if (!scopes.has(l.name)) {
-          scopes.set(l.name, l);
+      Object.entries(config.pkgs).forEach(([name, longName]) => {
+        const l = (0, parse_1.createLabel)("pkgs", name, longName);
+        if (!pkgs.has(l.name)) {
+          pkgs.set(l.name, l);
         }
       });
-      return [...changeTypes.values(), ...scopes.values()];
+      return [...changeTypes.values(), ...pkgs.values()];
     };
     exports2.genLabels = genLabels;
     var parseLabels = (config, labels) => {
       const ls = labels.map((label) => (0, parse_1.parseLabel)(config, label));
       return {
         changeTypes: ls.filter((x) => x?.type === "changeTypes"),
-        scopes: ls.filter((x) => x?.type === "scopes")
+        pkgs: ls.filter((x) => x?.type === "pkgs")
       };
     };
     exports2.parseLabels = parseLabels;
@@ -51604,11 +51593,11 @@ var require_fetch2 = __commonJS({
     }`);
         this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? parseNumber(c.message);
         this.changes = (version) => this.commits((0, git_1.commitsAfter)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
-          const { changeTypes, scopes } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
+          const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           return {
             ...pr,
             type: changeTypes.find(Boolean)?.changeType ?? "chore",
-            scopes: scopes.map(({ scope }) => scope)
+            pkgs: pkgs.map(({ pkg }) => pkg)
           };
         }));
       }
@@ -51637,14 +51626,14 @@ ${space(n)}`));
       constructor(api) {
         this.api = api;
         this.pkg = (key) => {
-          const id = this.api.config.scopes[key];
+          const id = this.api.config.pkgs[key];
           return link(key, this.api.module.pkg(id));
         };
-        this.change = ({ number, author, title, body, scopes }) => {
+        this.change = ({ number, author, title, body, pkgs }) => {
           const details = body ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1) : "";
           const head = `* ${link(`#${number}`, this.api.github.issue(number))}: ${title?.trim()}`;
           const stats = stat([
-            ["\u{1F4E6}", lines(scopes.map(this.pkg))],
+            ["\u{1F4E6}", lines(pkgs.map(this.pkg))],
             ["\u{1F464}", link(`@${author.login}`, author.url)]
           ]);
           return lines([head, stats, details]);
