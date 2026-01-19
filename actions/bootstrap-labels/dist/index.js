@@ -44690,7 +44690,7 @@ var require_config = __commonJS({
     };
     exports2.CustomManagerSchema = z.object({
       type: z.literal("custom"),
-      next: z.string(),
+      bump: z.string(),
       version: z.string(),
       setup: z.string(),
       pkg: z.string()
@@ -44751,9 +44751,8 @@ var require_custom = __commonJS({
       constructor(config) {
         this.config = config;
         this.version = () => version_1.Version.parse(this.config.version);
-        this.next = async (option) => {
-          const { next } = this.config;
-          return (0, utils_1.execVoid)(option ? `${next} ${option}` : next);
+        this.bump = async (option) => {
+          return (0, utils_1.execVoid)(this.config.bump.replace("{{BUMP}}", option));
         };
         this.setup = async () => {
           await (0, utils_1.execVoid)(this.config.setup);
@@ -50332,7 +50331,7 @@ var require_npm = __commonJS({
     exports2.setup = setup;
     var NpmModule = class {
       constructor() {
-        this.next = async (option) => {
+        this.bump = async (option) => {
           const args = {
             major: "major",
             minor: "minor",
@@ -57210,7 +57209,7 @@ var require_changelog = __commonJS({
       const version = api.module.version();
       version.isEqual((0, git_1.lastTag)());
       const changes = await new fetch_1.FetchApi(api).changes(version);
-      await api.module.next(detectChangeType(changes));
+      await api.module.bump(detectChangeType(changes));
       return new render_1.RenderAPI(api).changes(api.module.version(), changes);
     };
     exports2.renderChangelog = renderChangelog;
