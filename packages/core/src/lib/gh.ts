@@ -46,7 +46,7 @@ export class Github {
 
   constructor(
     path: string,
-    user: { name: string; email: string } = defaultUser
+    user: { name: string; email: string } = defaultUser,
   ) {
     const [org, repo] = path.split("/");
     this.org = org;
@@ -79,8 +79,8 @@ export class Github {
           ${chunk.map((n) => `item_${n}:${f(n)}`).join("\n")}
         }
       }`,
-          }).then(({ repository }) => Object.values(repository))
-        )
+          }).then(({ repository }) => Object.values(repository)),
+        ),
       ).then((x) => x.flat().filter(Boolean) as O[]);
 
   public issue = (n: number) => `https://${this.path}/issues/${n}`;
