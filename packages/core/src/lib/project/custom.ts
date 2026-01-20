@@ -11,7 +11,9 @@ export class CustomModule implements Module {
   public bump = (option: BumpType) =>
     execVoid(this.config.bump.replace("{{BUMP}}", option));
 
-  public postBump = () => execVoid(this.config.postBump);
+  public postBump = async () =>
+    this.config.postBump ? await execVoid(this.config.postBump) : undefined;
 
-  public pkg = (id: string): string => this.config.pkg.replace("{{PKG}}", id);
+  public pkg = (id: string): string | undefined =>
+    this.config.pkg ? this.config.pkg.replace("{{PKG}}", id) : undefined;
 }

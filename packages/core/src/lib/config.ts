@@ -17,8 +17,9 @@ export const CustomManagerSchema = z.object({
   type: z.literal("custom"),
   bump: z.string(),
   version: z.string(),
-  postBump: z.string(),
-  pkg: z.string(),
+  // Optional fields
+  pkg: z.string().optional(),
+  postBump: z.string().optional(),
 });
 
 export const NPMManagerSchema = z.object({

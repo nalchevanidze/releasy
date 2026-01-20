@@ -44692,8 +44692,9 @@ var require_config = __commonJS({
       type: z.literal("custom"),
       bump: z.string(),
       version: z.string(),
-      postBump: z.string(),
-      pkg: z.string()
+      // Optional fields
+      pkg: z.string().optional(),
+      postBump: z.string().optional()
     });
     exports2.NPMManagerSchema = z.object({
       type: z.literal("npm")
@@ -44752,8 +44753,8 @@ var require_custom = __commonJS({
         this.config = config;
         this.version = () => version_1.Version.parse((0, utils_1.exec)(this.config.version).trim());
         this.bump = (option) => (0, utils_1.execVoid)(this.config.bump.replace("{{BUMP}}", option));
-        this.postBump = () => (0, utils_1.execVoid)(this.config.postBump);
-        this.pkg = (id) => this.config.pkg.replace("{{PKG}}", id);
+        this.postBump = async () => this.config.postBump ? await (0, utils_1.execVoid)(this.config.postBump) : void 0;
+        this.pkg = (id) => this.config.pkg ? this.config.pkg.replace("{{PKG}}", id) : void 0;
       }
     };
     exports2.CustomModule = CustomModule;
@@ -57156,9 +57157,10 @@ ${space(n)}`));
     var RenderAPI = class {
       constructor(api) {
         this.api = api;
-        this.pkg = (key) => {
-          const id = this.api.config.pkgs[key];
-          return link(key, this.api.module.pkg(id));
+        this.pkg = (labelName) => {
+          const longName = this.api.config.pkgs[labelName];
+          const url = this.api.module.pkg(longName);
+          return url ? link(labelName, url) : longName;
         };
         this.change = ({ number, author, title, body, pkgs }) => {
           const details = body ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1) : "";

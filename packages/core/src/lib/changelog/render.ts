@@ -32,9 +32,10 @@ const indent = (txt: string, n: number = 1) =>
 export class RenderAPI {
   constructor(private api: Api) {}
 
-  private pkg = (key: string) => {
-    const id = this.api.config.pkgs[key];
-    return link(key, this.api.module.pkg(id));
+  private pkg = (labelName: string) => {
+    const longName = this.api.config.pkgs[labelName];
+    const url = this.api.module.pkg(longName);
+    return url ? link(labelName, url) : longName;
   };
 
   private change = ({ number, author, title, body, pkgs }: Change): string => {
