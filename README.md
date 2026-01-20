@@ -161,7 +161,7 @@ If `type` is `"custom"`, the following fields are required:
   "pkgs": {
     "server": "morpheus-graphql",
     "client": "morpheus-graphql-client",
-    "core": "morpheus-graphql-core",
+    "core": "morpheus-graphql-core"
   },
   "project": {
     "type": "custom",
