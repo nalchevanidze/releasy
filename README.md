@@ -132,10 +132,10 @@ Supported managers:
 
 If `type` is `"custom"`, the following fields are required:
 
-- `pkg` (string): a package reference or URL template (can include `{{PKG}}`)
 - `version` (string): command to retrieve the current version
 - `bump` (string): command to compute and apply the next version (e.g., `hconf next {{BUMP}}` where `{{BUMP}}` is replaced with `major`, `minor`, or `patch`)
-- `postBump` (string): optional command to execute after version bumping, such as updating lockfiles, regenerating build artifacts, or running post-version scripts
+- `pkg` (optional string): a package reference or URL template (can include `{{PKG}}`)
+- `postBump` (optional string): optional command to execute after version bumping, such as updating lockfiles, regenerating build artifacts, or running post-version scripts
 
 ---
 
@@ -267,7 +267,7 @@ jobs:
           fetch-depth: 0
 
       - name: Draft Release PR (compute version + commit bump + changelog + open PR)
-        uses: nalchevanidze/relasy/actions/draft-release@v1.0.0
+        uses: nalchevanidze/relasy/actions/draft-release@v1.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -298,7 +298,7 @@ jobs:
         run: # Commands to publish package to registry
 
       - name: Publish GitHub Release (from merged release PR)
-        uses: nalchevanidze/relasy/actions/publish-release@v1.0.0
+        uses: nalchevanidze/relasy/actions/publish-release@v1.1.0
         id: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -349,7 +349,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Validate PR Labels
-        uses: nalchevanidze/relasy/actions/validate-pr-labels@v1.0.0
+        uses: nalchevanidze/relasy/actions/validate-pr-labels@v1.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -382,7 +382,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create/ensure required labels exist
-        uses: nalchevanidze/relasy/actions/bootstrap-labels@v1.0.0
+        uses: nalchevanidze/relasy/actions/bootstrap-labels@v1.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
