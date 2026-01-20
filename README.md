@@ -71,12 +71,12 @@ When multiple PRs are included in a release, Relasy applies the **highest bump**
 
 Every PR should have **exactly one** change/type label:
 
-| Label | Meaning | Version bump | Changelog section |
-|------:|---------|--------------|-------------------|
-| 💥 breaking | breaking change | major | Breaking Changes |
-| ✨ feature | new feature | minor | New Features |
-| 🐛 fix | bug fix | patch | Bug Fixes |
-| 🧹 chore | maintenance | patch | Minor Changes |
+|       Label | Meaning         | Version bump | Changelog section |
+| ----------: | --------------- | ------------ | ----------------- |
+| 💥 breaking | breaking change | major        | Breaking Changes  |
+|  ✨ feature | new feature     | minor        | New Features      |
+|      🐛 fix | bug fix         | patch        | Bug Fixes         |
+|    🧹 chore | maintenance     | patch        | Minor Changes     |
 
 Optional (monorepos): **zero or more** package labels:
 
@@ -106,14 +106,14 @@ At a high level, `relasy.json` describes:
     "type": "npm"
   }
 }
-````
+```
 
 ### `pkgs`
 
 `pkgs` is a mapping of logical **pkg keys** to a **package identifier**.
 
-* For **npm** projects, the value is typically the npm package name (often scoped).
-* For **custom** projects, the value is whatever identifier the custom workflow expects.
+- For **npm** projects, the value is typically the npm package name (often scoped).
+- For **custom** projects, the value is whatever identifier the custom workflow expects.
 
 The `pkgs` keys (`core`, `server`, `client`, etc.) are the handles you reference when you need to act on a specific module/package.
 
@@ -127,15 +127,15 @@ You can override any subset by providing only those keys.
 
 Supported managers:
 
-* `type: "npm"`
-* `type: "custom"`
+- `type: "npm"`
+- `type: "custom"`
 
 If `type` is `"custom"`, the following fields are required:
 
-* `pkg` (string): a package reference or URL template (can include `{{PKG}}`)
-* `version` (string): command to retrieve the current version
-* `bump` (string): command to compute the next version
-* `postBump` (string): command to prepare tooling/environment
+- `pkg` (string): a package reference or URL template (can include `{{PKG}}`)
+- `version` (string): command to retrieve the current version
+- `bump` (string): command to compute and apply the next version (e.g., `hconf next {{BUMP}}` where `{{BUMP}}` is replaced with `major`, `minor`, or `patch`)
+- `postBump` (string): optional command to execute after version bumping, such as updating lockfiles, regenerating build artifacts, or running post-version scripts
 
 ---
 
@@ -162,10 +162,6 @@ If `type` is `"custom"`, the following fields are required:
     "server": "morpheus-graphql",
     "client": "morpheus-graphql-client",
     "core": "morpheus-graphql-core",
-    "subscriptions": "morpheus-graphql-subscriptions",
-    "tests": "morpheus-graphql-tests",
-    "app": "morpheus-graphql-app",
-    "codegen": "morpheus-graphql-code-gen"
   },
   "project": {
     "type": "custom",
@@ -179,7 +175,7 @@ If `type` is `"custom"`, the following fields are required:
 
 **Notes:**
 
-* In custom mode, `{{PKG}}` is substituted with the resolved pkg identifier
+- In custom mode, `{{PKG}}` is substituted with the resolved pkg identifier
   (e.g. `morpheus-graphql-core`).
 
 ---
@@ -190,8 +186,8 @@ If `type` is `"custom"`, the following fields are required:
 
 When `project.type` is `"npm"`:
 
-* versioning is typically **centralized** (e.g. one version source of truth)
-* best suited when packages share a version
+- versioning is typically **centralized** (e.g. one version source of truth)
+- best suited when packages share a version
 
 ✅ easiest to operate
 ⚠️ not suitable if each package needs independent versions
@@ -200,7 +196,7 @@ When `project.type` is `"npm"`:
 
 When `project.type` is `"custom"`:
 
-* use it when you need custom versioning rules or publishing commands
+- use it when you need custom versioning rules or publishing commands
 
 ✅ best for complex repos / bespoke pipelines
 
@@ -214,11 +210,13 @@ Example output (placeholders only):
 ## 1.4.0 (2026-01-14)
 
 #### Breaking Changes
+
 - [#123](https://github.com/acme/awesome-monorepo/pull/123): Remove legacy auth middleware
   - 📦 server
   - 👤 @contributor-1
 
 #### New Features
+
 - [#141](https://github.com/acme/awesome-monorepo/pull/141): Add caching for search endpoint
   - 📦 server
   - 👤 @contributor-2
@@ -231,11 +229,13 @@ Example output (placeholders only):
   - 👤 @contributor-6
 
 #### Bug Fixes
+
 - [#160](https://github.com/acme/awesome-monorepo/pull/160): Fix pagination edge case for empty results
   - 📦 client
   - 👤 @contributor-4
 
 #### Minor Changes
+
 - [#166](https://github.com/acme/awesome-monorepo/pull/166): Update local dev docs
   - 📦 docs
   - 👤 @contributor-5
@@ -316,9 +316,9 @@ This action enforces the label contract on every PR so releases don’t get bloc
 
 What it checks (recommended defaults):
 
-* **Exactly one** change/type label (e.g. `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`)
-* **Zero or more** pkg labels for monorepos (e.g. `📦 client`, `📦 server`)
-* If any pkg labels are present, each must match a key in `relasy.json` → `pkgs` (prevents typos like `📦 frontend`)
+- **Exactly one** change/type label (e.g. `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`)
+- **Zero or more** pkg labels for monorepos (e.g. `📦 client`, `📦 server`)
+- If any pkg labels are present, each must match a key in `relasy.json` → `pkgs` (prevents typos like `📦 frontend`)
 
 Suggested workflow:
 
@@ -327,7 +327,16 @@ name: Validate PR Labels
 
 on:
   pull_request:
-    types: [opened, reopened, labeled, unlabeled, synchronize, edited, ready_for_review]
+    types:
+      [
+        opened,
+        reopened,
+        labeled,
+        unlabeled,
+        synchronize,
+        edited,
+        ready_for_review,
+      ]
 
 permissions:
   contents: read
@@ -353,8 +362,8 @@ This action creates the labels Relasy expects in a repository (useful for onboar
 
 What it creates (typical):
 
-* Type labels: `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`
-* Pkg labels from `relasy.json`: `📦 <pkgKey>` for each key under `pkgs`
+- Type labels: `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`
+- Pkg labels from `relasy.json`: `📦 <pkgKey>` for each key under `pkgs`
 
 Suggested workflow:
 
