@@ -48120,13 +48120,9 @@ var require_custom = __commonJS({
     var CustomModule = class {
       constructor(config) {
         this.config = config;
-        this.version = () => version_1.Version.parse(this.config.version);
-        this.bump = async (option) => {
-          return (0, utils_1.execVoid)(this.config.bump.replace("{{BUMP}}", option));
-        };
-        this.postBump = async () => {
-          await (0, utils_1.execVoid)(this.config.postBump);
-        };
+        this.version = () => version_1.Version.parse((0, utils_1.exec)(this.config.version).trim());
+        this.bump = (option) => (0, utils_1.execVoid)(this.config.bump.replace("{{BUMP}}", option));
+        this.postBump = () => (0, utils_1.execVoid)(this.config.postBump);
         this.pkg = (id) => this.config.pkg.replace("{{PKG}}", id);
       }
     };
