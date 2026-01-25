@@ -49,6 +49,15 @@ export async function getCurrentPrLabels(
 
 async function run() {
   try {
+    const headRef = context.payload.pull_request?.head?.ref;
+
+    if (headRef?.startsWith("release-")) {
+      console.log(
+        "Skipping label validation for merged release PR targeting main",
+      );
+      return;
+    }
+
     const relasy = await Relasy.load();
 
     const requireChangeType =
