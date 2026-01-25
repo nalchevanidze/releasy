@@ -57298,6 +57298,13 @@ async function getCurrentPrLabels(params = {}) {
 }
 async function run() {
   try {
+    const headRef = import_github.context.payload.pull_request?.head?.ref;
+    if (headRef?.startsWith("release-")) {
+      console.log(
+        "Skipping label validation for merged release PR targeting main"
+      );
+      return;
+    }
     const relasy = await import_core2.Relasy.load();
     const requireChangeType = (0, import_core.getInput)("require_change_type", {
       required: false
