@@ -1,7 +1,6 @@
-import { Github } from "../gh";
 import { ChangeType, Config } from "../config";
 import { Module } from "../project/types";
-import { propEq } from "ramda";
+import { Version } from "../version";
 
 export type Commit = {
   message: string;
@@ -23,10 +22,23 @@ export type Change = PR & {
   pkgs: string[];
 };
 
+export type GitHubClient = {
+  setup(): void;
+  isOwner(input: { nameWithOwner: string }): boolean;
+  batch<O>(
+    queryBuilder: (_: string | number) => string,
+  ): (items: Array<string | number>) => Promise<O[]>;
+  issue(n: number): string;
+  release(
+    version: Version,
+    body: string,
+  ): Promise<{ data: { number: number; html_url: string } }>;
+};
+
 export class Api {
   constructor(
     public config: Config,
-    public github: Github,
+    public github: GitHubClient,
     public module: Module,
   ) {}
 }

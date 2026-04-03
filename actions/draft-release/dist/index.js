@@ -36452,7 +36452,7 @@ var require_npm = __commonJS({
       return mod && mod.__esModule ? mod : { "default": mod };
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.NpmModule = exports2.setup = void 0;
+    exports2.NpmModule = exports2.resolvePostBumpCommand = exports2.defaultBuildCommand = exports2.detectPackageManager = exports2.setup = void 0;
     var node_fs_1 = __importDefault(require("node:fs"));
     var fast_glob_1 = __importDefault(require_out4());
     var utils_1 = require_utils4();
@@ -36504,6 +36504,7 @@ var require_npm = __commonJS({
         return "yarn";
       return "npm";
     };
+    exports2.detectPackageManager = detectPackageManager;
     var defaultBuildCommand = (pm) => {
       if (pm === "pnpm")
         return "pnpm run build";
@@ -36511,6 +36512,9 @@ var require_npm = __commonJS({
         return "yarn build";
       return "npm run build";
     };
+    exports2.defaultBuildCommand = defaultBuildCommand;
+    var resolvePostBumpCommand = (config) => config.postBump ?? config.build ?? (0, exports2.defaultBuildCommand)((0, exports2.detectPackageManager)());
+    exports2.resolvePostBumpCommand = resolvePostBumpCommand;
     var NpmModule = class {
       constructor(config) {
         this.config = config;
@@ -36528,8 +36532,7 @@ var require_npm = __commonJS({
       }
       async postBump() {
         await setup();
-        const buildCommand = this.config.postBump ?? this.config.build ?? defaultBuildCommand(detectPackageManager());
-        await (0, utils_1.exec)(buildCommand);
+        await (0, utils_1.exec)((0, exports2.resolvePostBumpCommand)(this.config));
       }
       pkg(id) {
         return `https://www.npmjs.com/package/${id}`;

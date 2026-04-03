@@ -56,19 +56,22 @@ export async function setup() {
   }
 }
 
-type PackageManager = "pnpm" | "yarn" | "npm";
+export type PackageManager = "pnpm" | "yarn" | "npm";
 
-const detectPackageManager = (): PackageManager => {
+export const detectPackageManager = (): PackageManager => {
   if (fs.existsSync("pnpm-lock.yaml")) return "pnpm";
   if (fs.existsSync("yarn.lock")) return "yarn";
   return "npm";
 };
 
-const defaultBuildCommand = (pm: PackageManager) => {
+export const defaultBuildCommand = (pm: PackageManager) => {
   if (pm === "pnpm") return "pnpm run build";
   if (pm === "yarn") return "yarn build";
   return "npm run build";
 };
+
+export const resolvePostBumpCommand = (config: NPMManager): string =>
+  config.postBump ?? config.build ?? defaultBuildCommand(detectPackageManager());
 
 export class NpmModule implements Module {
   constructor(private config: NPMManager) {}
@@ -90,12 +93,7 @@ export class NpmModule implements Module {
   async postBump() {
     await setup();
 
-    const buildCommand =
-      this.config.postBump ??
-      this.config.build ??
-      defaultBuildCommand(detectPackageManager());
-
-    await exec(buildCommand);
+    await exec(resolvePostBumpCommand(this.config));
   }
 
   pkg(id: string): string {
