@@ -1,4 +1,4 @@
-import { ChangeType, LabelType } from "../config";
+import { ChangeType } from "../config";
 
 type BaseLabel = {
   name: string;

@@ -1,12 +1,26 @@
-import { setFailed } from "@actions/core";
+import { setFailed, info } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { Relasy } from "@relasy/core";
 
-const { owner, repo } = context.repo;
+const resolveRepo = () => {
+  const owner = context.repo.owner || process.env.RELASY_OWNER;
+  const repo = context.repo.repo || process.env.RELASY_REPO;
+
+  if (!owner || !repo) {
+    throw new Error(
+      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs.",
+    );
+  }
+
+  return { owner, repo };
+};
+
+const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
 async function run() {
   try {
     const relasy = await Relasy.load();
+    const { owner, repo } = resolveRepo();
     const octokit = getOctokit(process.env.GITHUB_TOKEN || "");
 
     const labels = await octokit.paginate(
@@ -18,13 +32,26 @@ async function run() {
       },
     );
 
-    const ls = labels.map((l) => l.name);
+    const existingLabelNames = labels.map((l) => l.name);
+    const desiredLabels = relasy.labels(existingLabelNames);
 
-    console.log(`fetched labels: ${JSON.stringify(ls)}`);
+    info(`fetched labels: ${JSON.stringify(existingLabelNames)}`);
+
+    if (isDryRun()) {
+      info(
+        `[dry-run] Would reconcile ${desiredLabels.length} labels in ${owner}/${repo}`,
+      );
+      return;
+    }
+
+    let created = 0;
+    let updated = 0;
 
     await Promise.all(
-      relasy.labels(ls).map(async (label) => {
+      desiredLabels.map(async (label) => {
         if (label?.existing) {
+          updated += 1;
+
           return octokit.rest.issues.updateLabel({
             owner,
             repo,
@@ -35,6 +62,8 @@ async function run() {
           });
         }
 
+        created += 1;
+
         await octokit.rest.issues.createLabel({
           owner,
           repo,
@@ -44,12 +73,13 @@ async function run() {
         });
       }),
     );
+
+    info(
+      `Label reconciliation finished. created=${created}, updated=${updated}`,
+    );
   } catch (error) {
-    if (error instanceof Error) {
-      setFailed(error.message);
-    } else {
-      setFailed(String(error));
-    }
+    const message = error instanceof Error ? error.message : String(error);
+    setFailed(`bootstrap-labels failed: ${message}`);
   }
 }
 

@@ -21,9 +21,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Validate PR Labels
-        uses: nalchevanidze/relasy/actions/validate-pr-labels@main
+        uses: ./actions/validate-pr-labels
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

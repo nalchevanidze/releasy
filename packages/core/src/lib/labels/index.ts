@@ -1,4 +1,4 @@
-import { Config, LabelType } from "../config";
+import { Config } from "../config";
 import { ChangeTypeLabel, PkgLabel } from "./label";
 import { createLabel, parseLabel } from "./parse";
 
@@ -35,7 +35,7 @@ export const genLabels = (config: Config, ls: string[]) => {
   return [...changeTypes.values(), ...pkgs.values()];
 };
 
-export const parseLabels = <T extends LabelType>(
+export const parseLabels = (
   config: Config,
   labels: string[],
 ): { changeTypes: ChangeTypeLabel[]; pkgs: PkgLabel[] } => {

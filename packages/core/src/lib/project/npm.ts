@@ -71,7 +71,9 @@ export const defaultBuildCommand = (pm: PackageManager) => {
 };
 
 export const resolvePostBumpCommand = (config: NPMManager): string =>
-  config.postBump ?? config.build ?? defaultBuildCommand(detectPackageManager());
+  config.postBump ??
+  config.build ??
+  defaultBuildCommand(detectPackageManager());
 
 export class NpmModule implements Module {
   constructor(private config: NPMManager) {}

@@ -1,4 +1,4 @@
-import { setFailed, getInput, setOutput } from "@actions/core";
+import { setFailed, getInput, setOutput, info } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { Relasy } from "@relasy/core";
 
@@ -7,13 +7,41 @@ type Params = {
   refetch?: boolean;
 };
 
-const { owner, repo } = context.repo;
+const resolveRepo = () => {
+  const owner = context.repo.owner || process.env.RELASY_OWNER;
+  const repo = context.repo.repo || process.env.RELASY_REPO;
+
+  if (!owner || !repo) {
+    throw new Error(
+      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs.",
+    );
+  }
+
+  return { owner, repo };
+};
+
+const resolvePrNumber = () => {
+  const payloadPr = context.payload.pull_request?.number;
+  const issuePr = context.issue.number;
+  const envPr = process.env.RELASY_PR_NUMBER
+    ? Number(process.env.RELASY_PR_NUMBER)
+    : undefined;
+
+  const number = payloadPr ?? issuePr ?? envPr;
+
+  if (!number || Number.isNaN(number)) {
+    throw new Error(
+      "Could not determine PR number. Ensure PR event context exists or set RELASY_PR_NUMBER for local runs.",
+    );
+  }
+
+  return number;
+};
 
 export async function getCurrentPrLabels(
   params: Params = {},
 ): Promise<string[]> {
   const prFromPayload = context.payload.pull_request as any | undefined;
-
   const toName = (l: any) => (typeof l === "string" ? l : l?.name);
 
   // 1) Fast path: use event payload (no API call)
@@ -29,13 +57,8 @@ export async function getCurrentPrLabels(
     );
   }
 
-  const prNumber = prFromPayload?.number ?? context.issue.number;
-  if (!prNumber) {
-    throw new Error(
-      "Could not determine PR number. Ensure this runs on a PR-related event.",
-    );
-  }
-
+  const { owner, repo } = resolveRepo();
+  const prNumber = resolvePrNumber();
   const octokit = getOctokit(token);
 
   const { data: pr } = await octokit.rest.pulls.get({
@@ -52,9 +75,7 @@ async function run() {
     const headRef = context.payload.pull_request?.head?.ref;
 
     if (headRef?.startsWith("release-")) {
-      console.log(
-        "Skipping label validation for merged release PR targeting main",
-      );
+      info("Skipping label validation for release branch PR");
       return;
     }
 
@@ -65,7 +86,8 @@ async function run() {
         required: false,
       }) === "true";
 
-    const { changeTypes } = relasy.parseLabels(await getCurrentPrLabels());
+    const labels = await getCurrentPrLabels();
+    const { changeTypes } = relasy.parseLabels(labels);
 
     if (requireChangeType && changeTypes.length === 0) {
       throw new Error(
@@ -85,11 +107,8 @@ async function run() {
 
     setOutput("change_type", changeTypes[0] || "");
   } catch (error) {
-    if (error instanceof Error) {
-      setFailed(error.message);
-    } else {
-      setFailed(String(error));
-    }
+    const message = error instanceof Error ? error.message : String(error);
+    setFailed(`validate-pr-labels failed: ${message}`);
   }
 }
 

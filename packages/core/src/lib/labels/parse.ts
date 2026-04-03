@@ -37,7 +37,7 @@ const colors: Record<string, string> = {
   pkg: "FFFFFF",
 };
 
-export const parseLabel = <T extends LabelType>(
+export const parseLabel = (
   config: Config,
   original: string,
 ): Label | undefined => {

@@ -8,14 +8,14 @@ const options = {
 
 export const isKey = <T extends string>(
   obj: Record<T, unknown>,
-  key?: string | null
+  key?: string | null,
 ): key is T => typeof key === "string" && key in obj;
 
 export const exec = (command: string) => execSync(command, options)?.trimEnd();
 
 export const execVoid = (cmd: string) =>
   promisify(execProcess)(cmd, options).then(({ stdout }) =>
-    console.log(stdout)
+    console.log(stdout),
   );
 
 export const exit = (error: Error) => {

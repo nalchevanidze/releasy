@@ -17581,12 +17581,12 @@ var require_lib = __commonJS({
             throw new Error("Client has already been disposed.");
           }
           const parsedUrl = new URL(requestUrl);
-          let info = this._prepareRequest(verb, parsedUrl, headers);
+          let info2 = this._prepareRequest(verb, parsedUrl, headers);
           const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
           let numTries = 0;
           let response;
           do {
-            response = yield this.requestRaw(info, data);
+            response = yield this.requestRaw(info2, data);
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
               let authenticationHandler;
               for (const handler of this.handlers) {
@@ -17596,7 +17596,7 @@ var require_lib = __commonJS({
                 }
               }
               if (authenticationHandler) {
-                return authenticationHandler.handleAuthentication(this, info, data);
+                return authenticationHandler.handleAuthentication(this, info2, data);
               } else {
                 return response;
               }
@@ -17619,8 +17619,8 @@ var require_lib = __commonJS({
                   }
                 }
               }
-              info = this._prepareRequest(verb, parsedRedirectUrl, headers);
-              response = yield this.requestRaw(info, data);
+              info2 = this._prepareRequest(verb, parsedRedirectUrl, headers);
+              response = yield this.requestRaw(info2, data);
               redirectsRemaining--;
             }
             if (!response.message.statusCode || !HttpResponseRetryCodes.includes(response.message.statusCode)) {
@@ -17649,7 +17649,7 @@ var require_lib = __commonJS({
        * @param info
        * @param data
        */
-      requestRaw(info, data) {
+      requestRaw(info2, data) {
         return __awaiter(this, void 0, void 0, function* () {
           return new Promise((resolve, reject) => {
             function callbackForResult(err, res) {
@@ -17661,7 +17661,7 @@ var require_lib = __commonJS({
                 resolve(res);
               }
             }
-            this.requestRawWithCallback(info, data, callbackForResult);
+            this.requestRawWithCallback(info2, data, callbackForResult);
           });
         });
       }
@@ -17671,12 +17671,12 @@ var require_lib = __commonJS({
        * @param data
        * @param onResult
        */
-      requestRawWithCallback(info, data, onResult) {
+      requestRawWithCallback(info2, data, onResult) {
         if (typeof data === "string") {
-          if (!info.options.headers) {
-            info.options.headers = {};
+          if (!info2.options.headers) {
+            info2.options.headers = {};
           }
-          info.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+          info2.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
         }
         let callbackCalled = false;
         function handleResult(err, res) {
@@ -17685,7 +17685,7 @@ var require_lib = __commonJS({
             onResult(err, res);
           }
         }
-        const req = info.httpModule.request(info.options, (msg) => {
+        const req = info2.httpModule.request(info2.options, (msg) => {
           const res = new HttpClientResponse(msg);
           handleResult(void 0, res);
         });
@@ -17697,7 +17697,7 @@ var require_lib = __commonJS({
           if (socket) {
             socket.end();
           }
-          handleResult(new Error(`Request timeout: ${info.options.path}`));
+          handleResult(new Error(`Request timeout: ${info2.options.path}`));
         });
         req.on("error", function(err) {
           handleResult(err);
@@ -17733,27 +17733,27 @@ var require_lib = __commonJS({
         return this._getProxyAgentDispatcher(parsedUrl, proxyUrl);
       }
       _prepareRequest(method, requestUrl, headers) {
-        const info = {};
-        info.parsedUrl = requestUrl;
-        const usingSsl = info.parsedUrl.protocol === "https:";
-        info.httpModule = usingSsl ? https : http;
+        const info2 = {};
+        info2.parsedUrl = requestUrl;
+        const usingSsl = info2.parsedUrl.protocol === "https:";
+        info2.httpModule = usingSsl ? https : http;
         const defaultPort = usingSsl ? 443 : 80;
-        info.options = {};
-        info.options.host = info.parsedUrl.hostname;
-        info.options.port = info.parsedUrl.port ? parseInt(info.parsedUrl.port) : defaultPort;
-        info.options.path = (info.parsedUrl.pathname || "") + (info.parsedUrl.search || "");
-        info.options.method = method;
-        info.options.headers = this._mergeHeaders(headers);
+        info2.options = {};
+        info2.options.host = info2.parsedUrl.hostname;
+        info2.options.port = info2.parsedUrl.port ? parseInt(info2.parsedUrl.port) : defaultPort;
+        info2.options.path = (info2.parsedUrl.pathname || "") + (info2.parsedUrl.search || "");
+        info2.options.method = method;
+        info2.options.headers = this._mergeHeaders(headers);
         if (this.userAgent != null) {
-          info.options.headers["user-agent"] = this.userAgent;
+          info2.options.headers["user-agent"] = this.userAgent;
         }
-        info.options.agent = this._getAgent(info.parsedUrl);
+        info2.options.agent = this._getAgent(info2.parsedUrl);
         if (this.handlers) {
           for (const handler of this.handlers) {
-            handler.prepareRequest(info.options);
+            handler.prepareRequest(info2.options);
           }
         }
-        return info;
+        return info2;
       }
       _mergeHeaders(headers) {
         if (this.requestOptions && this.requestOptions.headers) {
@@ -19743,10 +19743,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       (0, command_1.issueCommand)("notice", (0, utils_1.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
     }
     exports2.notice = notice;
-    function info(message) {
+    function info2(message) {
       process.stdout.write(message + os.EOL);
     }
-    exports2.info = info;
+    exports2.info = info2;
     function startGroup(name) {
       (0, command_1.issue)("group", name);
     }
@@ -26505,8 +26505,8 @@ var require_context = __commonJS({
       }
       get repo() {
         if (process.env.GITHUB_REPOSITORY) {
-          const [owner2, repo2] = process.env.GITHUB_REPOSITORY.split("/");
-          return { owner: owner2, repo: repo2 };
+          const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+          return { owner, repo };
         }
         if (this.payload.repository) {
           return {
@@ -28806,6 +28806,24 @@ var require_gh = __commonJS({
       }
       return GITHUB_TOKEN;
     };
+    var isDryRun2 = () => process.env.RELASY_DRY_RUN === "true";
+    var sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    var withRetry2 = async (label, fn) => {
+      const attempts = 3;
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          return await fn();
+        } catch (error) {
+          const status = error?.status;
+          const retryable = status === 429 || status !== void 0 && status >= 500;
+          if (!retryable || attempt === attempts) {
+            throw new Error(`${label} failed after ${attempt} attempt(s): ${error?.message ?? String(error)}`);
+          }
+          await sleep2(300 * attempt);
+        }
+      }
+      throw new Error(`${label} failed: exhausted retries`);
+    };
     var defaultUser = {
       name: "github-actions[bot]",
       email: "41898282+github-actions[bot]@users.noreply.github.com"
@@ -28826,7 +28844,7 @@ var require_gh = __commonJS({
               ${chunk.map((n) => `item_${n}:${f(n)}`).join("\n")}
             }
           }`;
-            const data = await this.octokit.graphql(query);
+            const data = await withRetry2("GitHub GraphQL batch", () => this.octokit.graphql(query));
             return Object.values(data.repository);
           }));
           return output.flat().filter(Boolean);
@@ -28834,23 +28852,64 @@ var require_gh = __commonJS({
         this.issue = (n) => `https://${this.path}/issues/${n}`;
         this.release = async (version, body) => {
           const name = `release-${version.toString()}`;
+          if (isDryRun2()) {
+            console.log(`[dry-run] Would create or reuse release PR for branch ${name} in ${this.org}/${this.repo}`);
+            return {
+              data: {
+                number: 0,
+                html_url: `https://github.com/${this.org}/${this.repo}/pull/0`
+              }
+            };
+          }
+          const existing = await withRetry2("Check existing release PR", async () => {
+            const { data } = await this.octokit.rest.pulls.list({
+              owner: this.org,
+              repo: this.repo,
+              state: "open",
+              head: `${this.org}:${name}`,
+              base: "main",
+              per_page: 1
+            });
+            return data[0];
+          });
+          if (existing) {
+            console.log(`Reusing existing release PR: ${existing.html_url}`);
+            return {
+              data: {
+                number: existing.number,
+                html_url: existing.html_url
+              }
+            };
+          }
           (0, git_1.git)("add", ".");
           (0, git_1.git)("status");
-          (0, git_1.git)("commit", "-m", `"${name}"`);
+          try {
+            (0, git_1.git)("commit", "-m", `"${name}"`);
+          } catch {
+            console.log("No new changes to commit before drafting release PR.");
+          }
           (0, git_1.git)("push", `https://${token()}@${this.path}.git`, `HEAD:${name}`);
-          return this.octokit.rest.pulls.create({
-            owner: this.org,
-            repo: this.repo,
-            head: name,
-            draft: true,
-            base: "main",
-            title: `Publish Release ${version.toString()}`,
-            body
+          return withRetry2("Create release PR", async () => {
+            const pr = await this.octokit.rest.pulls.create({
+              owner: this.org,
+              repo: this.repo,
+              head: name,
+              draft: true,
+              base: "main",
+              title: `Publish Release ${version.toString()}`,
+              body
+            });
+            return {
+              data: {
+                number: pr.data.number,
+                html_url: pr.data.html_url
+              }
+            };
           });
         };
-        const [org, repo2] = path.split("/");
+        const [org, repo] = path.split("/");
         this.org = org;
-        this.repo = repo2;
+        this.repo = repo;
         this.user = user;
       }
       get path() {
@@ -38077,7 +38136,7 @@ var require_partial = __commonJS({
       match(filepath) {
         const parts = filepath.split("/");
         const levels = parts.length;
-        const patterns = this._storage.filter((info) => !info.complete || info.segments.length > levels);
+        const patterns = this._storage.filter((info2) => !info2.complete || info2.segments.length > levels);
         for (const pattern of patterns) {
           const section = pattern.sections[0];
           if (!pattern.complete && levels > section.length) {
@@ -45505,14 +45564,26 @@ var require_fetch2 = __commonJS({
   "../../packages/core/dist/lib/changelog/fetch.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.FetchApi = void 0;
+    exports2.FetchApi = exports2.parsePRNumberFromCommitMessage = void 0;
     var ramda_1 = require_src();
     var labels_1 = require_labels();
     var git_1 = require_git();
-    var parseNumber = (msg) => {
-      const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
-      return num ? parseInt(num, 10) : void 0;
+    var parsePRNumberFromCommitMessage = (msg) => {
+      const patterns = [
+        /\(#(?<prNumber>[0-9]+)\)/m,
+        /pull request #(?<prNumber>[0-9]+)/im,
+        /\bPR\s*#(?<prNumber>[0-9]+)\b/im,
+        /\B#(?<prNumber>[0-9]+)\b/m
+      ];
+      for (const pattern of patterns) {
+        const num = pattern.exec(msg)?.groups?.prNumber;
+        if (num) {
+          return parseInt(num, 10);
+        }
+      }
+      return void 0;
     };
+    exports2.parsePRNumberFromCommitMessage = parsePRNumberFromCommitMessage;
     var FetchApi = class {
       constructor(api) {
         this.api = api;
@@ -45534,7 +45605,7 @@ var require_fetch2 = __commonJS({
       author { login url }
       labels(first: 10) { nodes { name } }
     }`);
-        this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? parseNumber(c.message);
+        this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? (0, exports2.parsePRNumberFromCommitMessage)(c.message);
         this.changes = (version) => this.commits((0, git_1.commitsAfterVersion)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
           const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           return {
@@ -45678,34 +45749,102 @@ var import_core = __toESM(require_core());
 var import_rest = __toESM(require_dist_node12());
 var import_github = __toESM(require_github());
 var import_core2 = __toESM(require_dist());
-var { owner, repo } = import_github.context.repo;
-var getbody = () => {
+var resolveRepo = () => {
+  const owner = import_github.context.repo.owner || process.env.RELASY_OWNER;
+  const repo = import_github.context.repo.repo || process.env.RELASY_REPO;
+  if (!owner || !repo) {
+    throw new Error(
+      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs."
+    );
+  }
+  return { owner, repo };
+};
+var getBody = () => {
   const inputBody = (0, import_core.getInput)("body", { required: false });
   if (inputBody && inputBody.trim().length > 0) {
     return inputBody;
   }
   return import_github.context.payload.pull_request?.body ?? "";
 };
+var isDryRun = () => process.env.RELASY_DRY_RUN === "true";
+var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+var withRetry = async (label, fn) => {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const status = error?.status;
+      const retryable = status === 429 || status !== void 0 && status >= 500;
+      if (!retryable || attempt === 3) {
+        throw new Error(
+          `${label} failed after ${attempt} attempt(s): ${error?.message ?? String(error)}`
+        );
+      }
+      await sleep(300 * attempt);
+    }
+  }
+  throw new Error(`${label} failed: exhausted retries`);
+};
 async function run() {
   try {
     const relasy = await import_core2.Relasy.load();
+    const { owner, repo } = resolveRepo();
     const octokit = new import_rest.Octokit({ auth: process.env.GITHUB_TOKEN });
     const version = relasy.version().toString();
-    const { data } = await octokit.repos.createRelease({
-      owner,
-      repo,
-      tag_name: version,
-      name: version,
-      body: getbody()
+    if (isDryRun()) {
+      (0, import_core.info)(
+        `[dry-run] Would create or reuse release ${version} in ${owner}/${repo}`
+      );
+      (0, import_core.setOutput)("id", "0");
+      (0, import_core.setOutput)(
+        "upload_url",
+        `https://uploads.github.com/repos/${owner}/${repo}/releases/0/assets{?name,label}`
+      );
+      return;
+    }
+    const existing = await withRetry("Get release by tag", async () => {
+      try {
+        const { data: data2 } = await octokit.repos.getReleaseByTag({
+          owner,
+          repo,
+          tag: version
+        });
+        return data2;
+      } catch (error) {
+        if (error?.status === 404) {
+          return void 0;
+        }
+        throw error;
+      }
     });
+    if (existing) {
+      (0, import_core.info)(`Release ${version} already exists: ${existing.html_url}`);
+      (0, import_core.setOutput)("id", String(existing.id));
+      (0, import_core.setOutput)("upload_url", existing.upload_url);
+      return;
+    }
+    const { data } = await withRetry(
+      "Create release",
+      () => octokit.repos.createRelease({
+        owner,
+        repo,
+        tag_name: version,
+        name: version,
+        body: getBody()
+      })
+    );
     (0, import_core.setOutput)("id", data.id);
     (0, import_core.setOutput)("upload_url", data.upload_url);
   } catch (error) {
-    if (error instanceof Error) {
-      (0, import_core.setFailed)(error.message);
-    } else {
-      (0, import_core.setFailed)(String(error));
-    }
+    const { owner, repo } = (() => {
+      try {
+        return resolveRepo();
+      } catch {
+        return { owner: "<unknown>", repo: "<unknown>" };
+      }
+    })();
+    const message = error instanceof Error ? error.message : String(error);
+    (0, import_core.setFailed)(`publish-release failed for ${owner}/${repo}: ${message}`);
   }
 }
 if (require.main === module) {

@@ -5,7 +5,7 @@ on:
 
 permissions:
   contents: write
-  
+
 jobs:
   publish_release:
     if: ${{ github.base_ref == 'main' && startsWith(github.head_ref, 'release-') && github.event.pull_request.merged == true  }}
@@ -13,13 +13,13 @@ jobs:
     outputs:
       upload_url: ${{ steps.publish.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Publish to Registry
         run: # Commands to publish package to registry
 
       - name: Publish Release
-        uses: nalchevanidze/relasy/actions/publish-release@main
+        uses: ./actions/publish-release
         id: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

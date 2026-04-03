@@ -19,7 +19,39 @@ const token = () => {
   if (!GITHUB_TOKEN) {
     throw new Error("missing variable: GITHUB_TOKEN");
   }
+
   return GITHUB_TOKEN;
+};
+
+const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const withRetry = async <T>(
+  label: string,
+  fn: () => Promise<T>,
+): Promise<T> => {
+  const attempts = 3;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      const status = error?.status as number | undefined;
+      const retryable =
+        status === 429 || (status !== undefined && status >= 500);
+
+      if (!retryable || attempt === attempts) {
+        throw new Error(
+          `${label} failed after ${attempt} attempt(s): ${error?.message ?? String(error)}`,
+        );
+      }
+
+      await sleep(300 * attempt);
+    }
+  }
+
+  throw new Error(`${label} failed: exhausted retries`);
 };
 
 const defaultUser = {
@@ -71,9 +103,11 @@ export class Github {
             }
           }`;
 
-          const data = await this.octokit.graphql<{
-            repository: Record<string, O | null>;
-          }>(query);
+          const data = await withRetry("GitHub GraphQL batch", () =>
+            this.octokit.graphql<{
+              repository: Record<string, O | null>;
+            }>(query),
+          );
 
           return Object.values(data.repository);
         }),
@@ -90,19 +124,71 @@ export class Github {
   ): Promise<{ data: { number: number; html_url: string } }> => {
     const name = `release-${version.toString()}`;
 
+    if (isDryRun()) {
+      console.log(
+        `[dry-run] Would create or reuse release PR for branch ${name} in ${this.org}/${this.repo}`,
+      );
+
+      return {
+        data: {
+          number: 0,
+          html_url: `https://github.com/${this.org}/${this.repo}/pull/0`,
+        },
+      };
+    }
+
+    const existing = await withRetry("Check existing release PR", async () => {
+      const { data } = await this.octokit.rest.pulls.list({
+        owner: this.org,
+        repo: this.repo,
+        state: "open",
+        head: `${this.org}:${name}`,
+        base: "main",
+        per_page: 1,
+      });
+
+      return data[0];
+    });
+
+    if (existing) {
+      console.log(`Reusing existing release PR: ${existing.html_url}`);
+
+      return {
+        data: {
+          number: existing.number,
+          html_url: existing.html_url,
+        },
+      };
+    }
+
     git("add", ".");
     git("status");
-    git("commit", "-m", `"${name}"`);
+
+    try {
+      git("commit", "-m", `"${name}"`);
+    } catch {
+      console.log("No new changes to commit before drafting release PR.");
+    }
+
     git("push", `https://${token()}@${this.path}.git`, `HEAD:${name}`);
 
-    return this.octokit.rest.pulls.create({
-      owner: this.org,
-      repo: this.repo,
-      head: name,
-      draft: true,
-      base: "main",
-      title: `Publish Release ${version.toString()}`,
-      body,
+    return withRetry("Create release PR", async () => {
+      const pr = await this.octokit.rest.pulls.create({
+        owner: this.org,
+        repo: this.repo,
+        head: name,
+        draft: true,
+        base: "main",
+        title: `Publish Release ${version.toString()}`,
+        body,
+      });
+
+      return {
+        data: {
+          number: pr.data.number,
+          html_url: pr.data.html_url,
+        },
+      };
     });
   };
 }

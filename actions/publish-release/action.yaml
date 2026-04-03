@@ -1,17 +1,17 @@
-name: 'Create a Release'
-description: 'Create a release for a tag in your repository'
-author: 'GitHub'
+name: "Create a Release"
+description: "Create a release for a tag in your repository"
+author: "GitHub"
 inputs:
   body:
-    description: 'Text describing the contents of the tag.'
+    description: "Text describing the contents of the tag."
     required: false
 
 outputs:
   id:
-    description: 'The ID of the created Release'
+    description: "The ID of the created Release"
   upload_url:
-    description: 'The URL for uploading assets to the release'
+    description: "The URL for uploading assets to the release"
 
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: "node20"
+  main: "dist/index.js"

@@ -130,6 +130,17 @@ Supported managers:
 - `type: "npm"`
 - `type: "custom"`
 
+For `type: "npm"`, optional fields are supported:
+
+- `build` (optional string): command used after bumping (e.g. `pnpm run build`)
+- `postBump` (optional string): override command executed after bumping; takes precedence over `build`
+
+If neither `build` nor `postBump` is set, Relasy auto-detects the package manager from lockfiles and runs one of:
+
+- `pnpm run build`
+- `yarn build`
+- `npm run build`
+
 If `type` is `"custom"`, the following fields are required:
 
 - `version` (string): command to retrieve the current version
@@ -149,7 +160,8 @@ If `type` is `"custom"`, the following fields are required:
     "core": "relasy/core"
   },
   "project": {
-    "type": "npm"
+    "type": "npm",
+    "build": "pnpm run build"
   }
 }
 ```
@@ -386,6 +398,32 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+---
+
+## Local runs and dry-run mode
+
+You can run Relasy actions logic on a local machine for debugging.
+
+Required env vars:
+
+- `GITHUB_TOKEN`
+- `RELASY_OWNER` (when GitHub event context is not available)
+- `RELASY_REPO` (when GitHub event context is not available)
+- `RELASY_PR_NUMBER` (for PR-label validation outside PR events)
+
+Optional:
+
+- `RELASY_DRY_RUN=true` — prints intended GitHub mutations without creating PRs/releases/labels.
+
+---
+
+## Troubleshooting
+
+- **Version/tag mismatch**: ensure `package.json` version matches the latest git tag before running `draft-release`.
+- **No tags in repository**: first release is supported; Relasy falls back to scanning all commits.
+- **Duplicate release PR concern**: Relasy reuses an existing open `release-*` PR instead of creating a duplicate.
+- **Release already exists**: publish action reuses existing release by tag and returns its outputs.
 
 ---
 

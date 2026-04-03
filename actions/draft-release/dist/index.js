@@ -26585,6 +26585,24 @@ var require_gh = __commonJS({
       }
       return GITHUB_TOKEN;
     };
+    var isDryRun = () => process.env.RELASY_DRY_RUN === "true";
+    var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    var withRetry = async (label, fn) => {
+      const attempts = 3;
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          return await fn();
+        } catch (error) {
+          const status = error?.status;
+          const retryable = status === 429 || status !== void 0 && status >= 500;
+          if (!retryable || attempt === attempts) {
+            throw new Error(`${label} failed after ${attempt} attempt(s): ${error?.message ?? String(error)}`);
+          }
+          await sleep(300 * attempt);
+        }
+      }
+      throw new Error(`${label} failed: exhausted retries`);
+    };
     var defaultUser = {
       name: "github-actions[bot]",
       email: "41898282+github-actions[bot]@users.noreply.github.com"
@@ -26605,7 +26623,7 @@ var require_gh = __commonJS({
               ${chunk.map((n) => `item_${n}:${f(n)}`).join("\n")}
             }
           }`;
-            const data = await this.octokit.graphql(query);
+            const data = await withRetry("GitHub GraphQL batch", () => this.octokit.graphql(query));
             return Object.values(data.repository);
           }));
           return output.flat().filter(Boolean);
@@ -26613,18 +26631,59 @@ var require_gh = __commonJS({
         this.issue = (n) => `https://${this.path}/issues/${n}`;
         this.release = async (version, body) => {
           const name = `release-${version.toString()}`;
+          if (isDryRun()) {
+            console.log(`[dry-run] Would create or reuse release PR for branch ${name} in ${this.org}/${this.repo}`);
+            return {
+              data: {
+                number: 0,
+                html_url: `https://github.com/${this.org}/${this.repo}/pull/0`
+              }
+            };
+          }
+          const existing = await withRetry("Check existing release PR", async () => {
+            const { data } = await this.octokit.rest.pulls.list({
+              owner: this.org,
+              repo: this.repo,
+              state: "open",
+              head: `${this.org}:${name}`,
+              base: "main",
+              per_page: 1
+            });
+            return data[0];
+          });
+          if (existing) {
+            console.log(`Reusing existing release PR: ${existing.html_url}`);
+            return {
+              data: {
+                number: existing.number,
+                html_url: existing.html_url
+              }
+            };
+          }
           (0, git_1.git)("add", ".");
           (0, git_1.git)("status");
-          (0, git_1.git)("commit", "-m", `"${name}"`);
+          try {
+            (0, git_1.git)("commit", "-m", `"${name}"`);
+          } catch {
+            console.log("No new changes to commit before drafting release PR.");
+          }
           (0, git_1.git)("push", `https://${token()}@${this.path}.git`, `HEAD:${name}`);
-          return this.octokit.rest.pulls.create({
-            owner: this.org,
-            repo: this.repo,
-            head: name,
-            draft: true,
-            base: "main",
-            title: `Publish Release ${version.toString()}`,
-            body
+          return withRetry("Create release PR", async () => {
+            const pr = await this.octokit.rest.pulls.create({
+              owner: this.org,
+              repo: this.repo,
+              head: name,
+              draft: true,
+              base: "main",
+              title: `Publish Release ${version.toString()}`,
+              body
+            });
+            return {
+              data: {
+                number: pr.data.number,
+                html_url: pr.data.html_url
+              }
+            };
           });
         };
         const [org, repo] = path.split("/");
@@ -43284,14 +43343,26 @@ var require_fetch2 = __commonJS({
   "../../packages/core/dist/lib/changelog/fetch.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.FetchApi = void 0;
+    exports2.FetchApi = exports2.parsePRNumberFromCommitMessage = void 0;
     var ramda_1 = require_src();
     var labels_1 = require_labels();
     var git_1 = require_git();
-    var parseNumber = (msg) => {
-      const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
-      return num ? parseInt(num, 10) : void 0;
+    var parsePRNumberFromCommitMessage = (msg) => {
+      const patterns = [
+        /\(#(?<prNumber>[0-9]+)\)/m,
+        /pull request #(?<prNumber>[0-9]+)/im,
+        /\bPR\s*#(?<prNumber>[0-9]+)\b/im,
+        /\B#(?<prNumber>[0-9]+)\b/m
+      ];
+      for (const pattern of patterns) {
+        const num = pattern.exec(msg)?.groups?.prNumber;
+        if (num) {
+          return parseInt(num, 10);
+        }
+      }
+      return void 0;
     };
+    exports2.parsePRNumberFromCommitMessage = parsePRNumberFromCommitMessage;
     var FetchApi = class {
       constructor(api) {
         this.api = api;
@@ -43313,7 +43384,7 @@ var require_fetch2 = __commonJS({
       author { login url }
       labels(first: 10) { nodes { name } }
     }`);
-        this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? parseNumber(c.message);
+        this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? (0, exports2.parsePRNumberFromCommitMessage)(c.message);
         this.changes = (version) => this.commits((0, git_1.commitsAfterVersion)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
           const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           return {

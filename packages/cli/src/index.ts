@@ -2,10 +2,10 @@
 import { Command } from "commander";
 import { Relasy, exit } from "@relasy/core";
 import { writeFile } from "fs/promises";
-import dotenv from 'dotenv'
+import dotenv from "dotenv";
 
 export const main = async () => {
-  dotenv.config()
+  dotenv.config();
 
   const easy = await Relasy.load();
 

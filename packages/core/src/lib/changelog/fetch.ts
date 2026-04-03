@@ -4,9 +4,25 @@ import { parseLabels } from "../labels";
 import { Version } from "../version";
 import { commitsAfterVersion } from "../git";
 
-const parseNumber = (msg: string) => {
-  const num = / \(#(?<prNumber>[0-9]+)\)$/m.exec(msg)?.groups?.prNumber;
-  return num ? parseInt(num, 10) : undefined;
+export const parsePRNumberFromCommitMessage = (
+  msg: string,
+): number | undefined => {
+  const patterns = [
+    /\(#(?<prNumber>[0-9]+)\)/m, // squash merge default
+    /pull request #(?<prNumber>[0-9]+)/im,
+    /\bPR\s*#(?<prNumber>[0-9]+)\b/im,
+    /\B#(?<prNumber>[0-9]+)\b/m,
+  ];
+
+  for (const pattern of patterns) {
+    const num = pattern.exec(msg)?.groups?.prNumber;
+
+    if (num) {
+      return parseInt(num, 10);
+    }
+  }
+
+  return undefined;
 };
 
 export class FetchApi {
@@ -41,7 +57,7 @@ export class FetchApi {
   private toPRNumber = (c: Commit): number | undefined =>
     c.associatedPullRequests.nodes.find(({ repository }) =>
       this.api.github.isOwner(repository),
-    )?.number ?? parseNumber(c.message);
+    )?.number ?? parsePRNumberFromCommitMessage(c.message);
 
   public changes = (version: Version) =>
     this.commits(commitsAfterVersion(version))
