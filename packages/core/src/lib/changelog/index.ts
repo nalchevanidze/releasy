@@ -18,7 +18,17 @@ const detectChangeType = (changes: Change[]) => {
 export const renderChangelog = async (api: Api) => {
   const version = api.module.version();
 
-  version.isEqual(lastTag());
+  try {
+    version.isEqual(lastTag());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (!message.includes("No names found")) {
+      throw new Error(
+        `Unable to continue release. package.json version must match the last git tag. Root cause: ${message}`,
+      );
+    }
+  }
 
   const changes = await new FetchApi(api).changes(version);
 

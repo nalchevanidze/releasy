@@ -4,4 +4,4 @@ import { NpmModule } from "./npm";
 import { Module } from "./types";
 
 export const setupToolchain = (manager: Manager): Module =>
-  manager.type === "npm" ? new NpmModule() : new CustomModule(manager);
+  manager.type === "npm" ? new NpmModule(manager) : new CustomModule(manager);

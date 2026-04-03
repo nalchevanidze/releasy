@@ -24,6 +24,8 @@ export const CustomManagerSchema = z.object({
 
 export const NPMManagerSchema = z.object({
   type: z.literal("npm"),
+  build: z.string().optional(),
+  postBump: z.string().optional(),
 });
 
 export type CustomManager = z.infer<typeof CustomManagerSchema>;

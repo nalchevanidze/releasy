@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import fg from "fast-glob";
+import { NPMManager } from "../config";
 import { Module } from "./types";
 import { exec } from "../utils";
 import { Version } from "../version";
@@ -7,6 +8,7 @@ import { Version } from "../version";
 function readJson(p: string) {
   return JSON.parse(fs.readFileSync(p, "utf8"));
 }
+
 function writeJson(p: string, obj: unknown) {
   fs.writeFileSync(p, JSON.stringify(obj, null, 2) + "\n");
 }
@@ -54,7 +56,23 @@ export async function setup() {
   }
 }
 
+type PackageManager = "pnpm" | "yarn" | "npm";
+
+const detectPackageManager = (): PackageManager => {
+  if (fs.existsSync("pnpm-lock.yaml")) return "pnpm";
+  if (fs.existsSync("yarn.lock")) return "yarn";
+  return "npm";
+};
+
+const defaultBuildCommand = (pm: PackageManager) => {
+  if (pm === "pnpm") return "pnpm run build";
+  if (pm === "yarn") return "yarn build";
+  return "npm run build";
+};
+
 export class NpmModule implements Module {
+  constructor(private config: NPMManager) {}
+
   version() {
     return Version.parse(readJson("package.json").version);
   }
@@ -71,7 +89,13 @@ export class NpmModule implements Module {
 
   async postBump() {
     await setup();
-    await exec("pnpm run build");
+
+    const buildCommand =
+      this.config.postBump ??
+      this.config.build ??
+      defaultBuildCommand(detectPackageManager());
+
+    await exec(buildCommand);
   }
 
   pkg(id: string): string {

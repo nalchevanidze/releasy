@@ -1,4 +1,4 @@
-import axios from "axios";
+import { Octokit } from "@octokit/rest";
 import { git, isUserSet } from "./git";
 import { Version } from "./version";
 
@@ -21,18 +21,6 @@ const token = () => {
   }
   return GITHUB_TOKEN;
 };
-
-const gh = (path: string, body: {}) =>
-  axios
-    .post(`https://api.github.com/${path}`, JSON.stringify(body), {
-      headers: {
-        authorization: `Bearer ${token()}`,
-        "content-type": "application/json",
-        accept: "Accept: application/vnd.github.v3+json",
-      },
-    })
-    .then(({ data }) => data.data)
-    .catch((err) => Promise.reject(err.message));
 
 const defaultUser = {
   name: "github-actions[bot]",
@@ -58,6 +46,10 @@ export class Github {
     return `github.com/${this.org}/${this.repo}`;
   }
 
+  private get octokit() {
+    return new Octokit({ auth: token() });
+  }
+
   public setup = () => {
     if (isUserSet()) return;
 
@@ -70,22 +62,32 @@ export class Github {
 
   public batch =
     <O>(f: (_: string | number) => string) =>
-    (items: Array<string | number>) =>
-      Promise.all(
-        chunks(items).map((chunk) =>
-          gh("graphql", {
-            query: `{
-          repository(owner: "${this.org}", name: "${this.repo}") {
-          ${chunk.map((n) => `item_${n}:${f(n)}`).join("\n")}
-        }
-      }`,
-          }).then(({ repository }) => Object.values(repository)),
-        ),
-      ).then((x) => x.flat().filter(Boolean) as O[]);
+    async (items: Array<string | number>) => {
+      const output = await Promise.all(
+        chunks(items).map(async (chunk) => {
+          const query = `query {
+            repository(owner: "${this.org}", name: "${this.repo}") {
+              ${chunk.map((n) => `item_${n}:${f(n)}`).join("\n")}
+            }
+          }`;
+
+          const data = await this.octokit.graphql<{
+            repository: Record<string, O | null>;
+          }>(query);
+
+          return Object.values(data.repository);
+        }),
+      );
+
+      return output.flat().filter(Boolean) as O[];
+    };
 
   public issue = (n: number) => `https://${this.path}/issues/${n}`;
 
-  public release = async (version: Version, body: string) => {
+  public release = async (
+    version: Version,
+    body: string,
+  ): Promise<{ data: { number: number; html_url: string } }> => {
     const name = `release-${version.toString()}`;
 
     git("add", ".");
@@ -93,12 +95,12 @@ export class Github {
     git("commit", "-m", `"${name}"`);
     git("push", `https://${token()}@${this.path}.git`, `HEAD:${name}`);
 
-    return gh(`repos/${this.org}/${this.repo}/pulls`, {
+    return this.octokit.rest.pulls.create({
+      owner: this.org,
+      repo: this.repo,
       head: name,
       draft: true,
       base: "main",
-      owner: this.org,
-      repo: this.repo,
       title: `Publish Release ${version.toString()}`,
       body,
     });

@@ -20,6 +20,8 @@ export const lastTag = () => git("describe", "--abbrev=0", "--tags");
 const commitsAfter = (tag: string) =>
   git("rev-list", "--reverse", `${tag}..`).split("\n");
 
+const commitsAll = () => git("rev-list", "--reverse", "HEAD").split("\n");
+
 const isUserSet = () => {
   try {
     const user = `${git("config", "user.name")}${git(
@@ -37,7 +39,11 @@ export const commitsAfterVersion = (version: Version) => {
   try {
     return commitsAfter(version.toString());
   } catch {
-    return commitsAfter(version.value);
+    try {
+      return commitsAfter(version.value);
+    } catch {
+      return commitsAll();
+    }
   }
 };
 
