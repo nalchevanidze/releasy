@@ -22,9 +22,8 @@ async function run() {
 
     console.log(`fetched labels: ${JSON.stringify(ls)}`);
 
-    Promise.all(
+    await Promise.all(
       relasy.labels(ls).map(async (label) => {
-
         if (label?.existing) {
           return octokit.rest.issues.updateLabel({
             owner,

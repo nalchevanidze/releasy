@@ -3,7 +3,6 @@ import fg from "fast-glob";
 import { Module } from "./types";
 import { exec } from "../utils";
 import { Version } from "../version";
-import { ar } from "vitest/dist/global-58e8e951";
 
 function readJson(p: string) {
   return JSON.parse(fs.readFileSync(p, "utf8"));
