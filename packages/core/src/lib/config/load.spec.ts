@@ -1,9 +1,12 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import {
+  loadRawConfig,
   normalizeConfig,
   normalizeConfigInputKeys,
   validateChangelogTemplates,
 } from "./load";
+
+const fsPromises = require("node:fs/promises") as typeof import("node:fs/promises");
 
 describe("config normalization", () => {
   test("defaults policy fields", () => {
@@ -70,6 +73,55 @@ describe("config normalization", () => {
         },
       }),
     ).toThrow("Duplicate semantic key");
+  });
+});
+
+describe("config file loading", () => {
+  test("loads relasy.yaml successfully", async () => {
+    const accessSpy = vi
+      .spyOn(fsPromises, "access")
+      .mockImplementation(async (path: any) => {
+        if (path === "./relasy.yaml") return;
+        throw new Error("not found");
+      });
+
+    const readSpy = vi
+      .spyOn(fsPromises, "readFile")
+      .mockResolvedValue(
+        [
+          "pkgs:",
+          "  core:",
+          "    name: '@acme/core'",
+          "project:",
+          "  type: npm",
+        ].join("\n"),
+      );
+
+    try {
+      const cfg = await loadRawConfig();
+      expect(cfg.project.type).toBe("npm");
+      expect((cfg.pkgs as any).core.name ?? (cfg.pkgs as any).core).toBe(
+        "@acme/core",
+      );
+      expect(readSpy).toHaveBeenCalledWith("./relasy.yaml", "utf8");
+    } finally {
+      accessSpy.mockRestore();
+      readSpy.mockRestore();
+    }
+  });
+
+  test("rejects relasy.json-only repositories (yaml required)", async () => {
+    const accessSpy = vi
+      .spyOn(fsPromises, "access")
+      .mockRejectedValue(new Error("not found"));
+
+    try {
+      await expect(loadRawConfig()).rejects.toThrow(
+        "Missing configuration file. Expected relasy.yaml or relasy.yml.",
+      );
+    } finally {
+      accessSpy.mockRestore();
+    }
   });
 });
 
