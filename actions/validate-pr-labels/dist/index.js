@@ -33221,6 +33221,7 @@ var require_schema = __commonJS({
     });
     exports2.ManagerSchema = z.union([exports2.NPMManagerSchema, exports2.CustomManagerSchema]);
     exports2.ConfigSchema = z.object({
+      configVersion: z.literal(1).optional(),
       pkgs: z.record(z.string(), z.string()),
       project: exports2.ManagerSchema,
       labelPolicy: z.enum(["strict", "permissive"]).optional(),
@@ -33250,22 +33251,62 @@ var require_load = __commonJS({
   "../../packages/core/dist/lib/config/load.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadConfig = void 0;
+    exports2.loadConfig = exports2.normalizeConfig = exports2.validateChangelogTemplates = void 0;
     var promises_1 = require("fs/promises");
     var git_1 = require_git();
     var defaults_1 = require_defaults();
     var schema_1 = require_schema();
-    var loadConfig = async () => {
-      const data = await (0, promises_1.readFile)("./relasy.json", "utf8").then(JSON.parse);
-      const config = schema_1.ConfigSchema.parse(data);
-      const gh = (0, git_1.remote)();
+    var readPlaceholders = (template) => {
+      const out = [];
+      const re = /{{([A-Z_]+)}}/g;
+      let match = null;
+      while (match = re.exec(template)) {
+        out.push(match[1]);
+      }
+      return out;
+    };
+    var validateTemplate = (label, template, required, allowed) => {
+      const placeholders = readPlaceholders(template);
+      const missing = required.filter((x) => !placeholders.includes(x));
+      if (missing.length > 0) {
+        throw new Error(`${label} is missing required placeholders: ${missing.join(", ")}`);
+      }
+      const unknown = placeholders.filter((x) => !allowed.includes(x));
+      if (unknown.length > 0) {
+        throw new Error(`${label} contains unknown placeholders: ${unknown.join(", ")}`);
+      }
+    };
+    var validateChangelogTemplates = (changelog) => {
+      if (!changelog)
+        return;
+      if (changelog.headerTemplate) {
+        validateTemplate("changelog.headerTemplate", changelog.headerTemplate, ["VERSION", "DATE"], ["VERSION", "DATE"]);
+      }
+      if (changelog.sectionTemplate) {
+        validateTemplate("changelog.sectionTemplate", changelog.sectionTemplate, ["LABEL", "CHANGES"], ["LABEL", "CHANGES"]);
+      }
+      if (changelog.itemTemplate) {
+        validateTemplate("changelog.itemTemplate", changelog.itemTemplate, ["REF", "TITLE"], ["REF", "TITLE", "AUTHOR", "PACKAGES", "BODY", "DETAILS", "STATS"]);
+      }
+    };
+    exports2.validateChangelogTemplates = validateChangelogTemplates;
+    var normalizeConfig = (config, gh) => {
+      (0, exports2.validateChangelogTemplates)(config.changelog);
       return {
         ...config,
         gh,
+        configVersion: config.configVersion ?? 1,
         labelPolicy: config.labelPolicy ?? "strict",
         nonPrCommitsPolicy: config.nonPrCommitsPolicy ?? "skip",
         changeTypes: defaults_1.defaultChangeTypes
       };
+    };
+    exports2.normalizeConfig = normalizeConfig;
+    var loadConfig = async () => {
+      const data = await (0, promises_1.readFile)("./relasy.json", "utf8").then(JSON.parse);
+      const config = schema_1.ConfigSchema.parse(data);
+      const gh = (0, git_1.remote)();
+      return (0, exports2.normalizeConfig)(config, gh);
     };
     exports2.loadConfig = loadConfig;
   }

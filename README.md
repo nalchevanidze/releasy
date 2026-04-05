@@ -94,13 +94,16 @@ At a high level, `relasy.json` describes:
 
 - the **pkgs** in your repo (single package or many packages/modules)
 - which **tooling** is used to resolve versioning/publishing details (`project`)
+- configuration schema version (`configVersion`)
 - label parsing behavior (`labelPolicy`)
 - changelog rendering preferences (`changelog`)
+- non-PR commit handling policy (`nonPrCommitsPolicy`)
 
 ### Schema overview
 
 ```json
 {
+  "configVersion": 1,
   "pkgs": {
     "shortName": "long-package-identifier"
   },
@@ -108,8 +111,11 @@ At a high level, `relasy.json` describes:
     "type": "npm"
   },
   "labelPolicy": "strict",
+  "nonPrCommitsPolicy": "skip",
   "changelog": {
     "headerTemplate": "## {{VERSION}} ({{DATE}})",
+    "sectionTemplate": "#### {{LABEL}}\n{{CHANGES}}",
+    "itemTemplate": "* {{REF}}: {{TITLE}}",
     "groupByPackage": false
   }
 }
@@ -148,6 +154,9 @@ If neither `build` nor `postBump` is set, Relasy auto-detects the package manage
 - `pnpm run build`
 - `yarn build`
 - `npm run build`
+
+`configVersion` identifies the config schema version (current: `1`).
+If omitted, Relasy defaults to version `1` for backward compatibility. See `CONFIG_VERSIONING.md`.
 
 `labelPolicy` controls handling of invalid/unknown labels:
 

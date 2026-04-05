@@ -9,6 +9,7 @@ export {
 export type {
   ChangelogConfig,
   ChangeType,
+  ConfigVersion,
   CustomManager,
   LabelPolicy,
   LabelType,

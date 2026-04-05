@@ -11,6 +11,8 @@ export type ChangelogConfig = {
   groupByPackage?: boolean;
 };
 
+export type ConfigVersion = 1;
+
 export type NonPrCommitPolicy = "include" | "skip" | "strict-fail";
 
 export const ChangelogConfigSchema = z
@@ -63,6 +65,7 @@ export const ManagerSchema = z.union([NPMManagerSchema, CustomManagerSchema]);
 export type Manager = z.infer<typeof ManagerSchema>;
 
 export const ConfigSchema = z.object({
+  configVersion: z.literal(1).optional(),
   pkgs: z.record(z.string(), z.string()),
   project: ManagerSchema,
   labelPolicy: z.enum(["strict", "permissive"]).optional(),
