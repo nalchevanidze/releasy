@@ -24,6 +24,14 @@ const baseApi = (changelog?: Api["config"]["changelog"]): Api => ({
       docs: "Documentation",
       test: "Testing",
     },
+    changeTypeEmojis: {
+      breaking: "💥",
+      feature: "✨",
+      fix: "🐛",
+      chore: "🧹",
+      docs: "📚",
+      test: "🧪",
+    },
     policies: {
       labelMode: "strict",
       autoAddInferredPackages: false,
@@ -168,6 +176,29 @@ describe("RenderAPI snapshots", () => {
     expect(markdown).toMatchSnapshot();
   });
 
+  test("package grouping normalizes multi-package keys", () => {
+    const api = baseApi({
+      grouping: "package",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("3.4.1"), [
+      c({
+        number: 30,
+        type: "feature",
+        title: "Ship shared auth layer",
+        pkgs: ["web", "core"],
+      }),
+      c({
+        number: 31,
+        type: "feature",
+        title: "Expand auth docs",
+        pkgs: ["core", "web"],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
   test("custom section/item templates", () => {
     const api = baseApi({
       templates: {
@@ -182,6 +213,183 @@ describe("RenderAPI snapshots", () => {
         number: 40,
         type: "feature",
         title: "Template driven entry",
+        pkgs: ["core"],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("grouping none renders a flat list without sections", () => {
+    const api = baseApi({
+      grouping: "none",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.1"), [
+      c({
+        number: 50,
+        type: "feature",
+        title: "Add keyboard shortcuts",
+        pkgs: ["web"],
+      }),
+      c({
+        number: 51,
+        type: "fix",
+        title: "Handle null session",
+        pkgs: ["core"],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("package grouping renders normalized multi-package sections", () => {
+    const api = baseApi({
+      grouping: "package",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.2"), [
+      c({
+        number: 52,
+        type: "fix",
+        title: "Align package order",
+        pkgs: ["web", "core", "web"],
+      }),
+      c({
+        number: 53,
+        type: "fix",
+        title: "Keep grouping stable",
+        pkgs: ["core", "web"],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("unknown package labels fall back to raw names with links when available", () => {
+    const api = baseApi({
+      grouping: "scope",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.3"), [
+      c({
+        number: 54,
+        type: "feature",
+        title: "Wire analytics hook",
+        pkgs: ["sdk"],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("item template can consume DETAILS and STATS placeholders", () => {
+    const api = baseApi({
+      templates: {
+        item: "* {{TITLE}}\n  source={{REF}}\n  stats={{STATS}}\n  details={{DETAILS}}",
+      },
+      grouping: "scope",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.4"), [
+      c({
+        number: 55,
+        type: "docs",
+        title: "Add migration guide",
+        body: "Step 1\nStep 2",
+        pkgs: ["cli", "core"],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("empty change list renders a friendly empty-state note", () => {
+    const api = baseApi({
+      grouping: "scope",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.5"), []);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("section templates are ignored when grouping is none", () => {
+    const api = baseApi({
+      templates: {
+        section: "### {{LABEL}}\n{{CHANGES}}",
+      },
+      grouping: "none",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.6"), [
+      c({
+        number: 56,
+        type: "test",
+        title: "Increase coverage for renderer",
+        pkgs: ["core"],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("default layout renders top-level visual summary", () => {
+    const api = baseApi({
+      grouping: "scope",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.7"), [
+      c({
+        number: 57,
+        type: "feature",
+        title: "Ship composer",
+        pkgs: ["core"],
+      }),
+      c({ number: 58, type: "feature", title: "Ship presets", pkgs: ["web"] }),
+      c({ number: 59, type: "fix", title: "Fix lint script", pkgs: ["cli"] }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("custom item template skips default visual summary", () => {
+    const api = baseApi({
+      templates: {
+        item: "- {{TITLE}}",
+      },
+      grouping: "scope",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.8"), [
+      c({ number: 60, type: "docs", title: "Add style guide", pkgs: ["core"] }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("section icons come from user config changeTypeEmojis", () => {
+    const api = baseApi({
+      grouping: "scope",
+    });
+
+    api.config.changeTypeEmojis = {
+      ...api.config.changeTypeEmojis,
+      feature: "🚀",
+      fix: "🛠️",
+    };
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.9"), [
+      c({
+        number: 61,
+        type: "feature",
+        title: "Ship inline editor",
+        pkgs: ["web"],
+      }),
+      c({
+        number: 62,
+        type: "fix",
+        title: "Handle stale cache",
         pkgs: ["core"],
       }),
     ]);
