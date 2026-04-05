@@ -50,7 +50,7 @@ export const parseLabels = (
       try {
         return parseLabel(config, label);
       } catch (error) {
-        if ((config.labelPolicy ?? "strict") === "permissive") {
+        if ((config.policies?.labelMode ?? "strict") === "permissive") {
           return undefined;
         }
 

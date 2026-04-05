@@ -72,17 +72,18 @@ export const evaluatePackageScopeRules = (
   const { inferredScopes, existingScopes, missingScopes, conflictingScopes } =
     inferPackageScopes(iRelasy, labels, changedFiles);
 
-  const requireInferred = iRelasy.config.rules?.requireInferredPackageLabels ?? true;
-  const blockConflict = iRelasy.config.rules?.blockOnLabelConflict ?? false;
+  const missingRule =
+    iRelasy.config.policies?.rules?.inferredPackageMissing ?? "error";
+  const conflictRule = iRelasy.config.policies?.rules?.labelConflict ?? "error";
 
-  if (requireInferred && missingScopes.length > 0) {
+  if (missingRule === "error" && missingScopes.length > 0) {
     return fail(
       "LABEL_POLICY_ERROR",
       `Missing inferred package labels: ${missingScopes.map((s) => `📦 ${s}`).join(", ")}`,
     );
   }
 
-  if (blockConflict && conflictingScopes.length > 0) {
+  if (conflictRule === "error" && conflictingScopes.length > 0) {
     return fail(
       "LABEL_POLICY_ERROR",
       `Package label conflict detected. Labels not inferred from changed files: ${conflictingScopes

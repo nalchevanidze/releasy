@@ -1,9 +1,10 @@
 import { Result, fail, ok } from "./result";
-import { Config, ConfigSchema } from "../lib/config";
+import { Config, ConfigSchema, normalizeConfigInputKeys } from "../lib/config";
 
 export const validateConfig = (input: unknown): Result<Config> => {
   try {
-    const parsed = ConfigSchema.parse(input) as Config;
+    const normalized = normalizeConfigInputKeys(input);
+    const parsed = ConfigSchema.parse(normalized) as Config;
     return ok(parsed);
   } catch (error) {
     return fail(

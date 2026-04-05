@@ -6,22 +6,39 @@ import {
   defaultChangeTypeBumps,
   defaultChangeTypeEmojis,
   defaultChangeTypes,
+  defaultDetectionUse,
+  defaultLabelMode,
+  defaultRuleLevels,
 } from "./defaults";
-import { ChangeType, ChangelogConfig, ConfigSchema, RawConfig } from "./schema";
+import {
+  ChangeType,
+  ChangelogConfig,
+  ConfigSchema,
+  RawConfig,
+  RuleLevel,
+} from "./schema";
 
 type ExtraConfig = {
   gh: string;
-  configVersion?: 1;
   changeTypes: Record<ChangeType, string>;
   changeTypeEmojis?: Record<string, string>;
   changeTypeBumps?: Record<string, BumpLevel>;
-  labelPolicy?: "strict" | "permissive";
-  nonPrCommitsPolicy?: "include" | "skip" | "strict-fail";
   pkgs: Record<string, { name: string; paths?: string[] }>;
   changeTypeScopes?: Record<string, { paths: string[] }>;
+  policies: {
+    labelMode: "strict" | "permissive";
+    autoAddInferredPackages: boolean;
+    detectionUse: Array<"labels" | "commits">;
+    rules: {
+      labelConflict: RuleLevel;
+      inferredPackageMissing: RuleLevel;
+      detectionConflict: RuleLevel;
+      nonPrCommit: RuleLevel;
+    };
+  };
 };
 
-export type Config = Omit<RawConfig, "pkgs"> & ExtraConfig;
+export type Config = Omit<RawConfig, "pkgs" | "policies"> & ExtraConfig;
 
 const readPlaceholders = (template: string): string[] => {
   const out: string[] = [];
@@ -61,28 +78,28 @@ const validateTemplate = (
 export const validateChangelogTemplates = (changelog?: ChangelogConfig) => {
   if (!changelog) return;
 
-  if (changelog.headerTemplate) {
+  if (changelog.templates?.header) {
     validateTemplate(
-      "changelog.headerTemplate",
-      changelog.headerTemplate,
+      "changelog.templates.header",
+      changelog.templates.header,
       ["VERSION", "DATE"],
       ["VERSION", "DATE"],
     );
   }
 
-  if (changelog.sectionTemplate) {
+  if (changelog.templates?.section) {
     validateTemplate(
-      "changelog.sectionTemplate",
-      changelog.sectionTemplate,
+      "changelog.templates.section",
+      changelog.templates.section,
       ["LABEL", "CHANGES"],
       ["LABEL", "CHANGES"],
     );
   }
 
-  if (changelog.itemTemplate) {
+  if (changelog.templates?.item) {
     validateTemplate(
-      "changelog.itemTemplate",
-      changelog.itemTemplate,
+      "changelog.templates.item",
+      changelog.templates.item,
       ["REF", "TITLE"],
       ["REF", "TITLE", "AUTHOR", "PACKAGES", "BODY", "DETAILS", "STATS"],
     );
@@ -114,18 +131,6 @@ const normalizeChanges = (changes?: RawConfig["changes"]) => {
   if (!changes) return { titles, icons, bumps, scopes };
 
   for (const [key, value] of Object.entries(changes)) {
-    if (!value.title) {
-      throw new Error(`changes.${key}.title is required.`);
-    }
-
-    if (!value.icon) {
-      throw new Error(`changes.${key}.icon is required.`);
-    }
-
-    if (!value.bump) {
-      throw new Error(`changes.${key}.bump is required.`);
-    }
-
     titles[key] = value.title;
     icons[key] = value.icon;
     bumps[key] = value.bump;
@@ -138,6 +143,79 @@ const normalizeChanges = (changes?: RawConfig["changes"]) => {
   return { titles, icons, bumps, scopes };
 };
 
+const toCamel = (key: string) =>
+  key.replace(/-([a-zA-Z0-9])/g, (_, char: string) => char.toUpperCase());
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const normalizeKeysDeep = (value: unknown, path = "root"): unknown => {
+  if (Array.isArray(value)) {
+    return value.map((item, index) => normalizeKeysDeep(item, `${path}[${index}]`));
+  }
+
+  if (!isPlainObject(value)) {
+    return value;
+  }
+
+  const out: Record<string, unknown> = {};
+
+  for (const [key, child] of Object.entries(value)) {
+    const normalizedKey = toCamel(key);
+
+    if (normalizedKey in out) {
+      throw new Error(
+        `Duplicate semantic key detected at ${path}: "${key}" conflicts with another key normalized to "${normalizedKey}".`,
+      );
+    }
+
+    out[normalizedKey] = normalizeKeysDeep(child, `${path}.${key}`);
+  }
+
+  return out;
+};
+
+const hasLegacyFields = (cfg: Record<string, unknown>) => {
+  const topLegacy = [
+    "configVersion",
+    "labelPolicy",
+    "nonPrCommitsPolicy",
+    "rules",
+  ].some((key) => key in cfg);
+
+  const changelogLegacy = isPlainObject(cfg.changelog)
+    ? ["headerTemplate", "sectionTemplate", "itemTemplate", "groupByPackage"].some(
+        (key) => key in cfg.changelog,
+      )
+    : false;
+
+  return topLegacy || changelogLegacy;
+};
+
+const hasNewFields = (cfg: Record<string, unknown>) => {
+  const topNew = ["policies", "changes", "changelog"].some((key) => key in cfg);
+
+  const changelogNew =
+    isPlainObject(cfg.changelog) && ("templates" in cfg.changelog || "grouping" in cfg.changelog);
+
+  return topNew || changelogNew;
+};
+
+const parseConfigInput = (input: unknown): RawConfig => {
+  const normalized = normalizeKeysDeep(input);
+  if (!isPlainObject(normalized)) {
+    throw new Error("Configuration root must be an object.");
+  }
+
+  if (hasLegacyFields(normalized) && hasNewFields(normalized)) {
+    throw new Error(
+      "Mixed legacy and new schema keys detected. Use only canonical beta schema keys.",
+    );
+  }
+
+  return ConfigSchema.parse(normalized);
+};
+
 export const normalizeConfig = (config: RawConfig, gh: string): Config => {
   validateChangelogTemplates(config.changelog);
 
@@ -148,9 +226,23 @@ export const normalizeConfig = (config: RawConfig, gh: string): Config => {
     ...config,
     pkgs: normalizedPkgs,
     gh,
-    configVersion: config.configVersion ?? 1,
-    labelPolicy: config.labelPolicy ?? "strict",
-    nonPrCommitsPolicy: config.nonPrCommitsPolicy ?? "skip",
+    policies: {
+      labelMode: config.policies?.labelMode ?? defaultLabelMode,
+      autoAddInferredPackages: config.policies?.autoAddInferredPackages ?? false,
+      detectionUse: config.policies?.detectionUse ?? defaultDetectionUse,
+      rules: {
+        labelConflict:
+          config.policies?.rules?.labelConflict ?? defaultRuleLevels.labelConflict,
+        inferredPackageMissing:
+          config.policies?.rules?.inferredPackageMissing ??
+          defaultRuleLevels.inferredPackageMissing,
+        detectionConflict:
+          config.policies?.rules?.detectionConflict ??
+          defaultRuleLevels.detectionConflict,
+        nonPrCommit:
+          config.policies?.rules?.nonPrCommit ?? defaultRuleLevels.nonPrCommit,
+      },
+    },
     changeTypes: normalizedChanges.titles as Record<ChangeType, string>,
     changeTypeEmojis: normalizedChanges.icons,
     changeTypeBumps: normalizedChanges.bumps,
@@ -158,13 +250,6 @@ export const normalizeConfig = (config: RawConfig, gh: string): Config => {
       Object.keys(normalizedChanges.scopes).length > 0
         ? normalizedChanges.scopes
         : undefined,
-    changelog: {
-      ...config.changelog,
-      sectionTitles: {
-        ...(config.changelog?.sectionTitles ?? {}),
-        ...normalizedChanges.titles,
-      },
-    },
   };
 };
 
@@ -186,7 +271,7 @@ export const loadRawConfig = async (): Promise<RawConfig> => {
 
   if (yamlPath) {
     const content = await readFile(yamlPath, "utf8");
-    return ConfigSchema.parse(yaml.load(content) ?? {});
+    return parseConfigInput(yaml.load(content) ?? {});
   }
 
   if (await exists("./relasy.json")) {
@@ -195,7 +280,7 @@ export const loadRawConfig = async (): Promise<RawConfig> => {
     );
 
     const content = await readFile("./relasy.json", "utf8");
-    return ConfigSchema.parse(JSON.parse(content));
+    return parseConfigInput(JSON.parse(content));
   }
 
   throw new Error(
@@ -209,3 +294,5 @@ export const loadConfig = async (): Promise<Config> => {
 
   return normalizeConfig(config, gh);
 };
+
+export const normalizeConfigInputKeys = (input: unknown) => normalizeKeysDeep(input);

@@ -1,39 +1,43 @@
 import * as z from "zod";
 
 export type LabelType = "pkgs" | "changeTypes";
-export type LabelPolicy = "strict" | "permissive";
+export type LabelMode = "strict" | "permissive";
+export type RuleLevel = "skip" | "warn" | "error";
+export type DetectionInput = "labels" | "commits";
+export type BumpLevel = "major" | "minor" | "patch";
 
 export type ChangelogConfig = {
-  headerTemplate?: string;
-  sectionTemplate?: string;
-  itemTemplate?: string;
-  sectionTitles?: Record<string, string>;
-  groupByPackage?: boolean;
+  templates?: {
+    header?: string;
+    section?: string;
+    item?: string;
+  };
+  grouping?: "package" | "scope" | "none";
 };
-
-export type ConfigVersion = 1;
-
-export type NonPrCommitPolicy = "include" | "skip" | "strict-fail";
-export type BumpLevel = "major" | "minor" | "patch";
 
 export type PkgConfig = {
   name: string;
   paths?: string[];
 };
 
-export type ChangeTypeScope = {
-  paths: string[];
+export type RulesConfig = {
+  labelConflict?: RuleLevel;
+  inferredPackageMissing?: RuleLevel;
+  detectionConflict?: RuleLevel;
+  nonPrCommit?: RuleLevel;
 };
 
-export type RulesConfig = {
-  requireInferredPackageLabels?: boolean;
-  blockOnLabelConflict?: boolean;
+export type PoliciesConfig = {
+  labelMode?: LabelMode;
+  autoAddInferredPackages?: boolean;
+  detectionUse?: DetectionInput[];
+  rules?: RulesConfig;
 };
 
 export type ChangeDefinition = {
-  title?: string;
-  icon?: string;
-  bump?: BumpLevel;
+  title: string;
+  icon: string;
+  bump: BumpLevel;
   paths?: string[];
 };
 
@@ -41,11 +45,14 @@ export type ChangesConfig = Record<string, ChangeDefinition>;
 
 export const ChangelogConfigSchema = z
   .object({
-    headerTemplate: z.string().optional(),
-    sectionTemplate: z.string().optional(),
-    itemTemplate: z.string().optional(),
-    sectionTitles: z.record(z.string(), z.string()).optional(),
-    groupByPackage: z.boolean().optional(),
+    templates: z
+      .object({
+        header: z.string().optional(),
+        section: z.string().optional(),
+        item: z.string().optional(),
+      })
+      .optional(),
+    grouping: z.enum(["package", "scope", "none"]).optional(),
   })
   .optional();
 
@@ -60,22 +67,25 @@ export const changeTypes = {
 
 export type ChangeType = keyof typeof changeTypes;
 
-export const CustomManagerSchema = z.object({
-  type: z.literal("custom"),
-  bump: z.string(),
-  version: z.string(),
-  // Optional fields
-  pkg: z.string().optional(),
-  postBump: z.string().optional(),
-  baseBranch: z.string().optional(),
-});
+export const CustomManagerSchema = z
+  .object({
+    type: z.literal("custom"),
+    bump: z.string(),
+    version: z.string(),
+    pkg: z.string().optional(),
+    postBump: z.string().optional(),
+    baseBranch: z.string().optional(),
+  })
+  .strict();
 
-export const NPMManagerSchema = z.object({
-  type: z.literal("npm"),
-  build: z.string().optional(),
-  postBump: z.string().optional(),
-  baseBranch: z.string().optional(),
-});
+export const NPMManagerSchema = z
+  .object({
+    type: z.literal("npm"),
+    build: z.string().optional(),
+    postBump: z.string().optional(),
+    baseBranch: z.string().optional(),
+  })
+  .strict();
 
 export type CustomManager = z.infer<typeof CustomManagerSchema>;
 export type NPMManager = z.infer<typeof NPMManagerSchema>;
@@ -85,35 +95,49 @@ export type Manager = z.infer<typeof ManagerSchema>;
 
 export const PkgConfigSchema = z.union([
   z.string(),
-  z.object({
-    name: z.string(),
-    paths: z.union([z.string(), z.array(z.string()).min(1)]).optional(),
-  }),
+  z
+    .object({
+      name: z.string(),
+      paths: z.union([z.string(), z.array(z.string()).min(1)]).optional(),
+    })
+    .strict(),
 ]);
 
-export const ChangeDefinitionSchema = z.object({
-  title: z.string().optional(),
-  icon: z.string().optional(),
-  bump: z.enum(["major", "minor", "patch"]).optional(),
-  paths: z.union([z.string(), z.array(z.string()).min(1)]).optional(),
-});
+export const ChangeDefinitionSchema = z
+  .object({
+    title: z.string(),
+    icon: z.string(),
+    bump: z.enum(["major", "minor", "patch"]),
+    paths: z.union([z.string(), z.array(z.string()).min(1)]).optional(),
+  })
+  .strict();
 
 export const RulesConfigSchema = z
   .object({
-    requireInferredPackageLabels: z.boolean().optional(),
-    blockOnLabelConflict: z.boolean().optional(),
+    labelConflict: z.enum(["skip", "warn", "error"]).optional(),
+    inferredPackageMissing: z.enum(["skip", "warn", "error"]).optional(),
+    detectionConflict: z.enum(["skip", "warn", "error"]).optional(),
+    nonPrCommit: z.enum(["skip", "warn", "error"]).optional(),
   })
   .optional();
 
-export const ConfigSchema = z.object({
-  configVersion: z.literal(1).optional(),
-  pkgs: z.record(z.string(), PkgConfigSchema),
-  project: ManagerSchema,
-  labelPolicy: z.enum(["strict", "permissive"]).optional(),
-  nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
-  changes: z.record(z.string(), ChangeDefinitionSchema).optional(),
-  rules: RulesConfigSchema,
-  changelog: ChangelogConfigSchema,
-});
+export const PoliciesConfigSchema = z
+  .object({
+    labelMode: z.enum(["strict", "permissive"]).optional(),
+    autoAddInferredPackages: z.boolean().optional(),
+    detectionUse: z.array(z.enum(["labels", "commits"])).min(1).optional(),
+    rules: RulesConfigSchema,
+  })
+  .optional();
+
+export const ConfigSchema = z
+  .object({
+    pkgs: z.record(z.string(), PkgConfigSchema),
+    project: ManagerSchema,
+    policies: PoliciesConfigSchema,
+    changes: z.record(z.string(), ChangeDefinitionSchema).optional(),
+    changelog: ChangelogConfigSchema,
+  })
+  .strict();
 
 export type RawConfig = z.infer<typeof ConfigSchema>;

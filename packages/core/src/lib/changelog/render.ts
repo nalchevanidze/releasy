@@ -72,7 +72,7 @@ export class RenderAPI {
     ]);
 
     const defaultItem = lines([`* ${this.ref(change)}: ${title?.trim()}`, stats, details]);
-    const template = this.api.config.changelog?.itemTemplate;
+    const template = this.api.config.changelog?.templates?.item;
 
     if (!template) return defaultItem;
 
@@ -89,7 +89,7 @@ export class RenderAPI {
 
   private section = (label: string, changes: Change[]) => {
     const renderedChanges = lines(changes.map(this.change));
-    const template = this.api.config.changelog?.sectionTemplate;
+    const template = this.api.config.changelog?.templates?.section;
 
     if (!template) {
       return lines([`#### ${label}`, renderedChanges]);
@@ -120,10 +120,9 @@ export class RenderAPI {
     const groups = groupBy(({ type }) => type, changes);
     const sectionTitles = {
       ...this.api.config.changeTypes,
-      ...(this.api.config.changelog?.sectionTitles ?? {}),
     };
 
-    const headerTemplate = this.api.config.changelog?.headerTemplate;
+    const headerTemplate = this.api.config.changelog?.templates?.header;
     const header = headerTemplate
       ? applyTemplate(headerTemplate, {
           VERSION: tag.toString(),
@@ -131,18 +130,21 @@ export class RenderAPI {
         })
       : `## ${tag.toString()} (${getDate()})`;
 
-    return lines(
-      [
-        header,
-        ...Object.entries(sectionTitles).flatMap(([type, label]) =>
-          isKey(groups, type)
-            ? this.api.config.changelog?.groupByPackage
-              ? this.sectionByPackage(label, groups[type])
-              : this.section(label, groups[type])
-            : "",
-        ),
-      ],
-      2,
-    );
+    const grouping = this.api.config.changelog?.grouping ?? "none";
+
+    const sections =
+      grouping === "none"
+        ? [lines(changes.map(this.change))]
+        : Object.entries(sectionTitles).flatMap(([type, label]) => {
+            if (!isKey(groups, type)) return "";
+
+            if (grouping === "package") {
+              return this.sectionByPackage(label, groups[type]);
+            }
+
+            return this.section(label, groups[type]);
+          });
+
+    return lines([header, ...sections], 2);
   };
 }

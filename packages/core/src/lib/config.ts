@@ -11,16 +11,16 @@ export type {
   ChangelogConfig,
   ChangeType,
   ChangesConfig,
-  ConfigVersion,
   CustomManager,
-  LabelPolicy,
+  DetectionInput,
+  LabelMode,
   LabelType,
   Manager,
-  ChangeTypeScope,
   NPMManager,
-  NonPrCommitPolicy,
   PkgConfig,
+  PoliciesConfig,
   RawConfig,
+  RuleLevel,
   RulesConfig,
 } from "./config/schema";
 
@@ -29,5 +29,6 @@ export {
   loadConfig,
   loadRawConfig,
   normalizeConfig,
+  normalizeConfigInputKeys,
   validateChangelogTemplates,
 } from "./config/load";

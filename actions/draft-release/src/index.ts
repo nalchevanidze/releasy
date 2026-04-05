@@ -8,7 +8,7 @@ export async function run() {
     const plan = await buildReleasePlan(iRelasy);
     if (plan.ok) {
       info(
-        `[relasy] plan: version=${plan.data.version}, baseBranch=${plan.data.baseBranch}, labelPolicy=${plan.data.labelPolicy}`,
+        `[relasy] plan: version=${plan.data.version}, baseBranch=${plan.data.baseBranch}, labelMode=${plan.data.labelMode}, detectionUse=${plan.data.detectionUse.join("+")}`,
       );
     }
 

@@ -5,7 +5,8 @@ type IRelasyPlan = Pick<IRelasy, "version" | "config">;
 export type ReleasePlan = {
   version: string;
   baseBranch: string;
-  labelPolicy: string;
+  labelMode: string;
+  detectionUse: string[];
 };
 
 export const buildReleasePlan = async (
@@ -14,8 +15,10 @@ export const buildReleasePlan = async (
   try {
     return ok({
       version: iRelasy.version().toString(),
-      baseBranch: iRelasy.config.project.baseBranch ?? "(auto-detect default branch)",
-      labelPolicy: iRelasy.config.labelPolicy ?? "strict",
+      baseBranch:
+        iRelasy.config.project.baseBranch ?? "(auto-detect default branch)",
+      labelMode: iRelasy.config.policies?.labelMode ?? "strict",
+      detectionUse: iRelasy.config.policies?.detectionUse ?? ["labels"],
     });
   } catch (error) {
     return fail(
