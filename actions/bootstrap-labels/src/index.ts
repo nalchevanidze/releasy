@@ -1,32 +1,15 @@
 import { setFailed, info } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
+import { requireGitHubToken, resolveRepo } from "@relasy/actions-common";
 import { Relasy } from "@relasy/core";
-
-const resolveRepo = () => {
-  const owner = context.repo.owner || process.env.RELASY_OWNER;
-  const repo = context.repo.repo || process.env.RELASY_REPO;
-
-  if (!owner || !repo) {
-    throw new Error(
-      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs.",
-    );
-  }
-
-  return { owner, repo };
-};
 
 const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
 export async function run() {
   try {
     const relasy = await Relasy.load();
-    const { owner, repo } = resolveRepo();
-    const token = process.env.GITHUB_TOKEN;
-
-    if (!token) {
-      throw new Error("Missing GITHUB_TOKEN.");
-    }
-
+    const { owner, repo } = resolveRepo(context);
+    const token = requireGitHubToken();
     const octokit = getOctokit(token);
 
     const labels = await octokit.paginate(

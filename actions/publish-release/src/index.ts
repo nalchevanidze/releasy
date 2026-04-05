@@ -1,20 +1,8 @@
 import { setFailed, getInput, setOutput, info } from "@actions/core";
 import { Octokit } from "@octokit/rest";
 import { context } from "@actions/github";
+import { getErrorStatus, resolveRepo } from "@relasy/actions-common";
 import { Relasy, withRetry } from "@relasy/core";
-
-const resolveRepo = () => {
-  const owner = context.repo.owner || process.env.RELASY_OWNER;
-  const repo = context.repo.repo || process.env.RELASY_REPO;
-
-  if (!owner || !repo) {
-    throw new Error(
-      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs.",
-    );
-  }
-
-  return { owner, repo };
-};
 
 const getBody = (): string => {
   const inputBody = getInput("body", { required: false });
@@ -28,15 +16,10 @@ const getBody = (): string => {
 
 const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
-const getErrorStatus = (error: unknown): number | undefined =>
-  typeof error === "object" && error !== null && "status" in error
-    ? (error as { status?: number }).status
-    : undefined;
-
 export async function run() {
   try {
     const relasy = await Relasy.load();
-    const { owner, repo } = resolveRepo();
+    const { owner, repo } = resolveRepo(context);
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
     const version = relasy.version().toString();
 
@@ -92,7 +75,7 @@ export async function run() {
   } catch (error) {
     const { owner, repo } = (() => {
       try {
-        return resolveRepo();
+        return resolveRepo(context);
       } catch {
         return { owner: "<unknown>", repo: "<unknown>" };
       }

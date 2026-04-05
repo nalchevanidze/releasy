@@ -28711,7 +28711,7 @@ var require_utils6 = __commonJS({
   "../../packages/core/dist/lib/utils.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.setupEnv = exports2.exit = exports2.execVoid = exports2.exec = exports2.isKey = void 0;
+    exports2.setupEnv = exports2.exit = exports2.execFileVoid = exports2.execVoid = exports2.execFile = exports2.exec = exports2.isKey = void 0;
     var node_child_process_1 = require("node:child_process");
     var node_util_1 = require("node:util");
     var options = {
@@ -28722,8 +28722,12 @@ var require_utils6 = __commonJS({
     exports2.isKey = isKey;
     var exec = (command) => (0, node_child_process_1.execSync)(command, options)?.trimEnd();
     exports2.exec = exec;
+    var execFile = (file, args) => (0, node_child_process_1.execFileSync)(file, args, options)?.trimEnd();
+    exports2.execFile = execFile;
     var execVoid = (cmd) => (0, node_util_1.promisify)(node_child_process_1.exec)(cmd, options).then(({ stdout }) => console.log(stdout));
     exports2.execVoid = execVoid;
+    var execFileVoid = (file, args) => (0, node_util_1.promisify)(node_child_process_1.execFile)(file, args, options).then(({ stdout }) => console.log(stdout));
+    exports2.execFileVoid = execFileVoid;
     var exit = (error) => {
       console.log(error.message);
       process.exit(1);
@@ -28749,7 +28753,7 @@ var require_git = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.isUserSet = exports2.getDate = exports2.git = exports2.commitsAfterVersion = exports2.lastTag = exports2.remote = void 0;
     var utils_1 = require_utils6();
-    var git = (...cmd) => (0, utils_1.exec)(["git", ...cmd].join(" "));
+    var git = (...cmd) => (0, utils_1.execFile)("git", cmd);
     exports2.git = git;
     var remote = () => {
       const url = git("remote", "get-url", "origin").trim();
@@ -28787,6 +28791,37 @@ var require_git = __commonJS({
   }
 });
 
+// ../../packages/core/dist/lib/retry.js
+var require_retry = __commonJS({
+  "../../packages/core/dist/lib/retry.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.withRetry = exports2.isRetryableStatus = void 0;
+    var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    var getErrorStatus = (error) => typeof error === "object" && error !== null && "status" in error ? error.status : void 0;
+    var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
+    var isRetryableStatus = (status) => status === 429 || status !== void 0 && status >= 500;
+    exports2.isRetryableStatus = isRetryableStatus;
+    var withRetry = async (label, fn, attempts = 3) => {
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          return await fn();
+        } catch (error) {
+          const status = getErrorStatus(error);
+          const retryable = (0, exports2.isRetryableStatus)(status);
+          if (!retryable || attempt === attempts) {
+            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage(error)}`);
+          }
+          console.log(`[retry] ${label}: retrying attempt ${attempt + 1}/${attempts}`);
+          await sleep(300 * attempt);
+        }
+      }
+      throw new Error(`${label} failed: exhausted retries`);
+    };
+    exports2.withRetry = withRetry;
+  }
+});
+
 // ../../packages/core/dist/lib/gh.js
 var require_gh = __commonJS({
   "../../packages/core/dist/lib/gh.js"(exports2) {
@@ -28795,6 +28830,7 @@ var require_gh = __commonJS({
     exports2.Github = exports2.chunks = void 0;
     var rest_1 = require_dist_node20();
     var git_1 = require_git();
+    var retry_1 = require_retry();
     var chunks = (xs) => {
       const batches = [];
       for (let i = 0; i < xs.length; i += 50) {
@@ -28812,36 +28848,26 @@ var require_gh = __commonJS({
       return GITHUB_TOKEN;
     };
     var isDryRun = () => process.env.RELASY_DRY_RUN === "true";
-    var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    var getErrorStatus = (error) => typeof error === "object" && error !== null && "status" in error ? error.status : void 0;
-    var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
-    var withRetry = async (label, fn) => {
-      const attempts = 3;
-      for (let attempt = 1; attempt <= attempts; attempt++) {
-        try {
-          return await fn();
-        } catch (error) {
-          const status = getErrorStatus(error);
-          const retryable = status === 429 || status !== void 0 && status >= 500;
-          if (!retryable || attempt === attempts) {
-            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage(error)}`);
-          }
-          await sleep(300 * attempt);
-        }
-      }
-      throw new Error(`${label} failed: exhausted retries`);
-    };
     var defaultUser = {
       name: "github-actions[bot]",
       email: "41898282+github-actions[bot]@users.noreply.github.com"
     };
     var Github = class {
-      constructor(path, user = defaultUser, baseBranch = "main") {
+      constructor(path, user = defaultUser, baseBranch) {
+        this.resolveBaseBranch = async () => {
+          if (this.configuredBaseBranch)
+            return this.configuredBaseBranch;
+          if (this.resolvedBaseBranch)
+            return this.resolvedBaseBranch;
+          const { data } = await (0, retry_1.withRetry)("Resolve repository default branch", () => this.octokit.rest.repos.get({ owner: this.org, repo: this.repo }));
+          this.resolvedBaseBranch = data.default_branch || "main";
+          return this.resolvedBaseBranch;
+        };
         this.setup = () => {
           if ((0, git_1.isUserSet)())
             return;
-          (0, git_1.git)("config", "user.name", `"${this.user.name}"`);
-          (0, git_1.git)("config", "user.email", `"${this.user.email}"`);
+          (0, git_1.git)("config", "user.name", this.user.name);
+          (0, git_1.git)("config", "user.email", this.user.email);
         };
         this.isOwner = ({ nameWithOwner }) => nameWithOwner === `${this.org}/${this.repo}`;
         this.batch = (f) => async (items) => {
@@ -28851,7 +28877,7 @@ var require_gh = __commonJS({
               ${chunk.map((n) => `item_${n}:${f(n)}`).join("\n")}
             }
           }`;
-            const data = await withRetry("GitHub GraphQL batch", () => this.octokit.graphql(query));
+            const data = await (0, retry_1.withRetry)("GitHub GraphQL batch", () => this.octokit.graphql(query));
             return Object.values(data.repository);
           }));
           return output.flat().filter(Boolean);
@@ -28859,8 +28885,9 @@ var require_gh = __commonJS({
         this.issue = (n) => `https://${this.path}/issues/${n}`;
         this.release = async (version, body) => {
           const name = `release-${version.toString()}`;
+          const baseBranch2 = this.configuredBaseBranch || "main";
           if (isDryRun()) {
-            console.log(`[dry-run] Would create or reuse release PR for branch ${name} in ${this.org}/${this.repo}`);
+            console.log(`[relasy][dry-run] Would create or reuse release PR for branch ${name} (base=${baseBranch2}) in ${this.org}/${this.repo}`);
             return {
               data: {
                 number: 0,
@@ -28868,19 +28895,20 @@ var require_gh = __commonJS({
               }
             };
           }
-          const existing = await withRetry("Check existing release PR", async () => {
+          const resolvedBaseBranch = await this.resolveBaseBranch();
+          const existing = await (0, retry_1.withRetry)("Check existing release PR", async () => {
             const { data } = await this.octokit.rest.pulls.list({
               owner: this.org,
               repo: this.repo,
               state: "open",
               head: `${this.org}:${name}`,
-              base: this.baseBranch,
+              base: resolvedBaseBranch,
               per_page: 1
             });
             return data[0];
           });
           if (existing) {
-            console.log(`Reusing existing release PR: ${existing.html_url}`);
+            console.log(`[relasy] Reusing existing release PR: ${existing.html_url}`);
             return {
               data: {
                 number: existing.number,
@@ -28891,23 +28919,23 @@ var require_gh = __commonJS({
           (0, git_1.git)("add", ".");
           (0, git_1.git)("status");
           try {
-            (0, git_1.git)("commit", "-m", `"${name}"`);
+            (0, git_1.git)("commit", "-m", name);
           } catch {
-            console.log("No new changes to commit before drafting release PR.");
+            console.log("[relasy] No new changes to commit before drafting release PR.");
           }
           try {
             (0, git_1.git)("push", "origin", `HEAD:${name}`);
           } catch {
             const encoded = Buffer.from(`x-access-token:${token()}`).toString("base64");
-            (0, git_1.git)("-c", `"http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}"`, "push", `https://${this.path}.git`, `HEAD:${name}`);
+            (0, git_1.git)("-c", `http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}`, "push", `https://${this.path}.git`, `HEAD:${name}`);
           }
-          return withRetry("Create release PR", async () => {
+          return (0, retry_1.withRetry)("Create release PR", async () => {
             const pr = await this.octokit.rest.pulls.create({
               owner: this.org,
               repo: this.repo,
               head: name,
               draft: true,
-              base: this.baseBranch,
+              base: resolvedBaseBranch,
               title: `Publish Release ${version.toString()}`,
               body
             });
@@ -28923,7 +28951,7 @@ var require_gh = __commonJS({
         this.org = org;
         this.repo = repo;
         this.user = user;
-        this.baseBranch = baseBranch;
+        this.configuredBaseBranch = baseBranch;
       }
       get path() {
         return `github.com/${this.org}/${this.repo}`;
@@ -38819,7 +38847,7 @@ var require_npm = __commonJS({
             minor: "minor",
             patch: "patch"
           };
-          await (0, utils_1.exec)(`npm version ${args[option]} --no-git-tag-version`);
+          await (0, utils_1.execFile)("npm", ["version", args[option], "--no-git-tag-version"]);
         };
       }
       version() {
@@ -45723,7 +45751,7 @@ var require_dist = __commonJS({
   "../../packages/core/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.Relasy = exports2.exit = void 0;
+    exports2.Relasy = exports2.exit = exports2.withRetry = void 0;
     var types_1 = require_types();
     var gh_1 = require_gh();
     var config_1 = require_config();
@@ -45731,6 +45759,10 @@ var require_dist = __commonJS({
     var project_1 = require_project();
     var changelog_1 = require_changelog();
     var labels_1 = require_labels();
+    var retry_1 = require_retry();
+    Object.defineProperty(exports2, "withRetry", { enumerable: true, get: function() {
+      return retry_1.withRetry;
+    } });
     var utils_2 = require_utils6();
     Object.defineProperty(exports2, "exit", { enumerable: true, get: function() {
       return utils_2.exit;
@@ -45762,15 +45794,17 @@ var require_dist = __commonJS({
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
-  getCurrentPrLabels: () => getCurrentPrLabels
+  getCurrentPrLabels: () => getCurrentPrLabels,
+  run: () => run
 });
 module.exports = __toCommonJS(index_exports);
 var import_core = __toESM(require_core());
 var import_github = __toESM(require_github());
-var import_core2 = __toESM(require_dist());
-var resolveRepo = () => {
-  const owner = import_github.context.repo.owner || process.env.RELASY_OWNER;
-  const repo = import_github.context.repo.repo || process.env.RELASY_REPO;
+
+// ../../packages/actions-common/src/github.ts
+var resolveRepo = (context2, env = process.env) => {
+  const owner = context2.repo.owner || env.RELASY_OWNER;
+  const repo = context2.repo.repo || env.RELASY_REPO;
   if (!owner || !repo) {
     throw new Error(
       "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs."
@@ -45778,10 +45812,10 @@ var resolveRepo = () => {
   }
   return { owner, repo };
 };
-var resolvePrNumber = () => {
-  const payloadPr = import_github.context.payload.pull_request?.number;
-  const issuePr = import_github.context.issue.number;
-  const envPr = process.env.RELASY_PR_NUMBER ? Number(process.env.RELASY_PR_NUMBER) : void 0;
+var resolvePrNumber = (context2, env = process.env) => {
+  const payloadPr = context2.payload?.pull_request?.number;
+  const issuePr = context2.issue?.number;
+  const envPr = env.RELASY_PR_NUMBER ? Number(env.RELASY_PR_NUMBER) : void 0;
   const number = payloadPr ?? issuePr ?? envPr;
   if (!number || Number.isNaN(number)) {
     throw new Error(
@@ -45790,6 +45824,16 @@ var resolvePrNumber = () => {
   }
   return number;
 };
+var requireGitHubToken = (env = process.env) => {
+  const token = env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error("Missing GITHUB_TOKEN.");
+  }
+  return token;
+};
+
+// src/index.ts
+var import_core2 = __toESM(require_dist());
 var toLabelName = (label) => {
   if (typeof label === "string") {
     return label;
@@ -45804,14 +45848,9 @@ async function getCurrentPrLabels(params = {}) {
   if (prFromPayload && !params.refetch) {
     return (prFromPayload.labels ?? []).map(toLabelName).filter(Boolean);
   }
-  const token = params.token ?? process.env.GITHUB_TOKEN;
-  if (!token) {
-    throw new Error(
-      "No GitHub token provided. Pass `token` or set env GITHUB_TOKEN."
-    );
-  }
-  const { owner, repo } = resolveRepo();
-  const prNumber = resolvePrNumber();
+  const token = params.token ?? requireGitHubToken();
+  const { owner, repo } = resolveRepo(import_github.context);
+  const prNumber = resolvePrNumber(import_github.context);
   const octokit = (0, import_github.getOctokit)(token);
   const { data: pr } = await octokit.rest.pulls.get({
     owner,
@@ -45824,7 +45863,7 @@ async function run() {
   try {
     const headRef = import_github.context.payload.pull_request?.head?.ref;
     if (headRef?.startsWith("release-")) {
-      (0, import_core.info)("Skipping label validation for release branch PR");
+      (0, import_core.info)("[relasy] Skipping label validation for release branch PR");
       return;
     }
     const relasy = await import_core2.Relasy.load();
@@ -45858,7 +45897,8 @@ if (require.main === module) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  getCurrentPrLabels
+  getCurrentPrLabels,
+  run
 });
 /*! Bundled license information:
 

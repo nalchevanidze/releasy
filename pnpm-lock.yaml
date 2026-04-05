@@ -20,6 +20,9 @@ importers:
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
+      vitest:
+        specifier: ^0.24.2
+        version: 0.24.5
 
   actions/bootstrap-labels:
     dependencies:
@@ -32,6 +35,9 @@ importers:
       '@octokit/rest':
         specifier: ^19.0.7
         version: 19.0.13
+      '@relasy/actions-common':
+        specifier: workspace:*
+        version: link:../../packages/actions-common
       '@relasy/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -42,6 +48,9 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
+      vitest:
+        specifier: ^0.24.2
+        version: 0.24.5
 
   actions/draft-release:
     dependencies:
@@ -73,6 +82,9 @@ importers:
       '@octokit/rest':
         specifier: ^19.0.7
         version: 19.0.13
+      '@relasy/actions-common':
+        specifier: workspace:*
+        version: link:../../packages/actions-common
       '@relasy/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -83,6 +95,9 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
+      vitest:
+        specifier: ^0.24.2
+        version: 0.24.5
 
   actions/validate-pr-labels:
     dependencies:
@@ -95,6 +110,9 @@ importers:
       '@octokit/rest':
         specifier: ^19.0.7
         version: 19.0.13
+      '@relasy/actions-common':
+        specifier: workspace:*
+        version: link:../../packages/actions-common
       '@relasy/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -105,6 +123,15 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
+      vitest:
+        specifier: ^0.24.2
+        version: 0.24.5
+
+  packages/actions-common:
+    devDependencies:
+      vitest:
+        specifier: ^0.24.2
+        version: 0.24.5
 
   packages/cli:
     dependencies:

@@ -11,6 +11,7 @@
     "@actions/core": "^1.11.1",
     "@actions/github": "^5.0.3",
     "@octokit/rest": "^19.0.7",
+    "@relasy/actions-common": "workspace:*",
     "@relasy/core": "workspace:*"
   },
   "devDependencies": {

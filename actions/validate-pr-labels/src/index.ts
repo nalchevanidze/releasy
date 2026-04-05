@@ -1,41 +1,15 @@
 import { setFailed, getInput, setOutput, info } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
+import {
+  requireGitHubToken,
+  resolvePrNumber,
+  resolveRepo,
+} from "@relasy/actions-common";
 import { Relasy } from "@relasy/core";
 
 type Params = {
   token?: string;
   refetch?: boolean;
-};
-
-const resolveRepo = () => {
-  const owner = context.repo.owner || process.env.RELASY_OWNER;
-  const repo = context.repo.repo || process.env.RELASY_REPO;
-
-  if (!owner || !repo) {
-    throw new Error(
-      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs.",
-    );
-  }
-
-  return { owner, repo };
-};
-
-const resolvePrNumber = () => {
-  const payloadPr = context.payload.pull_request?.number;
-  const issuePr = context.issue.number;
-  const envPr = process.env.RELASY_PR_NUMBER
-    ? Number(process.env.RELASY_PR_NUMBER)
-    : undefined;
-
-  const number = payloadPr ?? issuePr ?? envPr;
-
-  if (!number || Number.isNaN(number)) {
-    throw new Error(
-      "Could not determine PR number. Ensure PR event context exists or set RELASY_PR_NUMBER for local runs.",
-    );
-  }
-
-  return number;
 };
 
 type LabelLike = string | { name?: string } | null | undefined;
@@ -65,15 +39,10 @@ export async function getCurrentPrLabels(
   }
 
   // 2) Fetch from API (latest state)
-  const token = params.token ?? process.env.GITHUB_TOKEN;
-  if (!token) {
-    throw new Error(
-      "No GitHub token provided. Pass `token` or set env GITHUB_TOKEN.",
-    );
-  }
+  const token = params.token ?? requireGitHubToken();
 
-  const { owner, repo } = resolveRepo();
-  const prNumber = resolvePrNumber();
+  const { owner, repo } = resolveRepo(context);
+  const prNumber = resolvePrNumber(context);
   const octokit = getOctokit(token);
 
   const { data: pr } = await octokit.rest.pulls.get({

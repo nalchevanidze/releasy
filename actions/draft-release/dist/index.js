@@ -8,6 +8,10 @@ var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
@@ -24,6 +28,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // ../../node_modules/.pnpm/@actions+core@1.11.1/node_modules/@actions/core/lib/utils.js
 var require_utils = __commonJS({
@@ -20018,7 +20023,7 @@ var require_dist_node2 = __commonJS({
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-    var __export = (target, all) => {
+    var __export2 = (target, all) => {
       for (var name in all)
         __defProp2(target, name, { get: all[name], enumerable: true });
     };
@@ -20030,12 +20035,12 @@ var require_dist_node2 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
-    __export(dist_src_exports, {
+    __export2(dist_src_exports, {
       endpoint: () => endpoint
     });
-    module2.exports = __toCommonJS(dist_src_exports);
+    module2.exports = __toCommonJS2(dist_src_exports);
     function lowercaseKeys(object) {
       if (!object) {
         return {};
@@ -23499,7 +23504,7 @@ var require_dist_node5 = __commonJS({
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __getProtoOf2 = Object.getPrototypeOf;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-    var __export = (target, all) => {
+    var __export2 = (target, all) => {
       for (var name in all)
         __defProp2(target, name, { get: all[name], enumerable: true });
     };
@@ -23519,12 +23524,12 @@ var require_dist_node5 = __commonJS({
       isNodeMode || !mod || !mod.__esModule ? __defProp2(target, "default", { value: mod, enumerable: true }) : target,
       mod
     ));
-    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
-    __export(dist_src_exports, {
+    __export2(dist_src_exports, {
       request: () => request
     });
-    module2.exports = __toCommonJS(dist_src_exports);
+    module2.exports = __toCommonJS2(dist_src_exports);
     var import_endpoint = require_dist_node2();
     var import_universal_user_agent = require_dist_node();
     var VERSION = "6.2.8";
@@ -23692,7 +23697,7 @@ var require_dist_node6 = __commonJS({
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-    var __export = (target, all) => {
+    var __export2 = (target, all) => {
       for (var name in all)
         __defProp2(target, name, { get: all[name], enumerable: true });
     };
@@ -23704,14 +23709,14 @@ var require_dist_node6 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
-    __export(dist_src_exports, {
+    __export2(dist_src_exports, {
       GraphqlResponseError: () => GraphqlResponseError,
       graphql: () => graphql2,
       withCustomRequest: () => withCustomRequest
     });
-    module2.exports = __toCommonJS(dist_src_exports);
+    module2.exports = __toCommonJS2(dist_src_exports);
     var import_request = require_dist_node5();
     var import_universal_user_agent = require_dist_node();
     var VERSION = "5.0.6";
@@ -23826,7 +23831,7 @@ var require_dist_node7 = __commonJS({
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-    var __export = (target, all) => {
+    var __export2 = (target, all) => {
       for (var name in all)
         __defProp2(target, name, { get: all[name], enumerable: true });
     };
@@ -23838,12 +23843,12 @@ var require_dist_node7 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
-    __export(dist_src_exports, {
+    __export2(dist_src_exports, {
       createTokenAuth: () => createTokenAuth
     });
-    module2.exports = __toCommonJS(dist_src_exports);
+    module2.exports = __toCommonJS2(dist_src_exports);
     var REGEX_IS_INSTALLATION_LEGACY = /^v1\./;
     var REGEX_IS_INSTALLATION = /^ghs_/;
     var REGEX_IS_USER_TO_SERVER = /^ghu_/;
@@ -23897,7 +23902,7 @@ var require_dist_node8 = __commonJS({
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-    var __export = (target, all) => {
+    var __export2 = (target, all) => {
       for (var name in all)
         __defProp2(target, name, { get: all[name], enumerable: true });
     };
@@ -23909,12 +23914,12 @@ var require_dist_node8 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
-    __export(dist_src_exports, {
+    __export2(dist_src_exports, {
       Octokit: () => Octokit
     });
-    module2.exports = __toCommonJS(dist_src_exports);
+    module2.exports = __toCommonJS2(dist_src_exports);
     var import_universal_user_agent = require_dist_node();
     var import_before_after_hook = require_before_after_hook();
     var import_request = require_dist_node5();
@@ -24076,7 +24081,7 @@ var require_dist_node10 = __commonJS({
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-    var __export = (target, all) => {
+    var __export2 = (target, all) => {
       for (var name in all)
         __defProp2(target, name, { get: all[name], enumerable: true });
     };
@@ -24088,15 +24093,15 @@ var require_dist_node10 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
-    __export(dist_src_exports, {
+    __export2(dist_src_exports, {
       composePaginateRest: () => composePaginateRest,
       isPaginatingEndpoint: () => isPaginatingEndpoint,
       paginateRest: () => paginateRest,
       paginatingEndpoints: () => paginatingEndpoints
     });
-    module2.exports = __toCommonJS(dist_src_exports);
+    module2.exports = __toCommonJS2(dist_src_exports);
     var VERSION = "6.1.2";
     function normalizePaginatedListResponse(response) {
       if (!response.data) {
@@ -24443,7 +24448,7 @@ var require_dist_node11 = __commonJS({
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-    var __export = (target, all) => {
+    var __export2 = (target, all) => {
       for (var name in all)
         __defProp2(target, name, { get: all[name], enumerable: true });
     };
@@ -24455,13 +24460,13 @@ var require_dist_node11 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
-    __export(dist_src_exports, {
+    __export2(dist_src_exports, {
       legacyRestEndpointMethods: () => legacyRestEndpointMethods,
       restEndpointMethods: () => restEndpointMethods
     });
-    module2.exports = __toCommonJS(dist_src_exports);
+    module2.exports = __toCommonJS2(dist_src_exports);
     var VERSION = "7.2.3";
     var Endpoints = {
       actions: {
@@ -26447,7 +26452,7 @@ var require_dist_node12 = __commonJS({
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
     var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-    var __export = (target, all) => {
+    var __export2 = (target, all) => {
       for (var name in all)
         __defProp2(target, name, { get: all[name], enumerable: true });
     };
@@ -26459,12 +26464,12 @@ var require_dist_node12 = __commonJS({
       }
       return to;
     };
-    var __toCommonJS = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
+    var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
     var dist_src_exports = {};
-    __export(dist_src_exports, {
+    __export2(dist_src_exports, {
       Octokit: () => Octokit
     });
-    module2.exports = __toCommonJS(dist_src_exports);
+    module2.exports = __toCommonJS2(dist_src_exports);
     var import_core3 = require_dist_node8();
     var import_plugin_request_log = require_dist_node9();
     var import_plugin_paginate_rest = require_dist_node10();
@@ -26485,7 +26490,7 @@ var require_utils4 = __commonJS({
   "../../packages/core/dist/lib/utils.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.setupEnv = exports2.exit = exports2.execVoid = exports2.exec = exports2.isKey = void 0;
+    exports2.setupEnv = exports2.exit = exports2.execFileVoid = exports2.execVoid = exports2.execFile = exports2.exec = exports2.isKey = void 0;
     var node_child_process_1 = require("node:child_process");
     var node_util_1 = require("node:util");
     var options = {
@@ -26496,8 +26501,12 @@ var require_utils4 = __commonJS({
     exports2.isKey = isKey;
     var exec = (command) => (0, node_child_process_1.execSync)(command, options)?.trimEnd();
     exports2.exec = exec;
+    var execFile = (file, args) => (0, node_child_process_1.execFileSync)(file, args, options)?.trimEnd();
+    exports2.execFile = execFile;
     var execVoid = (cmd) => (0, node_util_1.promisify)(node_child_process_1.exec)(cmd, options).then(({ stdout }) => console.log(stdout));
     exports2.execVoid = execVoid;
+    var execFileVoid = (file, args) => (0, node_util_1.promisify)(node_child_process_1.execFile)(file, args, options).then(({ stdout }) => console.log(stdout));
+    exports2.execFileVoid = execFileVoid;
     var exit = (error) => {
       console.log(error.message);
       process.exit(1);
@@ -26523,7 +26532,7 @@ var require_git = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.isUserSet = exports2.getDate = exports2.git = exports2.commitsAfterVersion = exports2.lastTag = exports2.remote = void 0;
     var utils_1 = require_utils4();
-    var git = (...cmd) => (0, utils_1.exec)(["git", ...cmd].join(" "));
+    var git = (...cmd) => (0, utils_1.execFile)("git", cmd);
     exports2.git = git;
     var remote = () => {
       const url = git("remote", "get-url", "origin").trim();
@@ -26561,6 +26570,37 @@ var require_git = __commonJS({
   }
 });
 
+// ../../packages/core/dist/lib/retry.js
+var require_retry = __commonJS({
+  "../../packages/core/dist/lib/retry.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.withRetry = exports2.isRetryableStatus = void 0;
+    var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    var getErrorStatus = (error) => typeof error === "object" && error !== null && "status" in error ? error.status : void 0;
+    var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
+    var isRetryableStatus = (status) => status === 429 || status !== void 0 && status >= 500;
+    exports2.isRetryableStatus = isRetryableStatus;
+    var withRetry = async (label, fn, attempts = 3) => {
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          return await fn();
+        } catch (error) {
+          const status = getErrorStatus(error);
+          const retryable = (0, exports2.isRetryableStatus)(status);
+          if (!retryable || attempt === attempts) {
+            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage(error)}`);
+          }
+          console.log(`[retry] ${label}: retrying attempt ${attempt + 1}/${attempts}`);
+          await sleep(300 * attempt);
+        }
+      }
+      throw new Error(`${label} failed: exhausted retries`);
+    };
+    exports2.withRetry = withRetry;
+  }
+});
+
 // ../../packages/core/dist/lib/gh.js
 var require_gh = __commonJS({
   "../../packages/core/dist/lib/gh.js"(exports2) {
@@ -26569,6 +26609,7 @@ var require_gh = __commonJS({
     exports2.Github = exports2.chunks = void 0;
     var rest_1 = require_dist_node12();
     var git_1 = require_git();
+    var retry_1 = require_retry();
     var chunks = (xs) => {
       const batches = [];
       for (let i = 0; i < xs.length; i += 50) {
@@ -26586,36 +26627,26 @@ var require_gh = __commonJS({
       return GITHUB_TOKEN;
     };
     var isDryRun = () => process.env.RELASY_DRY_RUN === "true";
-    var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    var getErrorStatus = (error) => typeof error === "object" && error !== null && "status" in error ? error.status : void 0;
-    var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
-    var withRetry = async (label, fn) => {
-      const attempts = 3;
-      for (let attempt = 1; attempt <= attempts; attempt++) {
-        try {
-          return await fn();
-        } catch (error) {
-          const status = getErrorStatus(error);
-          const retryable = status === 429 || status !== void 0 && status >= 500;
-          if (!retryable || attempt === attempts) {
-            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage(error)}`);
-          }
-          await sleep(300 * attempt);
-        }
-      }
-      throw new Error(`${label} failed: exhausted retries`);
-    };
     var defaultUser = {
       name: "github-actions[bot]",
       email: "41898282+github-actions[bot]@users.noreply.github.com"
     };
     var Github = class {
-      constructor(path, user = defaultUser, baseBranch = "main") {
+      constructor(path, user = defaultUser, baseBranch) {
+        this.resolveBaseBranch = async () => {
+          if (this.configuredBaseBranch)
+            return this.configuredBaseBranch;
+          if (this.resolvedBaseBranch)
+            return this.resolvedBaseBranch;
+          const { data } = await (0, retry_1.withRetry)("Resolve repository default branch", () => this.octokit.rest.repos.get({ owner: this.org, repo: this.repo }));
+          this.resolvedBaseBranch = data.default_branch || "main";
+          return this.resolvedBaseBranch;
+        };
         this.setup = () => {
           if ((0, git_1.isUserSet)())
             return;
-          (0, git_1.git)("config", "user.name", `"${this.user.name}"`);
-          (0, git_1.git)("config", "user.email", `"${this.user.email}"`);
+          (0, git_1.git)("config", "user.name", this.user.name);
+          (0, git_1.git)("config", "user.email", this.user.email);
         };
         this.isOwner = ({ nameWithOwner }) => nameWithOwner === `${this.org}/${this.repo}`;
         this.batch = (f) => async (items) => {
@@ -26625,7 +26656,7 @@ var require_gh = __commonJS({
               ${chunk.map((n) => `item_${n}:${f(n)}`).join("\n")}
             }
           }`;
-            const data = await withRetry("GitHub GraphQL batch", () => this.octokit.graphql(query));
+            const data = await (0, retry_1.withRetry)("GitHub GraphQL batch", () => this.octokit.graphql(query));
             return Object.values(data.repository);
           }));
           return output.flat().filter(Boolean);
@@ -26633,8 +26664,9 @@ var require_gh = __commonJS({
         this.issue = (n) => `https://${this.path}/issues/${n}`;
         this.release = async (version, body) => {
           const name = `release-${version.toString()}`;
+          const baseBranch2 = this.configuredBaseBranch || "main";
           if (isDryRun()) {
-            console.log(`[dry-run] Would create or reuse release PR for branch ${name} in ${this.org}/${this.repo}`);
+            console.log(`[relasy][dry-run] Would create or reuse release PR for branch ${name} (base=${baseBranch2}) in ${this.org}/${this.repo}`);
             return {
               data: {
                 number: 0,
@@ -26642,19 +26674,20 @@ var require_gh = __commonJS({
               }
             };
           }
-          const existing = await withRetry("Check existing release PR", async () => {
+          const resolvedBaseBranch = await this.resolveBaseBranch();
+          const existing = await (0, retry_1.withRetry)("Check existing release PR", async () => {
             const { data } = await this.octokit.rest.pulls.list({
               owner: this.org,
               repo: this.repo,
               state: "open",
               head: `${this.org}:${name}`,
-              base: this.baseBranch,
+              base: resolvedBaseBranch,
               per_page: 1
             });
             return data[0];
           });
           if (existing) {
-            console.log(`Reusing existing release PR: ${existing.html_url}`);
+            console.log(`[relasy] Reusing existing release PR: ${existing.html_url}`);
             return {
               data: {
                 number: existing.number,
@@ -26665,23 +26698,23 @@ var require_gh = __commonJS({
           (0, git_1.git)("add", ".");
           (0, git_1.git)("status");
           try {
-            (0, git_1.git)("commit", "-m", `"${name}"`);
+            (0, git_1.git)("commit", "-m", name);
           } catch {
-            console.log("No new changes to commit before drafting release PR.");
+            console.log("[relasy] No new changes to commit before drafting release PR.");
           }
           try {
             (0, git_1.git)("push", "origin", `HEAD:${name}`);
           } catch {
             const encoded = Buffer.from(`x-access-token:${token()}`).toString("base64");
-            (0, git_1.git)("-c", `"http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}"`, "push", `https://${this.path}.git`, `HEAD:${name}`);
+            (0, git_1.git)("-c", `http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}`, "push", `https://${this.path}.git`, `HEAD:${name}`);
           }
-          return withRetry("Create release PR", async () => {
+          return (0, retry_1.withRetry)("Create release PR", async () => {
             const pr = await this.octokit.rest.pulls.create({
               owner: this.org,
               repo: this.repo,
               head: name,
               draft: true,
-              base: this.baseBranch,
+              base: resolvedBaseBranch,
               title: `Publish Release ${version.toString()}`,
               body
             });
@@ -26697,7 +26730,7 @@ var require_gh = __commonJS({
         this.org = org;
         this.repo = repo;
         this.user = user;
-        this.baseBranch = baseBranch;
+        this.configuredBaseBranch = baseBranch;
       }
       get path() {
         return `github.com/${this.org}/${this.repo}`;
@@ -36593,7 +36626,7 @@ var require_npm = __commonJS({
             minor: "minor",
             patch: "patch"
           };
-          await (0, utils_1.exec)(`npm version ${args[option]} --no-git-tag-version`);
+          await (0, utils_1.execFile)("npm", ["version", args[option], "--no-git-tag-version"]);
         };
       }
       version() {
@@ -43497,7 +43530,7 @@ var require_dist = __commonJS({
   "../../packages/core/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.Relasy = exports2.exit = void 0;
+    exports2.Relasy = exports2.exit = exports2.withRetry = void 0;
     var types_1 = require_types();
     var gh_1 = require_gh();
     var config_1 = require_config();
@@ -43505,6 +43538,10 @@ var require_dist = __commonJS({
     var project_1 = require_project();
     var changelog_1 = require_changelog();
     var labels_1 = require_labels();
+    var retry_1 = require_retry();
+    Object.defineProperty(exports2, "withRetry", { enumerable: true, get: function() {
+      return retry_1.withRetry;
+    } });
     var utils_2 = require_utils4();
     Object.defineProperty(exports2, "exit", { enumerable: true, get: function() {
       return utils_2.exit;
@@ -43534,6 +43571,11 @@ var require_dist = __commonJS({
 });
 
 // src/index.ts
+var index_exports = {};
+__export(index_exports, {
+  run: () => run
+});
+module.exports = __toCommonJS(index_exports);
 var import_core = __toESM(require_core());
 var import_core2 = __toESM(require_dist());
 async function run() {
@@ -43549,7 +43591,7 @@ async function run() {
     (0, import_core.setOutput)("release_branch", branch);
     (0, import_core.setOutput)("pr_number", String(pr.data.number));
     (0, import_core.setOutput)("pr_url", pr.data.html_url);
-    (0, import_core.info)(`Draft release finished: ${pr.data.html_url}`);
+    (0, import_core.info)(`[relasy] Draft release finished: ${pr.data.html_url}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     (0, import_core.setFailed)(message);
@@ -43558,6 +43600,10 @@ async function run() {
 if (require.main === module) {
   run();
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  run
+});
 /*! Bundled license information:
 
 undici/lib/fetch/body.js:
