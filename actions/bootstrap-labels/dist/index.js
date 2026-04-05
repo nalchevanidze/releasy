@@ -43990,7 +43990,7 @@ var require_changelog = __commonJS({
         const changes = await fetch2.changesBetweenRefs(previousTag, tag);
         sections.push(renderer.changes(version_1.Version.parse(tag), changes, previousTag, (0, git_1.dateAtRef)(tag)));
       }
-      return sections.reverse().join("\n\n");
+      return sections.reverse().join("\n\n---\n\n");
     };
     var renderChangelog = async (api, options = {}) => {
       const hasCustomStart = Boolean(options.sinceTag || options.sinceCommit);

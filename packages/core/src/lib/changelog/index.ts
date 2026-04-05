@@ -124,7 +124,7 @@ const renderFullHistoryChangelog = async (api: Api): Promise<string> => {
     );
   }
 
-  return sections.reverse().join("\n\n");
+  return sections.reverse().join("\n\n---\n\n");
 };
 
 export const renderChangelog = async (

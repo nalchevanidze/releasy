@@ -146,7 +146,7 @@ describe("renderChangelog", () => {
     mockListTags.mockReturnValue(["v1.0.0", "v1.1.0"]);
 
     await expect(renderChangelog(api as Api, { all: true })).resolves.toBe(
-      "ok\n\nok",
+      "ok\n\n---\n\nok",
     );
 
     expect(mockChangesBetweenRefs).toHaveBeenNthCalledWith(1, undefined, "v1.0.0");
