@@ -4,7 +4,12 @@ import { Module } from "../project/types";
 import { Version } from "../version";
 
 export type Commit = {
+  oid: string;
   message: string;
+  author?: {
+    name?: string;
+    user?: { login?: string; url?: string } | null;
+  } | null;
   associatedPullRequests: {
     nodes: Array<{ number: number; repository: { nameWithOwner: string } }>;
   };
@@ -21,6 +26,7 @@ export type PR = {
 export type Change = PR & {
   type: ChangeType;
   pkgs: string[];
+  sourceCommit?: string;
 };
 
 export type GitHubClient = {

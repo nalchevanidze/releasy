@@ -157,8 +157,16 @@ If neither `build` nor `postBump` is set, Relasy auto-detects the package manage
 `changelog` supports optional rendering controls:
 
 - `headerTemplate` (string): supports `{{VERSION}}` and `{{DATE}}`
+- `sectionTemplate` (string): custom section template with `{{LABEL}}` and `{{CHANGES}}`
+- `itemTemplate` (string): custom entry template with `{{REF}}`, `{{TITLE}}`, `{{AUTHOR}}`, `{{PACKAGES}}`, `{{BODY}}`, `{{DETAILS}}`, `{{STATS}}`
 - `sectionTitles` (object): override section names for `breaking|feature|fix|chore`
 - `groupByPackage` (boolean): group entries by package labels in each section
+
+`nonPrCommitsPolicy` controls commits that are not linked to PRs:
+
+- `skip` (default): ignore non-PR commits in changelog
+- `include`: include non-PR commits as synthetic chore entries
+- `strict-fail`: stop release generation when non-PR commits are detected
 
 If `type` is `"custom"`, the following fields are required:
 

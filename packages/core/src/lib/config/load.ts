@@ -7,6 +7,7 @@ type ExtraConfig = {
   gh: string;
   changeTypes: Record<ChangeType, string>;
   labelPolicy?: "strict" | "permissive";
+  nonPrCommitsPolicy?: "include" | "skip" | "strict-fail";
 };
 
 export type Config = RawConfig & ExtraConfig;
@@ -20,6 +21,7 @@ export const loadConfig = async (): Promise<Config> => {
     ...config,
     gh,
     labelPolicy: config.labelPolicy ?? "strict",
+    nonPrCommitsPolicy: config.nonPrCommitsPolicy ?? "skip",
     changeTypes: defaultChangeTypes,
   };
 };

@@ -5,13 +5,19 @@ export type LabelPolicy = "strict" | "permissive";
 
 export type ChangelogConfig = {
   headerTemplate?: string;
+  sectionTemplate?: string;
+  itemTemplate?: string;
   sectionTitles?: Partial<Record<ChangeType, string>>;
   groupByPackage?: boolean;
 };
 
+export type NonPrCommitPolicy = "include" | "skip" | "strict-fail";
+
 export const ChangelogConfigSchema = z
   .object({
     headerTemplate: z.string().optional(),
+    sectionTemplate: z.string().optional(),
+    itemTemplate: z.string().optional(),
     sectionTitles: z
       .object({
         breaking: z.string().optional(),
@@ -60,6 +66,7 @@ export const ConfigSchema = z.object({
   pkgs: z.record(z.string(), z.string()),
   project: ManagerSchema,
   labelPolicy: z.enum(["strict", "permissive"]).optional(),
+  nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
   changelog: ChangelogConfigSchema,
 });
 

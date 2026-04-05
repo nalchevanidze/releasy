@@ -29,6 +29,12 @@ const stat = (topics: [string, string][]) =>
 const indent = (txt: string, n: number = 1) =>
   space(n, txt.replace(/\n/g, `\n${space(n)}`));
 
+const applyTemplate = (template: string, values: Record<string, string>) =>
+  Object.entries(values).reduce(
+    (acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value),
+    template,
+  );
+
 export class RenderAPI {
   constructor(private api: Api) {}
 
@@ -38,29 +44,67 @@ export class RenderAPI {
     return url ? link(labelName, url) : longName;
   };
 
-  private change = ({ number, author, title, body, pkgs }: Change): string => {
+  private ref = ({ number, sourceCommit }: Change) => {
+    if (number > 0) {
+      return link(`#${number}`, this.api.github.issue(number));
+    }
+
+    if (sourceCommit) {
+      return `commit ${sourceCommit.slice(0, 7)}`;
+    }
+
+    return "unknown";
+  };
+
+  private author = ({ author }: Change) =>
+    author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
+
+  private change = (change: Change): string => {
+    const { title, body, pkgs } = change;
     const details = body
       ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1)
       : "";
 
-    const head = `* ${link(
-      `#${number}`,
-      this.api.github.issue(number),
-    )}: ${title?.trim()}`;
-
     const stats = stat([
       ["📦", lines(pkgs.map(this.pkg))],
-      ["👤", link(`@${author.login}`, author.url)],
+      ["👤", this.author(change)],
     ]);
 
-    return lines([head, stats, details]);
+    const defaultItem = lines([`* ${this.ref(change)}: ${title?.trim()}`, stats, details]);
+    const template = this.api.config.changelog?.itemTemplate;
+
+    if (!template) return defaultItem;
+
+    return applyTemplate(template, {
+      REF: this.ref(change),
+      TITLE: title?.trim() || "",
+      AUTHOR: this.author(change),
+      PACKAGES: lines(pkgs.map(this.pkg)),
+      BODY: body || "",
+      DETAILS: details,
+      STATS: stats,
+    });
   };
 
-  private section = (label: string, changes: Change[]) =>
-    lines([`#### ${label}`, ...changes.map(this.change)]);
+  private section = (label: string, changes: Change[]) => {
+    const renderedChanges = lines(changes.map(this.change));
+    const template = this.api.config.changelog?.sectionTemplate;
+
+    if (!template) {
+      return lines([`#### ${label}`, renderedChanges]);
+    }
+
+    return applyTemplate(template, {
+      LABEL: label,
+      CHANGES: renderedChanges,
+    });
+  };
 
   private sectionByPackage = (label: string, changes: Change[]) => {
-    const byPkg = groupBy((change: Change) => change.pkgs.join(",") || "other", changes);
+    const byPkg = groupBy(
+      (change: Change) => change.pkgs.join(",") || "other",
+      changes,
+    );
 
     return lines([
       `#### ${label}`,
@@ -80,9 +124,10 @@ export class RenderAPI {
 
     const headerTemplate = this.api.config.changelog?.headerTemplate;
     const header = headerTemplate
-      ? headerTemplate
-          .replace("{{VERSION}}", tag.toString())
-          .replace("{{DATE}}", getDate())
+      ? applyTemplate(headerTemplate, {
+          VERSION: tag.toString(),
+          DATE: getDate(),
+        })
       : `## ${tag.toString()} (${getDate()})`;
 
     return lines(

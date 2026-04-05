@@ -78,6 +78,24 @@ describe("Github release flow", () => {
     );
   });
 
+  test("reuses existing open release PR without creating duplicates (idempotent)", async () => {
+    pullsListMock = vi.fn().mockResolvedValue({
+      data: [{ number: 99, html_url: "https://github.com/org/repo/pull/99" }],
+    });
+
+    const [{ Github }, { Version }] = await Promise.all([
+      import("./gh"),
+      import("./version"),
+    ]);
+
+    const github = new Github("org/repo");
+    const out = await github.release(Version.parse("1.2.3"), "notes");
+
+    expect(out.data.number).toBe(99);
+    expect(pullsCreateMock).not.toHaveBeenCalled();
+    expect(gitMock).not.toHaveBeenCalledWith("push", "origin", "HEAD:release-v1.2.3");
+  });
+
   test("falls back to authenticated https push when origin push fails", async () => {
     let failOriginPushOnce = true;
 

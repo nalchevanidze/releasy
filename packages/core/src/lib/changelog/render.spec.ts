@@ -139,4 +139,43 @@ describe("RenderAPI snapshots", () => {
     const markdown = new RenderAPI(api).changes(Version.parse("3.4.0"), changes);
     expect(markdown).toMatchSnapshot();
   });
+
+  test("custom section/item templates", () => {
+    const api = baseApi({
+      sectionTemplate: "### {{LABEL}}\n{{CHANGES}}",
+      itemTemplate: "- {{REF}} | {{TITLE}} | {{AUTHOR}} | {{PACKAGES}}",
+      sectionTitles: {
+        feature: "Features",
+      },
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.0"), [
+      c({
+        number: 40,
+        type: "feature",
+        title: "Template driven entry",
+        pkgs: ["core"],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("commit-only synthetic entries (sourceCommit + no author url)", () => {
+    const api = baseApi();
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.0"), [
+      c({
+        number: 0,
+        sourceCommit: "abcdef1234567890",
+        title: "Standalone commit",
+        body: "raw commit body",
+        author: { login: "ci-bot", url: "" },
+        type: "chore",
+        pkgs: [],
+      }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
 });

@@ -14,6 +14,7 @@ export type {
   LabelType,
   Manager,
   NPMManager,
+  NonPrCommitPolicy,
   RawConfig,
 } from "./config/schema";
 

@@ -30967,6 +30967,8 @@ var require_schema = __commonJS({
     var z = __importStar(require_zod());
     exports2.ChangelogConfigSchema = z.object({
       headerTemplate: z.string().optional(),
+      sectionTemplate: z.string().optional(),
+      itemTemplate: z.string().optional(),
       sectionTitles: z.object({
         breaking: z.string().optional(),
         feature: z.string().optional(),
@@ -31001,6 +31003,7 @@ var require_schema = __commonJS({
       pkgs: z.record(z.string(), z.string()),
       project: exports2.ManagerSchema,
       labelPolicy: z.enum(["strict", "permissive"]).optional(),
+      nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
       changelog: exports2.ChangelogConfigSchema
     });
   }
@@ -31039,6 +31042,7 @@ var require_load = __commonJS({
         ...config,
         gh,
         labelPolicy: config.labelPolicy ?? "strict",
+        nonPrCommitsPolicy: config.nonPrCommitsPolicy ?? "skip",
         changeTypes: defaults_1.defaultChangeTypes
       };
     };
@@ -43503,36 +43507,80 @@ var require_fetch2 = __commonJS({
       return void 0;
     };
     exports2.parsePRNumberFromCommitMessage = parsePRNumberFromCommitMessage;
+    var toSyntheticChange = (commit) => {
+      const [title, ...bodyLines] = commit.message.split("\n");
+      const body = bodyLines.join("\n").trim();
+      const authorLogin = commit.author?.user?.login || commit.author?.name || "unknown";
+      const authorUrl = commit.author?.user?.url || "";
+      return {
+        number: 0,
+        title: title.trim() || `Commit ${commit.oid.slice(0, 7)}`,
+        body,
+        author: { login: authorLogin, url: authorUrl },
+        labels: { nodes: [] },
+        type: "chore",
+        pkgs: [],
+        sourceCommit: commit.oid
+      };
+    };
     var FetchApi = class {
       constructor(api) {
         this.api = api;
-        this.commits = this.api.github.batch((i) => `object(oid: "${i}") {
+        this.commits = (items) => this.api.github.batch((i) => `object(oid: "${i}") {
       ... on Commit {
+        oid
         message
-        associatedPullRequests(first: 10) { 
+        author {
+          name
+          user { login url }
+        }
+        associatedPullRequests(first: 10) {
           nodes {
             number
             repository { nameWithOwner }
           }
         }
       }
-    }`);
-        this.pullRequests = this.api.github.batch((i) => `pullRequest(number: ${i}) {
+    }`)(items);
+        this.pullRequests = (items) => this.api.github.batch((i) => `pullRequest(number: ${i}) {
       number
       title
       body
       author { login url }
       labels(first: 10) { nodes { name } }
-    }`);
-        this.toPRNumber = (c) => c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? (0, exports2.parsePRNumberFromCommitMessage)(c.message);
-        this.changes = (version) => this.commits((0, git_1.commitsAfterVersion)(version)).then((c) => (0, ramda_1.uniq)((0, ramda_1.reject)(ramda_1.isNil, c.map(this.toPRNumber)))).then(this.pullRequests).then((0, ramda_1.map)((pr) => {
+    }`)(items);
+        this.toResolution = (c) => {
+          const prNumber = c.associatedPullRequests.nodes.find(({ repository }) => this.api.github.isOwner(repository))?.number ?? (0, exports2.parsePRNumberFromCommitMessage)(c.message);
+          if (prNumber) {
+            return { kind: "pr", prNumber, commit: c };
+          }
+          return { kind: "non-pr", commit: c };
+        };
+        this.toChange = (pr) => {
           const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           return {
             ...pr,
             type: changeTypes.find(Boolean)?.changeType ?? "chore",
             pkgs: pkgs.map(({ pkg }) => pkg)
           };
-        }));
+        };
+        this.changes = async (version) => {
+          const commits = await this.commits((0, git_1.commitsAfterVersion)(version));
+          const resolutions = commits.map(this.toResolution);
+          const prNumbers = [...new Set(resolutions.filter((r) => r.kind === "pr").map((r) => r.prNumber))];
+          const nonPrCommits = resolutions.filter((r) => r.kind === "non-pr").map((r) => r.commit);
+          const policy = this.api.config.nonPrCommitsPolicy ?? "skip";
+          if (policy === "strict-fail" && nonPrCommits.length > 0) {
+            const examples = nonPrCommits.slice(0, 3).map((c) => c.oid.slice(0, 7)).join(", ");
+            throw new Error(`Found ${nonPrCommits.length} commits without associated PRs (examples: ${examples}). Set nonPrCommitsPolicy to "skip" or "include" to continue.`);
+          }
+          const prChanges = (await this.pullRequests(prNumbers)).map(this.toChange);
+          if (policy !== "include") {
+            return prChanges;
+          }
+          const syntheticChanges = nonPrCommits.map(toSyntheticChange);
+          return [...prChanges, ...syntheticChanges];
+        };
       }
     };
     exports2.FetchApi = FetchApi;
@@ -43555,6 +43603,7 @@ var require_render = __commonJS({
     var stat = (topics) => lines(topics.filter(([_, value]) => value).map(([topic, value]) => space(1, `- ${topic} ${value}`)));
     var indent = (txt, n = 1) => space(n, txt.replace(/\n/g, `
 ${space(n)}`));
+    var applyTemplate = (template, values) => Object.entries(values).reduce((acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value), template);
     var RenderAPI = class {
       constructor(api) {
         this.api = api;
@@ -43563,16 +43612,48 @@ ${space(n)}`));
           const url = this.api.module.pkg(longName);
           return url ? link(labelName, url) : longName;
         };
-        this.change = ({ number, author, title, body, pkgs }) => {
+        this.ref = ({ number, sourceCommit }) => {
+          if (number > 0) {
+            return link(`#${number}`, this.api.github.issue(number));
+          }
+          if (sourceCommit) {
+            return `commit ${sourceCommit.slice(0, 7)}`;
+          }
+          return "unknown";
+        };
+        this.author = ({ author }) => author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
+        this.change = (change) => {
+          const { title, body, pkgs } = change;
           const details = body ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1) : "";
-          const head = `* ${link(`#${number}`, this.api.github.issue(number))}: ${title?.trim()}`;
           const stats = stat([
             ["\u{1F4E6}", lines(pkgs.map(this.pkg))],
-            ["\u{1F464}", link(`@${author.login}`, author.url)]
+            ["\u{1F464}", this.author(change)]
           ]);
-          return lines([head, stats, details]);
+          const defaultItem = lines([`* ${this.ref(change)}: ${title?.trim()}`, stats, details]);
+          const template = this.api.config.changelog?.itemTemplate;
+          if (!template)
+            return defaultItem;
+          return applyTemplate(template, {
+            REF: this.ref(change),
+            TITLE: title?.trim() || "",
+            AUTHOR: this.author(change),
+            PACKAGES: lines(pkgs.map(this.pkg)),
+            BODY: body || "",
+            DETAILS: details,
+            STATS: stats
+          });
         };
-        this.section = (label, changes) => lines([`#### ${label}`, ...changes.map(this.change)]);
+        this.section = (label, changes) => {
+          const renderedChanges = lines(changes.map(this.change));
+          const template = this.api.config.changelog?.sectionTemplate;
+          if (!template) {
+            return lines([`#### ${label}`, renderedChanges]);
+          }
+          return applyTemplate(template, {
+            LABEL: label,
+            CHANGES: renderedChanges
+          });
+        };
         this.sectionByPackage = (label, changes) => {
           const byPkg = (0, ramda_1.groupBy)((change) => change.pkgs.join(",") || "other", changes);
           return lines([
@@ -43590,7 +43671,10 @@ ${space(n)}`));
             ...this.api.config.changelog?.sectionTitles ?? {}
           };
           const headerTemplate = this.api.config.changelog?.headerTemplate;
-          const header = headerTemplate ? headerTemplate.replace("{{VERSION}}", tag.toString()).replace("{{DATE}}", (0, git_1.getDate)()) : `## ${tag.toString()} (${(0, git_1.getDate)()})`;
+          const header = headerTemplate ? applyTemplate(headerTemplate, {
+            VERSION: tag.toString(),
+            DATE: (0, git_1.getDate)()
+          }) : `## ${tag.toString()} (${(0, git_1.getDate)()})`;
           return lines([
             header,
             ...Object.entries(sectionTitles).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.api.config.changelog?.groupByPackage ? this.sectionByPackage(label, groups[type]) : this.section(label, groups[type]) : "")
