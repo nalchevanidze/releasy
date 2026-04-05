@@ -38,6 +38,30 @@ export class RenderAPI {
     return url ? link(labelName, url) : longName;
   };
 
+  private normalizedPkgs = (pkgs: string[]) => [...new Set(pkgs)].sort();
+
+  private packageLinks = (pkgs: string[]) =>
+    this.normalizedPkgs(pkgs).map(this.pkg);
+
+  private packageStats = (pkgs: string[]) => {
+    const pkgLinks = this.packageLinks(pkgs);
+
+    if (!pkgLinks.length) return space(1, "- 📦 General");
+    if (pkgLinks.length === 1) return space(1, `- 📦 ${pkgLinks[0]}`);
+
+    return space(1, `- 📦 Packages (${pkgLinks.length}): ${pkgLinks.join(", ")}`);
+  };
+
+  private packageGroupKey = (pkgs: string[]) => {
+    const normalized = this.normalizedPkgs(pkgs);
+    return normalized.length ? normalized.join(",") : "other";
+  };
+
+  private packageGroupTitle = (pkgKey: string) => {
+    if (pkgKey === "other") return "General";
+    return this.packageLinks(pkgKey.split(",")).join(" · ");
+  };
+
   private ref = ({ number, sourceCommit }: Change) => {
     if (number > 0) {
       return link(`#${number}`, this.api.github.issue(number));
@@ -60,7 +84,7 @@ export class RenderAPI {
       : "";
 
     const stats = lines([
-      ...pkgs.map((pkg) => space(1, `- 📦 ${this.pkg(pkg)}`)),
+      this.packageStats(pkgs),
       space(1, `- 👤 ${this.author(change)}`),
     ]);
 
@@ -77,7 +101,7 @@ export class RenderAPI {
       REF: this.ref(change),
       TITLE: title?.trim() || "",
       AUTHOR: this.author(change),
-      PACKAGES: lines(pkgs.map(this.pkg)),
+      PACKAGES: lines(this.packageLinks(pkgs)),
       BODY: body || "",
       DETAILS: details,
       STATS: stats,
@@ -100,14 +124,14 @@ export class RenderAPI {
 
   private sectionByPackage = (label: string, changes: Change[]) => {
     const byPkg = groupBy(
-      (change: Change) => change.pkgs.join(",") || "other",
+      (change: Change) => this.packageGroupKey(change.pkgs),
       changes,
     );
 
     return lines([
       `#### ${label}`,
       ...Object.entries(byPkg).flatMap(([pkgKey, pkgChanges]) => {
-        const pkgTitle = pkgKey === "other" ? "General" : pkgKey;
+        const pkgTitle = this.packageGroupTitle(pkgKey);
         return lines([`##### 📦 ${pkgTitle}`, ...pkgChanges.map(this.change)]);
       }),
     ]);
@@ -128,6 +152,10 @@ export class RenderAPI {
       : `## ${tag.toString()} (${getDate()})`;
 
     const grouping = this.api.config.changelog?.grouping ?? "none";
+
+    if (changes.length === 0) {
+      return lines([header, "_No user-facing changes since the last tag._"], 2);
+    }
 
     const sections =
       grouping === "none"
