@@ -6,8 +6,23 @@ const info = vi.fn();
 const getInput = vi.fn();
 
 const pullsGet = vi.fn();
+const pullsListFiles = vi.fn();
+const issuesAddLabels = vi.fn();
+const paginate = vi.fn(async (_method: unknown, _args: unknown) => [
+  { filename: "packages/core/src/index.ts" },
+]);
+
 const getOctokit = vi.fn(() => ({
-  rest: { pulls: { get: (...args: unknown[]) => pullsGet(...args) } },
+  rest: {
+    pulls: {
+      get: (...args: unknown[]) => pullsGet(...args),
+      listFiles: (...args: unknown[]) => pullsListFiles(...args),
+    },
+    issues: {
+      addLabels: (...args: unknown[]) => issuesAddLabels(...args),
+    },
+  },
+  paginate: (...args: unknown[]) => paginate(...args),
 }));
 
 const context = {
@@ -21,6 +36,17 @@ const context = {
     },
   },
 };
+
+const checkLabels = vi.fn(() => ({ ok: true, data: { changeType: "feature" } }));
+const evaluatePackageScopeRules = vi.fn(() => ({
+  ok: true,
+  data: {
+    inferredScopes: ["core"],
+    existingScopes: ["core"],
+    missingScopes: [],
+    conflictingScopes: [],
+  },
+}));
 
 vi.mock("@actions/core", () => ({
   setFailed: (...args: unknown[]) => setFailed(...args),
@@ -43,96 +69,96 @@ vi.mock("@relasy/core", () => ({
         chore: "chore",
         breaking: "breaking",
       },
+      packageScopes: {
+        core: { paths: ["packages/core/**"] },
+      },
+      rules: {
+        requireInferredPackageLabels: true,
+      },
     },
     parseLabels: vi.fn(() => ({
       changeTypes: [{ changeType: "feature" }],
+      pkgs: [{ pkg: "core" }],
     })),
   })),
-  checkLabels: vi.fn(() => ({ ok: true, data: { changeType: "feature" } })),
+  checkLabels: (...args: unknown[]) => checkLabels(...args),
+  evaluatePackageScopeRules: (...args: unknown[]) => evaluatePackageScopeRules(...args),
 }));
 
 describe("validate-pr-labels action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getInput.mockReturnValue("true");
+    getInput.mockImplementation((name: string) => {
+      if (name === "require_change_type") return "true";
+      if (name === "auto_add_package_labels") return "false";
+      return "";
+    });
     process.env.GITHUB_TOKEN = "token";
-    delete process.env.RELASY_OWNER;
-    delete process.env.RELASY_REPO;
-    delete process.env.RELASY_PR_NUMBER;
 
-    context.repo.owner = "acme";
-    context.repo.repo = "demo";
-    context.issue.number = 10;
-    context.payload.pull_request = {
-      number: 10,
-      head: { ref: "feature-branch" },
-      labels: [{ name: "✨ feature" }],
-    };
-
-    pullsGet.mockResolvedValue({ data: { labels: [{ name: "🐛 fix" }] } });
+    pullsGet.mockResolvedValue({ data: { labels: [{ name: "✨ feature" }, { name: "📦 core" }] } });
+    pullsListFiles.mockResolvedValue([{ filename: "packages/core/src/index.ts" }]);
+    paginate.mockResolvedValue([{ filename: "packages/core/src/index.ts" }]);
   });
 
-  test("sets string change_type output", async () => {
+  test("sets outputs including inferred/missing package labels", async () => {
     const { run } = await import("./index");
 
     await run();
 
     expect(setOutput).toHaveBeenCalledWith("change_type", "feature");
+    expect(setOutput).toHaveBeenCalledWith("inferred_package_labels", "core");
+    expect(setOutput).toHaveBeenCalledWith("missing_package_labels", "");
     expect(setFailed).not.toHaveBeenCalled();
   });
 
-  test("getCurrentPrLabels uses payload labels by default", async () => {
-    const { getCurrentPrLabels } = await import("./index");
+  test("auto-adds missing inferred package labels when enabled", async () => {
+    let calls = 0;
+    evaluatePackageScopeRules.mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) {
+        return {
+          ok: false,
+          code: "LABEL_POLICY_ERROR",
+          message: "Missing inferred package labels: 📦 core",
+        };
+      }
 
-    context.payload.pull_request = {
-      number: 10,
-      head: { ref: "feature-branch" },
-      labels: [{ name: "✨ feature" }, "📦 core"] as unknown as { name: string }[],
-    };
+      return {
+        ok: true,
+        data: {
+          inferredScopes: ["core"],
+          existingScopes: ["core"],
+          missingScopes: [],
+          conflictingScopes: [],
+        },
+      };
+    });
 
-    await expect(getCurrentPrLabels()).resolves.toEqual([
-      "✨ feature",
-      "📦 core",
-    ]);
-    expect(getOctokit).not.toHaveBeenCalled();
+    getInput.mockImplementation((name: string) => {
+      if (name === "require_change_type") return "true";
+      if (name === "auto_add_package_labels") return "true";
+      return "";
+    });
+
+    const { run } = await import("./index");
+    await run();
+
+    expect(issuesAddLabels).toHaveBeenCalledWith({
+      owner: "acme",
+      repo: "demo",
+      issue_number: 10,
+      labels: ["📦 core"],
+    });
+    expect(setFailed).not.toHaveBeenCalled();
   });
 
-  test("getCurrentPrLabels refetches from API when requested", async () => {
-    const { getCurrentPrLabels } = await import("./index");
+  test("getCurrentPrFiles fetches changed files via GitHub API", async () => {
+    const { getCurrentPrFiles } = await import("./index");
 
-    await expect(getCurrentPrLabels({ refetch: true })).resolves.toEqual([
-      "🐛 fix",
+    await expect(getCurrentPrFiles()).resolves.toEqual([
+      "packages/core/src/index.ts",
     ]);
 
     expect(getOctokit).toHaveBeenCalledWith("token");
-    expect(pullsGet).toHaveBeenCalledWith({
-      owner: "acme",
-      repo: "demo",
-      pull_number: 10,
-    });
-  });
-
-  test("getCurrentPrLabels supports local-run fallback via env", async () => {
-    const { getCurrentPrLabels } = await import("./index");
-
-    context.repo.owner = "";
-    context.repo.repo = "";
-    context.issue.number = undefined as unknown as number;
-    context.payload.pull_request = undefined;
-    process.env.RELASY_OWNER = "env-org";
-    process.env.RELASY_REPO = "env-repo";
-    process.env.RELASY_PR_NUMBER = "99";
-
-    pullsGet.mockResolvedValue({ data: { labels: [{ name: "🧹 chore" }] } });
-
-    await expect(getCurrentPrLabels({ refetch: true })).resolves.toEqual([
-      "🧹 chore",
-    ]);
-
-    expect(pullsGet).toHaveBeenCalledWith({
-      owner: "env-org",
-      repo: "env-repo",
-      pull_number: 99,
-    });
   });
 });

@@ -1,4 +1,5 @@
-import { readFile } from "fs/promises";
+import { access, readFile } from "fs/promises";
+import yaml from "js-yaml";
 import { remote } from "../git";
 import { defaultChangeTypes } from "./defaults";
 import {
@@ -97,9 +98,43 @@ export const normalizeConfig = (config: RawConfig, gh: string): Config => {
   };
 };
 
+const exists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const loadRawConfig = async (): Promise<RawConfig> => {
+  const yamlPath = (await exists("./relasy.yaml"))
+    ? "./relasy.yaml"
+    : await exists("./relasy.yml")
+      ? "./relasy.yml"
+      : undefined;
+
+  if (yamlPath) {
+    const content = await readFile(yamlPath, "utf8");
+    return ConfigSchema.parse(yaml.load(content) ?? {});
+  }
+
+  if (await exists("./relasy.json")) {
+    console.warn(
+      "[relasy][deprecation] relasy.json is deprecated. Please migrate to relasy.yaml.",
+    );
+
+    const content = await readFile("./relasy.json", "utf8");
+    return ConfigSchema.parse(JSON.parse(content));
+  }
+
+  throw new Error(
+    "Missing configuration file. Expected relasy.yaml (preferred), relasy.yml, or relasy.json.",
+  );
+};
+
 export const loadConfig = async (): Promise<Config> => {
-  const data = await readFile("./relasy.json", "utf8").then(JSON.parse);
-  const config = ConfigSchema.parse(data);
+  const config = await loadRawConfig();
   const gh = remote();
 
   return normalizeConfig(config, gh);

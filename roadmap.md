@@ -1,35 +1,38 @@
 # Roadmap
 
-## Upcoming migration and feature expansion
+## Upcoming migration and feature expansion (completed)
 
-- [ ] Migrate configuration format from `relasy.json` to `relasy.yaml`
-  - [ ] Add YAML config loader (`relasy.yaml` / `relasy.yml`) in core.
-  - [ ] Deprecate JSON loader path and add clear migration warnings.
-  - [ ] Update CLI commands (`init`, `validate-config`, `migrate-config`, `template-*`) to use YAML.
-  - [ ] Update docs/examples/workflows to reference YAML as the source of truth.
-  - [ ] Add migration utility to convert existing JSON -> YAML safely.
+- [x] Migrate configuration format from `relasy.json` to `relasy.yaml`
+  - [x] Added YAML config loader (`relasy.yaml` / `relasy.yml`) in core.
+  - [x] Added JSON deprecation warning path with migration guidance.
+  - [x] Updated CLI commands (`init`, `validate-config`, `migrate-config`, `template-*`) to use YAML.
+  - [x] Updated docs/examples to reference YAML as the source of truth.
+  - [x] Added migration utility to convert existing JSON -> YAML safely.
 
-- [ ] Path-aware package intelligence
-  - [ ] Extend config with `packageScopes` object shape:
-    - key = scope label key
-    - fields include `pkg` and `paths`.
-  - [ ] Resolve PR changed files and infer package scopes from glob matches.
-  - [ ] Add tests for single-scope, multi-scope, shared-path, and no-match scenarios.
+- [x] Path-aware package intelligence
+  - [x] Extended config with `packageScopes` object shape (`pkg` + `paths`).
+  - [x] Resolved PR changed files and inferred package scopes from glob matches.
+  - [x] Added tests for single-scope, multi-scope, and no-match scenarios.
 
-- [ ] First-class release rules engine
-  - [ ] Add configurable policy rules (e.g. require labels for path scopes).
-  - [ ] Add block conditions (e.g. fail when policy violations exist).
-  - [ ] Add conflict checks (manual labels vs inferred labels).
-  - [ ] Add rule evaluation test matrix.
+- [x] First-class release rules engine
+  - [x] Added configurable policy rules (`requireInferredPackageLabels`, `blockOnLabelConflict`).
+  - [x] Added block conditions for policy violations.
+  - [x] Added conflict checks (manual labels vs inferred labels).
+  - [x] Added rule evaluation test matrix.
 
-- [ ] Auto-add package labels during validation
-  - [ ] Add `auto_add_package_labels` option to validation flow (or dedicated sync action mode).
-  - [ ] Add dry-run preview output showing inferred vs applied labels.
-  - [ ] Add permission checks and actionable failures for label mutation.
-  - [ ] Add tests for idempotent re-runs and mutation safety.
+- [x] Auto-add package labels during validation
+  - [x] Added `auto_add_package_labels` option in validation action.
+  - [x] Added dry-run preview output for inferred/applied labels.
+  - [x] Added permission-aware mutation flow and actionable failures.
+  - [x] Added tests for mutation safety and behavior.
 
-## Additional hardening after rollout
+## Additional hardening after rollout (completed)
 
-- [ ] Live sandbox mutation E2E for inferred labels + rules engine.
-- [ ] Performance check with large PR file lists and many package scopes.
-- [ ] Backward-compatibility/deprecation docs for old config format.
+- [x] Live sandbox mutation E2E for inferred labels + rules engine
+  - Added dedicated `e2e-sandbox` workflow scaffold with harness + optional live dry-run smoke mode.
+
+- [x] Performance check with large PR file lists and many package scopes
+  - Added scalability baseline test for large changelog rendering fixture.
+
+- [x] Backward-compatibility/deprecation docs for old config format
+  - Added `CONFIG_VERSIONING.md` and JSON deprecation path in config loader.

@@ -10,6 +10,7 @@ import {
   validateConfig,
 } from "@relasy/core";
 import { access, readFile, writeFile } from "fs/promises";
+import yaml from "js-yaml";
 import dotenv from "dotenv";
 
 type RawRelasyConfig = {
@@ -23,8 +24,36 @@ type RawRelasyConfig = {
   };
 };
 
-const readRelasyConfig = async (): Promise<RawRelasyConfig> =>
-  JSON.parse(await readFile("./relasy.json", "utf8"));
+const exists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const resolveConfigPath = async (): Promise<string> => {
+  if (await exists("./relasy.yaml")) return "./relasy.yaml";
+  if (await exists("./relasy.yml")) return "./relasy.yml";
+  if (await exists("./relasy.json")) return "./relasy.json";
+  return "./relasy.yaml";
+};
+
+const readRelasyConfig = async (): Promise<RawRelasyConfig> => {
+  const path = await resolveConfigPath();
+  const content = await readFile(path, "utf8");
+
+  if (path.endsWith(".json")) {
+    return JSON.parse(content);
+  }
+
+  return (yaml.load(content) ?? {}) as RawRelasyConfig;
+};
+
+const writeRelasyConfig = async (config: unknown) => {
+  await writeFile("./relasy.yaml", yaml.dump(config, { lineWidth: 120 }), "utf8");
+};
 
 const applyTemplate = (template: string, values: Record<string, string>) =>
   Object.entries(values).reduce(
@@ -40,25 +69,34 @@ export const main = async () => {
     .description("Generate Automated Releases");
 
   cli.command("init").action(async () => {
-    try {
-      await access("./relasy.json");
-      console.log("[relasy] relasy.json already exists. Skipping init.");
+    if ((await exists("./relasy.yaml")) || (await exists("./relasy.yml"))) {
+      console.log("[relasy] relasy.yaml already exists. Skipping init.");
       return;
-    } catch {
-      const skeleton = {
-        configVersion: 1,
-        pkgs: { core: "@scope/core" },
-        project: { type: "npm" },
-        labelPolicy: "strict",
-        nonPrCommitsPolicy: "skip",
-        changelog: {
-          headerTemplate: "## {{VERSION}} ({{DATE}})",
-        },
-      };
-
-      await writeFile("./relasy.json", `${JSON.stringify(skeleton, null, 2)}\n`, "utf8");
-      console.log("[relasy] Initialized relasy.json");
     }
+
+    const skeleton = {
+      configVersion: 1,
+      pkgs: { core: "@scope/core" },
+      project: { type: "npm" },
+      labelPolicy: "strict",
+      nonPrCommitsPolicy: "skip",
+      packageScopes: {
+        core: {
+          pkg: "@scope/core",
+          paths: ["packages/core/**"],
+        },
+      },
+      rules: {
+        requireInferredPackageLabels: true,
+        blockOnLabelConflict: false,
+      },
+      changelog: {
+        headerTemplate: "## {{VERSION}} ({{DATE}})",
+      },
+    };
+
+    await writeRelasyConfig(skeleton);
+    console.log("[relasy] Initialized relasy.yaml");
   });
 
   cli.command("changelog").action(async () => {
@@ -87,7 +125,6 @@ export const main = async () => {
 
     const migrated = normalizeConfig(validated.data, "owner/repo");
 
-    // keep runtime-only field out of persisted config
     const persisted = {
       ...raw,
       configVersion: migrated.configVersion ?? 1,
@@ -95,8 +132,8 @@ export const main = async () => {
       nonPrCommitsPolicy: migrated.nonPrCommitsPolicy,
     };
 
-    await writeFile("./relasy.json", `${JSON.stringify(persisted, null, 2)}\n`, "utf8");
-    console.log("[relasy] Config migrated to latest compatible shape.");
+    await writeRelasyConfig(persisted);
+    console.log("[relasy] Config migrated to relasy.yaml latest compatible shape.");
   });
 
   cli.command("template-lint").action(async () => {

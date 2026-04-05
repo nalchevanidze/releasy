@@ -16,8 +16,15 @@ export type {
   Manager,
   NPMManager,
   NonPrCommitPolicy,
+  PackageScope,
   RawConfig,
+  RulesConfig,
 } from "./config/schema";
 
 export type { Config } from "./config/load";
-export { loadConfig, normalizeConfig, validateChangelogTemplates } from "./config/load";
+export {
+  loadConfig,
+  loadRawConfig,
+  normalizeConfig,
+  validateChangelogTemplates,
+} from "./config/load";

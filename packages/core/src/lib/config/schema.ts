@@ -15,6 +15,16 @@ export type ConfigVersion = 1;
 
 export type NonPrCommitPolicy = "include" | "skip" | "strict-fail";
 
+export type PackageScope = {
+  pkg?: string;
+  paths: string[];
+};
+
+export type RulesConfig = {
+  requireInferredPackageLabels?: boolean;
+  blockOnLabelConflict?: boolean;
+};
+
 export const ChangelogConfigSchema = z
   .object({
     headerTemplate: z.string().optional(),
@@ -64,12 +74,26 @@ export type NPMManager = z.infer<typeof NPMManagerSchema>;
 export const ManagerSchema = z.union([NPMManagerSchema, CustomManagerSchema]);
 export type Manager = z.infer<typeof ManagerSchema>;
 
+export const PackageScopeSchema = z.object({
+  pkg: z.string().optional(),
+  paths: z.array(z.string()).min(1),
+});
+
+export const RulesConfigSchema = z
+  .object({
+    requireInferredPackageLabels: z.boolean().optional(),
+    blockOnLabelConflict: z.boolean().optional(),
+  })
+  .optional();
+
 export const ConfigSchema = z.object({
   configVersion: z.literal(1).optional(),
   pkgs: z.record(z.string(), z.string()),
   project: ManagerSchema,
   labelPolicy: z.enum(["strict", "permissive"]).optional(),
   nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
+  packageScopes: z.record(z.string(), PackageScopeSchema).optional(),
+  rules: RulesConfigSchema,
   changelog: ChangelogConfigSchema,
 });
 

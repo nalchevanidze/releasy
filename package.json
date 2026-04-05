@@ -11,7 +11,7 @@
     "build:action": "npm -w @relasy/draft-release-action run build && npm -w @relasy/publish-release-action run build && npm -w @relasy/validate-pr-labels-action run build && npm -w @relasy/bootstrap-labels-action run build",
     "build:cli": "npm -w @relasy/cli run build",
     "build": "npm run build:core && npm run build:action && npm run build:cli",
-    "test": "npm -w @relasy/core run test && npm -w @relasy/actions-common run test && npm -w @relasy/draft-release-action run test && npm -w @relasy/publish-release-action run test && npm -w @relasy/validate-pr-labels-action run test && npm -w @relasy/bootstrap-labels-action run test",
+    "test": "npm -w @relasy/core run test && npm -w @relasy/core run build && npm -w @relasy/actions-common run test && npm -w @relasy/draft-release-action run test && npm -w @relasy/publish-release-action run test && npm -w @relasy/validate-pr-labels-action run test && npm -w @relasy/bootstrap-labels-action run test",
     "lint": "eslint . --max-warnings 0",
     "security:check": "node scripts/check-workflow-permissions.mjs",
     "format": "prettier --write .",

@@ -1,0 +1,77 @@
+configVersion: 1
+
+# Label keys -> package identifiers used in changelog package links
+pkgs:
+  core: "@relasy/core"
+  cli: "@relasy/cli"
+  actions-common: "@relasy/actions-common"
+  draft: "@relasy/draft-release-action"
+  publish: "@relasy/publish-release-action"
+  labels: "@relasy/validate-pr-labels-action"
+  bootstrap: "@relasy/bootstrap-labels-action"
+
+project:
+  type: npm
+  # Optional override if default branch is not your repository default
+  # baseBranch: main
+
+# Strict mode keeps labeling quality high (recommended)
+labelPolicy: strict
+
+# Commits without associated PRs:
+# skip | include | strict-fail
+nonPrCommitsPolicy: skip
+
+# Path-aware package inference for auto package-scope labeling
+packageScopes:
+  core:
+    pkg: "@relasy/core"
+    paths:
+      - "packages/core/**"
+
+  cli:
+    pkg: "@relasy/cli"
+    paths:
+      - "packages/cli/**"
+
+  actions-common:
+    pkg: "@relasy/actions-common"
+    paths:
+      - "packages/actions-common/**"
+
+  draft:
+    pkg: "@relasy/draft-release-action"
+    paths:
+      - "actions/draft-release/**"
+
+  publish:
+    pkg: "@relasy/publish-release-action"
+    paths:
+      - "actions/publish-release/**"
+
+  labels:
+    pkg: "@relasy/validate-pr-labels-action"
+    paths:
+      - "actions/validate-pr-labels/**"
+
+  bootstrap:
+    pkg: "@relasy/bootstrap-labels-action"
+    paths:
+      - "actions/bootstrap-labels/**"
+
+# Rules engine behavior for inferred scopes
+rules:
+  requireInferredPackageLabels: true
+  blockOnLabelConflict: false
+
+changelog:
+  headerTemplate: "## {{VERSION}} ({{DATE}})"
+  sectionTitles:
+    breaking: "Breaking Changes"
+    feature: "New Features"
+    fix: "Bug Fixes"
+    chore: "Minor Changes"
+  groupByPackage: true
+  # Optional advanced formatting:
+  # sectionTemplate: "#### {{LABEL}}\n{{CHANGES}}"
+  # itemTemplate: "* {{REF}}: {{TITLE}}\n  - 👤 {{AUTHOR}}\n  - 📦 {{PACKAGES}}"

@@ -6,7 +6,7 @@ import {
   resolvePrNumber,
   resolveRepo,
 } from "@relasy/actions-common";
-import { checkLabels, loadRelasy } from "@relasy/core";
+import { checkLabels, evaluatePackageScopeRules, loadRelasy } from "@relasy/core";
 
 type Params = {
   token?: string;
@@ -55,6 +55,47 @@ export async function getCurrentPrLabels(
   return (pr.labels ?? []).map(toLabelName).filter(Boolean) as string[];
 }
 
+export async function getCurrentPrFiles(params: Params = {}): Promise<string[]> {
+  const token = params.token ?? requireGitHubToken();
+  const { owner, repo } = resolveRepo(context);
+  const prNumber = resolvePrNumber(context);
+  const octokit = getOctokit(token);
+
+  const files = await octokit.paginate(octokit.rest.pulls.listFiles, {
+    owner,
+    repo,
+    pull_number: prNumber,
+    per_page: 100,
+  });
+
+  return files.map((f) => f.filename);
+}
+
+const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
+
+const addPackageLabels = async (labelsToAdd: string[]) => {
+  if (labelsToAdd.length === 0) return;
+
+  if (isDryRun()) {
+    info(
+      `[relasy][dry-run] Would add inferred package labels: ${labelsToAdd.join(", ")}`,
+    );
+    return;
+  }
+
+  const token = requireGitHubToken();
+  const { owner, repo } = resolveRepo(context);
+  const prNumber = resolvePrNumber(context);
+  const octokit = getOctokit(token);
+
+  await octokit.rest.issues.addLabels({
+    owner,
+    repo,
+    issue_number: prNumber,
+    labels: labelsToAdd,
+  });
+};
+
 export async function run() {
   try {
     const headRef = context.payload.pull_request?.head?.ref;
@@ -71,14 +112,47 @@ export async function run() {
         required: false,
       }) === "true";
 
-    const labels = await getCurrentPrLabels();
-    const result = checkLabels(iRelasy, labels, requireChangeType);
+    const autoAddPackageLabels =
+      getInput("auto_add_package_labels", {
+        required: false,
+      }) === "true";
 
-    if (!result.ok) {
-      throw new Error(`[${result.code}] ${result.message}`);
+    let labels = await getCurrentPrLabels();
+
+    const labelResult = checkLabels(iRelasy, labels, requireChangeType);
+    if (!labelResult.ok) {
+      throw new Error(`[${labelResult.code}] ${labelResult.message}`);
     }
 
-    setOutput("change_type", result.data.changeType);
+    const changedFiles = await getCurrentPrFiles();
+    const scopeResult = evaluatePackageScopeRules(iRelasy, labels, changedFiles);
+
+    if (!scopeResult.ok) {
+      const message = `[${scopeResult.code}] ${scopeResult.message}`;
+
+      if (autoAddPackageLabels && message.includes("Missing inferred package labels")) {
+        const labelsToAdd = scopeResult.message
+          .replace("Missing inferred package labels: ", "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        info(`[relasy] Auto-adding inferred package labels: ${labelsToAdd.join(", ")}`);
+        await addPackageLabels(labelsToAdd);
+        labels = await getCurrentPrLabels({ refetch: true });
+      } else {
+        throw new Error(message);
+      }
+    }
+
+    const finalScopeResult = evaluatePackageScopeRules(iRelasy, labels, changedFiles);
+    if (!finalScopeResult.ok) {
+      throw new Error(`[${finalScopeResult.code}] ${finalScopeResult.message}`);
+    }
+
+    setOutput("change_type", labelResult.data.changeType);
+    setOutput("inferred_package_labels", finalScopeResult.data.inferredScopes.join(","));
+    setOutput("missing_package_labels", finalScopeResult.data.missingScopes.join(","));
   } catch (error) {
     setFailed(formatActionFailure("validate-pr-labels", error));
   }

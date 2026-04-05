@@ -80,17 +80,17 @@ Every PR should have **exactly one** change/type label:
 
 Optional (monorepos): **zero or more** package labels:
 
-- `📦 <pkgKey>` — each `<pkgKey>` must match a key in `relasy.json` → `pkgs`
+- `📦 <pkgKey>` — each `<pkgKey>` must match a key in `relasy.yaml` → `pkgs`
 
 > If a PR touches multiple packages, add multiple `📦` labels. Relasy will include them as tags on the changelog entry (no package grouping required).
 
 ---
 
-## Configuration (`relasy.json`)
+## Configuration (`relasy.yaml`)
 
-Relasy reads configuration from `relasy.json` to adapt to your repo conventions without changing action code.
+Relasy reads configuration from `relasy.yaml` (or `relasy.yml`) to adapt to your repo conventions without changing action code.
 
-At a high level, `relasy.json` describes:
+At a high level, `relasy.yaml` describes:
 
 - the **pkgs** in your repo (single package or many packages/modules)
 - which **tooling** is used to resolve versioning/publishing details (`project`)
@@ -98,27 +98,32 @@ At a high level, `relasy.json` describes:
 - label parsing behavior (`labelPolicy`)
 - changelog rendering preferences (`changelog`)
 - non-PR commit handling policy (`nonPrCommitsPolicy`)
+- path-aware package scope inference (`packageScopes`) and rule controls (`rules`)
 
 ### Schema overview
 
-```json
-{
-  "configVersion": 1,
-  "pkgs": {
-    "shortName": "long-package-identifier"
-  },
-  "project": {
-    "type": "npm"
-  },
-  "labelPolicy": "strict",
-  "nonPrCommitsPolicy": "skip",
-  "changelog": {
-    "headerTemplate": "## {{VERSION}} ({{DATE}})",
-    "sectionTemplate": "#### {{LABEL}}\n{{CHANGES}}",
-    "itemTemplate": "* {{REF}}: {{TITLE}}",
-    "groupByPackage": false
-  }
-}
+```yaml
+configVersion: 1
+pkgs:
+  shortName: long-package-identifier
+project:
+  type: npm
+labelPolicy: strict
+nonPrCommitsPolicy: skip
+packageScopes:
+  core:
+    pkg: "@scope/core"
+    paths:
+      - "packages/core/**"
+      - "libs/shared/**"
+rules:
+  requireInferredPackageLabels: true
+  blockOnLabelConflict: false
+changelog:
+  headerTemplate: "## {{VERSION}} ({{DATE}})"
+  sectionTemplate: "#### {{LABEL}}\n{{CHANGES}}"
+  itemTemplate: "* {{REF}}: {{TITLE}}"
+  groupByPackage: false
 ```
 
 ### `pkgs`
@@ -367,7 +372,7 @@ What it checks (recommended defaults):
 
 - **Exactly one** change/type label (e.g. `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`)
 - **Zero or more** pkg labels for monorepos (e.g. `📦 client`, `📦 server`)
-- If any pkg labels are present, each must match a key in `relasy.json` → `pkgs` (prevents typos like `📦 frontend`)
+- If any pkg labels are present, each must match a key in `relasy.yaml` → `pkgs` (prevents typos like `📦 frontend`)
 
 Suggested workflow:
 
@@ -412,7 +417,7 @@ This action creates the labels Relasy expects in a repository (useful for onboar
 What it creates (typical):
 
 - Type labels: `💥 breaking`, `✨ feature`, `🐛 fix`, `🧹 chore`
-- Pkg labels from `relasy.json`: `📦 <pkgKey>` for each key under `pkgs`
+- Pkg labels from `relasy.yaml`: `📦 <pkgKey>` for each key under `pkgs`
 
 Suggested workflow:
 
@@ -442,9 +447,9 @@ jobs:
 
 Relasy CLI now supports:
 
-- `relasy init` — create a starter `relasy.json` if missing
+- `relasy init` — create a starter `relasy.yaml` if missing
 - `relasy changelog` — generate `./changelog.md`
-- `relasy validate-config` — validate `relasy.json`
+- `relasy validate-config` — validate `relasy.yaml`
 - `relasy migrate-config` — normalize config to latest compatible shape (`configVersion: 1` defaults)
 - `relasy template-lint` — validate changelog template placeholders
 - `relasy template-preview` — render a local preview for configured templates
