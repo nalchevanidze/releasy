@@ -1,26 +1,29 @@
 # 🚀 [v2.0.0](https://github.com/nalchevanidze/relasy/compare/v1.9.0...v2.0.0) &nbsp; • &nbsp; April 05, 2026
 ![Major](https://img.shields.io/badge/BUMP-MAJOR-red?style=flat-square) ![Changes](https://img.shields.io/badge/CHANGES-11-blue?style=flat-square) ![Packages](https://img.shields.io/badge/PACKAGES-7-orange?style=flat-square)
 
+---
 
-### 💥 Breaking Changes
+### 💥 BREAKING CHANGES
 
 * **#38** — Add YAML-first config, policy-driven checks, and workflow hardening  
   &nbsp; &nbsp; 📦 **Scope:** `core` • `cli` • `bootstrap` • `draft` • `labels` • `publish`  
-  &nbsp; &nbsp; ✍️ **Author:** <img src="https://github.com/nalchevanidze.png?size=32" width="16" height="16" style="vertical-align:middle; border-radius:50%"> [@nalchevanidze](https://github.com/nalchevanidze)
+  &nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
 
-### 🐛 Bug Fixes
+<br>
+
+### 🐛 BUG FIXES
 
 * **#39** — Fix/release flow docs rule warn alignment  
   &nbsp; &nbsp; 📦 **Scope:** `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish`  
-  &nbsp; &nbsp; ✍️ **Author:** <img src="https://github.com/nalchevanidze.png?size=32" width="16" height="16" style="vertical-align:middle; border-radius:50%"> [@nalchevanidze](https://github.com/nalchevanidze)
+  &nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
 
 <br>
 
 ---
 
-### 🗒️ OTHER CHANGES
+### 🛠️ OTHER REFINEMENTS
 
--  [🔗](https://github.com/...) — fix minor issues 
--  [🔗](https://github.com/...) — update clients  
--  [🔗](https://github.com/...) — resolvePostBumpCommand  
--  [🔗](https://github.com/...) — improvements
+&nbsp; &nbsp; [🔗](https://github.com/...) &nbsp; fix minor issues  
+&nbsp; &nbsp; [🔗](https://github.com/...) &nbsp; update clients  
+&nbsp; &nbsp; [🔗](https://github.com/...) &nbsp; resolvePostBumpCommand  
+&nbsp; &nbsp; [🔗](https://github.com/...) &nbsp; general improvements
