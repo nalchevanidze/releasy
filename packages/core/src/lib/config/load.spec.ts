@@ -16,17 +16,59 @@ describe("config normalization/versioning", () => {
     expect(out.nonPrCommitsPolicy).toBe("skip");
   });
 
-  test("keeps explicit configVersion", () => {
+  test("normalizes single-string pkg paths into lists", () => {
     const out = normalizeConfig(
       {
-        configVersion: 1,
-        pkgs: { core: "@acme/core" },
+        pkgs: {
+          core: { name: "@acme/core", paths: "packages/core/**" },
+        },
         project: { type: "npm" },
       },
       "acme/demo",
     );
 
-    expect(out.configVersion).toBe(1);
+    expect(out.pkgs.core.paths).toEqual(["packages/core/**"]);
+  });
+
+  test("derives change titles/icons/scopes from changes map", () => {
+    const out = normalizeConfig(
+      {
+        pkgs: { core: "@acme/core" },
+        project: { type: "npm" },
+        changes: {
+          docs: {
+            title: "Documentation",
+            icon: "📚",
+            bump: "patch",
+            paths: "docs/**/*.md",
+          },
+        },
+      },
+      "acme/demo",
+    );
+
+    expect(out.changeTypes.docs).toBe("Documentation");
+    expect(out.changeTypeEmojis?.docs).toBe("📚");
+    expect(out.changeTypeBumps?.docs).toBe("patch");
+    expect(out.changeTypeScopes?.docs.paths).toEqual(["docs/**/*.md"]);
+  });
+
+  test("requires bump when custom change entry is declared", () => {
+    expect(() =>
+      normalizeConfig(
+        {
+          pkgs: { core: "@acme/core" },
+          project: { type: "npm" },
+          changes: {
+            docs: {
+              title: "Documentation",
+              icon: "📚",
+            },
+          },
+        },
+        "acme/demo",
+      ),
+    ).toThrow("changes.docs.bump is required");
   });
 });
 

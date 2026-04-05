@@ -3,6 +3,7 @@ import { Label } from "./label";
 
 type ParseConfig = {
   changeTypes: Record<string, string>;
+  changeTypeEmojis?: Record<string, string>;
   pkgs: Record<string, string | { name: string }>;
 };
 
@@ -32,9 +33,13 @@ const parseNameMap: Record<string, LabelType> = {
   "🏷️": "changeTypes",
 };
 
-const printName = (type: LabelType, key: string) => {
+const printName = (
+  type: LabelType,
+  key: string,
+  changeTypeEmojis?: Record<string, string>,
+) => {
   if (type === "changeTypes") {
-    return `${emojies[key] ?? "🏷️"} ${key}`;
+    return `${changeTypeEmojis?.[key] ?? emojies[key] ?? "🏷️"} ${key}`;
   }
 
   return `📦 ${key}`;
@@ -68,12 +73,25 @@ export const parseLabel = (
     const name = prefix as ChangeType;
     const longName = config.changeTypes[name];
 
-    if (longName) return createLabel("changeTypes", name, longName, original);
+    if (longName)
+      return createLabel(
+        "changeTypes",
+        name,
+        longName,
+        original,
+        config.changeTypeEmojis,
+      );
 
     return undefined;
   }
 
-  const type = parseNameMap[prefix];
+  const dynamicTypePrefix = Object.values(config.changeTypeEmojis ?? {}).includes(
+    prefix,
+  )
+    ? "changeTypes"
+    : undefined;
+
+  const type = parseNameMap[prefix] ?? dynamicTypePrefix;
 
   if (!type) return;
 
@@ -85,7 +103,7 @@ export const parseLabel = (
       : config[type];
 
   if (longNames[sub]) {
-    return createLabel(type, sub, longNames[sub], original);
+    return createLabel(type, sub, longNames[sub], original, config.changeTypeEmojis);
   }
 
   const fields = Object.keys(longNames).join(", ");
@@ -100,6 +118,7 @@ export const createLabel = <T extends LabelType>(
   key: string,
   longName: string,
   existing?: string,
+  changeTypeEmojis?: Record<string, string>,
 ): Label => {
   switch (type) {
     case "changeTypes":
@@ -108,7 +127,7 @@ export const createLabel = <T extends LabelType>(
         changeType: key as ChangeType,
         color: colors[key] || colors.pkg,
         description: `Label for versioning: ${longName}`,
-        name: printName(type, key),
+        name: printName(type, key, changeTypeEmojis),
         existing,
       };
 

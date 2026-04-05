@@ -33184,7 +33184,7 @@ var require_schema = __commonJS({
       return result;
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.ConfigSchema = exports2.RulesConfigSchema = exports2.ChangeTypeScopeSchema = exports2.PkgConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = void 0;
+    exports2.ConfigSchema = exports2.RulesConfigSchema = exports2.ChangeDefinitionSchema = exports2.PkgConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = void 0;
     var z = __importStar(require_zod());
     exports2.ChangelogConfigSchema = z.object({
       headerTemplate: z.string().optional(),
@@ -33221,11 +33221,13 @@ var require_schema = __commonJS({
       z.string(),
       z.object({
         name: z.string(),
-        paths: z.array(z.string()).min(1).optional()
+        paths: z.union([z.string(), z.array(z.string()).min(1)]).optional()
       })
     ]);
-    exports2.ChangeTypeScopeSchema = z.object({
-      paths: z.array(z.string()).min(1)
+    exports2.ChangeDefinitionSchema = z.object({
+      title: z.string().optional(),
+      icon: z.string().optional(),
+      paths: z.union([z.string(), z.array(z.string()).min(1)]).optional()
     });
     exports2.RulesConfigSchema = z.object({
       requireInferredPackageLabels: z.boolean().optional(),
@@ -33237,7 +33239,7 @@ var require_schema = __commonJS({
       project: exports2.ManagerSchema,
       labelPolicy: z.enum(["strict", "permissive"]).optional(),
       nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
-      changeTypeScopes: z.record(z.string(), exports2.ChangeTypeScopeSchema).optional(),
+      changes: z.record(z.string(), exports2.ChangeDefinitionSchema).optional(),
       rules: exports2.RulesConfigSchema,
       changelog: exports2.ChangelogConfigSchema
     });
@@ -36044,7 +36046,7 @@ var require_defaults = __commonJS({
   "../../packages/core/dist/lib/config/defaults.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.defaultChangeTypes = void 0;
+    exports2.defaultChangeTypeEmojis = exports2.defaultChangeTypes = void 0;
     exports2.defaultChangeTypes = {
       breaking: "Breaking change (major bump)",
       feature: "New feature (minor bump)",
@@ -36052,6 +36054,14 @@ var require_defaults = __commonJS({
       chore: "Minor / maintenance change (patch bump)",
       docs: "Documentation change (patch bump)",
       test: "Testing change (patch bump)"
+    };
+    exports2.defaultChangeTypeEmojis = {
+      breaking: "\u{1F4A5}",
+      feature: "\u2728",
+      fix: "\u{1F41B}",
+      chore: "\u{1F9F9}",
+      docs: "\u{1F4DA}",
+      test: "\u2705"
     };
   }
 });
@@ -36104,22 +36114,54 @@ var require_load = __commonJS({
       }
     };
     exports2.validateChangelogTemplates = validateChangelogTemplates;
+    var toPathList = (paths) => {
+      if (!paths)
+        return void 0;
+      return Array.isArray(paths) ? paths : [paths];
+    };
     var normalizePkgs = (pkgs) => Object.fromEntries(Object.entries(pkgs).map(([key, value]) => {
       if (typeof value === "string") {
         return [key, { name: value }];
       }
-      return [key, { name: value.name, paths: value.paths }];
+      return [key, { name: value.name, paths: toPathList(value.paths) }];
     }));
+    var normalizeChanges = (changes) => {
+      const titles = { ...defaults_1.defaultChangeTypes };
+      const icons = { ...defaults_1.defaultChangeTypeEmojis };
+      const scopes = {};
+      if (!changes)
+        return { titles, icons, scopes };
+      for (const [key, value] of Object.entries(changes)) {
+        if (value.title)
+          titles[key] = value.title;
+        if (value.icon)
+          icons[key] = value.icon;
+        if (value.paths)
+          scopes[key] = { paths: toPathList(value.paths) };
+      }
+      return { titles, icons, scopes };
+    };
     var normalizeConfig = (config, gh) => {
       (0, exports2.validateChangelogTemplates)(config.changelog);
+      const normalizedPkgs = normalizePkgs(config.pkgs);
+      const normalizedChanges = normalizeChanges(config.changes);
       return {
         ...config,
-        pkgs: normalizePkgs(config.pkgs),
+        pkgs: normalizedPkgs,
         gh,
         configVersion: config.configVersion ?? 1,
         labelPolicy: config.labelPolicy ?? "strict",
         nonPrCommitsPolicy: config.nonPrCommitsPolicy ?? "skip",
-        changeTypes: defaults_1.defaultChangeTypes
+        changeTypes: normalizedChanges.titles,
+        changeTypeEmojis: normalizedChanges.icons,
+        changeTypeScopes: Object.keys(normalizedChanges.scopes).length > 0 ? normalizedChanges.scopes : void 0,
+        changelog: {
+          ...config.changelog,
+          sectionTitles: {
+            ...config.changelog?.sectionTitles ?? {},
+            ...normalizedChanges.titles
+          }
+        }
       };
     };
     exports2.normalizeConfig = normalizeConfig;
@@ -48481,9 +48523,9 @@ var require_parse4 = __commonJS({
       "\u{1F6A8}": "changeTypes",
       "\u{1F3F7}\uFE0F": "changeTypes"
     };
-    var printName = (type, key) => {
+    var printName = (type, key, changeTypeEmojis) => {
       if (type === "changeTypes") {
-        return `${emojies[key] ?? "\u{1F3F7}\uFE0F"} ${key}`;
+        return `${changeTypeEmojis?.[key] ?? emojies[key] ?? "\u{1F3F7}\uFE0F"} ${key}`;
       }
       return `\u{1F4E6} ${key}`;
     };
@@ -48503,21 +48545,22 @@ var require_parse4 = __commonJS({
         const name = prefix;
         const longName = config.changeTypes[name];
         if (longName)
-          return (0, exports2.createLabel)("changeTypes", name, longName, original);
+          return (0, exports2.createLabel)("changeTypes", name, longName, original, config.changeTypeEmojis);
         return void 0;
       }
-      const type = parseNameMap[prefix];
+      const dynamicTypePrefix = Object.values(config.changeTypeEmojis ?? {}).includes(prefix) ? "changeTypes" : void 0;
+      const type = parseNameMap[prefix] ?? dynamicTypePrefix;
       if (!type)
         return;
       const longNames = type === "pkgs" ? Object.fromEntries(Object.entries(config.pkgs).map(([k, v]) => [k, typeof v === "string" ? v : v.name])) : config[type];
       if (longNames[sub]) {
-        return (0, exports2.createLabel)(type, sub, longNames[sub], original);
+        return (0, exports2.createLabel)(type, sub, longNames[sub], original, config.changeTypeEmojis);
       }
       const fields = Object.keys(longNames).join(", ");
       throw new Error(`invalid label ${original}. key ${sub} could not be found on object with fields: ${fields}`);
     };
     exports2.parseLabel = parseLabel;
-    var createLabel = (type, key, longName, existing) => {
+    var createLabel = (type, key, longName, existing, changeTypeEmojis) => {
       switch (type) {
         case "changeTypes":
           return {
@@ -48525,7 +48568,7 @@ var require_parse4 = __commonJS({
             changeType: key,
             color: colors[key] || colors.pkg,
             description: `Label for versioning: ${longName}`,
-            name: printName(type, key),
+            name: printName(type, key, changeTypeEmojis),
             existing
           };
         case "pkgs":
@@ -48567,7 +48610,7 @@ var require_labels = __commonJS({
         }
       });
       Object.entries(config.changeTypes).forEach(([name, longName]) => {
-        const l = (0, parse_1.createLabel)("changeTypes", name, longName);
+        const l = (0, parse_1.createLabel)("changeTypes", name, longName, void 0, config.changeTypeEmojis);
         if (!changeTypes.has(l.name)) {
           changeTypes.set(l.name, l);
         }

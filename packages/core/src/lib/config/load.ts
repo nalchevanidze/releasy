@@ -1,21 +1,24 @@
 import { access, readFile } from "fs/promises";
 import yaml from "js-yaml";
 import { remote } from "../git";
-import { defaultChangeTypes } from "./defaults";
 import {
-  ChangeType,
-  ChangelogConfig,
-  ConfigSchema,
-  RawConfig,
-} from "./schema";
+  BumpLevel,
+  defaultChangeTypeBumps,
+  defaultChangeTypeEmojis,
+  defaultChangeTypes,
+} from "./defaults";
+import { ChangeType, ChangelogConfig, ConfigSchema, RawConfig } from "./schema";
 
 type ExtraConfig = {
   gh: string;
   configVersion?: 1;
   changeTypes: Record<ChangeType, string>;
+  changeTypeEmojis?: Record<string, string>;
+  changeTypeBumps?: Record<string, BumpLevel>;
   labelPolicy?: "strict" | "permissive";
   nonPrCommitsPolicy?: "include" | "skip" | "strict-fail";
   pkgs: Record<string, { name: string; paths?: string[] }>;
+  changeTypeScopes?: Record<string, { paths: string[] }>;
 };
 
 export type Config = Omit<RawConfig, "pkgs"> & ExtraConfig;
@@ -86,6 +89,11 @@ export const validateChangelogTemplates = (changelog?: ChangelogConfig) => {
   }
 };
 
+const toPathList = (paths?: string | string[]) => {
+  if (!paths) return undefined;
+  return Array.isArray(paths) ? paths : [paths];
+};
+
 const normalizePkgs = (pkgs: RawConfig["pkgs"]) =>
   Object.fromEntries(
     Object.entries(pkgs).map(([key, value]) => {
@@ -93,21 +101,70 @@ const normalizePkgs = (pkgs: RawConfig["pkgs"]) =>
         return [key, { name: value }];
       }
 
-      return [key, { name: value.name, paths: value.paths }];
+      return [key, { name: value.name, paths: toPathList(value.paths) }];
     }),
   );
+
+const normalizeChanges = (changes?: RawConfig["changes"]) => {
+  const titles: Record<string, string> = { ...defaultChangeTypes };
+  const icons: Record<string, string> = { ...defaultChangeTypeEmojis };
+  const bumps: Record<string, BumpLevel> = { ...defaultChangeTypeBumps };
+  const scopes: Record<string, { paths: string[] }> = {};
+
+  if (!changes) return { titles, icons, bumps, scopes };
+
+  for (const [key, value] of Object.entries(changes)) {
+    if (!value.title) {
+      throw new Error(`changes.${key}.title is required.`);
+    }
+
+    if (!value.icon) {
+      throw new Error(`changes.${key}.icon is required.`);
+    }
+
+    if (!value.bump) {
+      throw new Error(`changes.${key}.bump is required.`);
+    }
+
+    titles[key] = value.title;
+    icons[key] = value.icon;
+    bumps[key] = value.bump;
+
+    if (value.paths) {
+      scopes[key] = { paths: toPathList(value.paths)! };
+    }
+  }
+
+  return { titles, icons, bumps, scopes };
+};
 
 export const normalizeConfig = (config: RawConfig, gh: string): Config => {
   validateChangelogTemplates(config.changelog);
 
+  const normalizedPkgs = normalizePkgs(config.pkgs);
+  const normalizedChanges = normalizeChanges(config.changes);
+
   return {
     ...config,
-    pkgs: normalizePkgs(config.pkgs),
+    pkgs: normalizedPkgs,
     gh,
     configVersion: config.configVersion ?? 1,
     labelPolicy: config.labelPolicy ?? "strict",
     nonPrCommitsPolicy: config.nonPrCommitsPolicy ?? "skip",
-    changeTypes: defaultChangeTypes,
+    changeTypes: normalizedChanges.titles as Record<ChangeType, string>,
+    changeTypeEmojis: normalizedChanges.icons,
+    changeTypeBumps: normalizedChanges.bumps,
+    changeTypeScopes:
+      Object.keys(normalizedChanges.scopes).length > 0
+        ? normalizedChanges.scopes
+        : undefined,
+    changelog: {
+      ...config.changelog,
+      sectionTitles: {
+        ...(config.changelog?.sectionTitles ?? {}),
+        ...normalizedChanges.titles,
+      },
+    },
   };
 };
 

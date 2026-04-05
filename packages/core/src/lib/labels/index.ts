@@ -19,7 +19,13 @@ export const genLabels = (config: Config, ls: string[]) => {
   });
 
   Object.entries(config.changeTypes).forEach(([name, longName]) => {
-    const l = createLabel("changeTypes", name, longName) as ChangeTypeLabel;
+    const l = createLabel(
+      "changeTypes",
+      name,
+      longName,
+      undefined,
+      config.changeTypeEmojis,
+    ) as ChangeTypeLabel;
     if (!changeTypes.has(l.name)) {
       changeTypes.set(l.name, l);
     }

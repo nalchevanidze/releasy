@@ -14,6 +14,7 @@ export type ChangelogConfig = {
 export type ConfigVersion = 1;
 
 export type NonPrCommitPolicy = "include" | "skip" | "strict-fail";
+export type BumpLevel = "major" | "minor" | "patch";
 
 export type PkgConfig = {
   name: string;
@@ -28,6 +29,15 @@ export type RulesConfig = {
   requireInferredPackageLabels?: boolean;
   blockOnLabelConflict?: boolean;
 };
+
+export type ChangeDefinition = {
+  title?: string;
+  icon?: string;
+  bump?: BumpLevel;
+  paths?: string[];
+};
+
+export type ChangesConfig = Record<string, ChangeDefinition>;
 
 export const ChangelogConfigSchema = z
   .object({
@@ -77,12 +87,15 @@ export const PkgConfigSchema = z.union([
   z.string(),
   z.object({
     name: z.string(),
-    paths: z.array(z.string()).min(1).optional(),
+    paths: z.union([z.string(), z.array(z.string()).min(1)]).optional(),
   }),
 ]);
 
-export const ChangeTypeScopeSchema = z.object({
-  paths: z.array(z.string()).min(1),
+export const ChangeDefinitionSchema = z.object({
+  title: z.string().optional(),
+  icon: z.string().optional(),
+  bump: z.enum(["major", "minor", "patch"]).optional(),
+  paths: z.union([z.string(), z.array(z.string()).min(1)]).optional(),
 });
 
 export const RulesConfigSchema = z
@@ -98,7 +111,7 @@ export const ConfigSchema = z.object({
   project: ManagerSchema,
   labelPolicy: z.enum(["strict", "permissive"]).optional(),
   nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
-  changeTypeScopes: z.record(z.string(), ChangeTypeScopeSchema).optional(),
+  changes: z.record(z.string(), ChangeDefinitionSchema).optional(),
   rules: RulesConfigSchema,
   changelog: ChangelogConfigSchema,
 });

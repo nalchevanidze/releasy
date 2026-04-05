@@ -7,8 +7,10 @@ export {
 } from "./config/schema";
 
 export type {
+  BumpLevel,
   ChangelogConfig,
   ChangeType,
+  ChangesConfig,
   ConfigVersion,
   CustomManager,
   LabelPolicy,
