@@ -36,3 +36,31 @@
 
 - [x] Backward-compatibility/deprecation docs for old config format
   - Added `CONFIG_VERSIONING.md` and JSON deprecation path in config loader.
+
+## Next implementation topics
+
+- [ ] Schema cleanup: unify scattered policies/rules into a minimal grouped model
+  - [ ] Remove `configVersion` (beta schema phase).
+  - [ ] Introduce top-level `policies` grouping.
+  - [ ] Move label behavior under `policies.labels`.
+  - [ ] Move non-PR commit behavior under `policies.commits.nonPr`.
+  - [ ] Keep enforceable constraints under `policies.rules`.
+  - [ ] Keep `changes.<type> = { icon, title, bump, paths }` as canonical change model.
+  - [ ] Move changelog rendering to `changelog.templates.{header,section,item}`.
+  - [ ] Replace `groupByPackage` with `changelog.grouping: package | scope | none`.
+
+- [ ] Hybrid change detection (PR labels + commitlint/conventional commits)
+  - [ ] Use `policies.detection.use: [labels, commits]` where order defines priority.
+  - [ ] Add `policies.detection.consensus: true|false` for mismatch handling.
+  - [ ] Implement commit parser adapter (Conventional Commits compatible).
+  - [ ] Normalize all inputs into one internal change model before bump/changelog.
+  - [ ] Add validator diagnostics for detection conflicts with actionable messages.
+  - [ ] Add tests for labels-only, commits-only, hybrid-agree, hybrid-conflict scenarios.
+
+- [ ] Config naming/style normalization
+  - [ ] Adopt kebab-case as canonical YAML key style.
+  - [ ] Add recursive key normalizer (kebab-case -> camelCase) at config load time.
+  - [ ] Reject duplicate semantic keys after normalization (e.g. `auto-add` + `autoAdd`).
+  - [ ] Validate only canonical normalized object.
+  - [ ] Document naming conventions and examples in README.
+
