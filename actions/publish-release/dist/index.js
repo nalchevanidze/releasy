@@ -28799,7 +28799,7 @@ var require_retry = __commonJS({
     exports2.withRetry = exports2.isRetryableStatus = void 0;
     var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     var getErrorStatus2 = (error) => typeof error === "object" && error !== null && "status" in error ? error.status : void 0;
-    var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
+    var getErrorMessage2 = (error) => error instanceof Error ? error.message : String(error);
     var isRetryableStatus = (status) => status === 429 || status !== void 0 && status >= 500;
     exports2.isRetryableStatus = isRetryableStatus;
     var withRetry2 = async (label, fn, attempts = 3) => {
@@ -28810,7 +28810,7 @@ var require_retry = __commonJS({
           const status = getErrorStatus2(error);
           const retryable = (0, exports2.isRetryableStatus)(status);
           if (!retryable || attempt === attempts) {
-            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage(error)}`);
+            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage2(error)}`);
           }
           console.log(`[retry] ${label}: retrying attempt ${attempt + 1}/${attempts}`);
           await sleep(300 * attempt);
@@ -45803,6 +45803,10 @@ var import_github = __toESM(require_github());
 
 // ../../packages/actions-common/src/errors.ts
 var getErrorStatus = (error) => typeof error === "object" && error !== null && "status" in error ? error.status : void 0;
+var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
+
+// ../../packages/actions-common/src/action.ts
+var formatActionFailure = (action, error) => `[${action}] ${getErrorMessage(error)}`;
 
 // ../../packages/actions-common/src/github.ts
 var resolveRepo = (context2, env = process.env) => {
@@ -45884,8 +45888,12 @@ async function run() {
         return { owner: "<unknown>", repo: "<unknown>" };
       }
     })();
-    const message = error instanceof Error ? error.message : String(error);
-    (0, import_core.setFailed)(`publish-release failed for ${owner}/${repo}: ${message}`);
+    (0, import_core.setFailed)(
+      formatActionFailure(
+        "publish-release",
+        `failed for ${owner}/${repo}: ${error instanceof Error ? error.message : String(error)}`
+      )
+    );
   }
 }
 if (require.main === module) {

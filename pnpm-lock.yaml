@@ -60,6 +60,9 @@ importers:
       '@actions/exec':
         specifier: ^1.1.1
         version: 1.1.1
+      '@relasy/actions-common':
+        specifier: workspace:*
+        version: link:../../packages/actions-common
       '@relasy/core':
         specifier: workspace:*
         version: link:../../packages/core

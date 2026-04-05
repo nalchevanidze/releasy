@@ -26578,7 +26578,7 @@ var require_retry = __commonJS({
     exports2.withRetry = exports2.isRetryableStatus = void 0;
     var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     var getErrorStatus = (error) => typeof error === "object" && error !== null && "status" in error ? error.status : void 0;
-    var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
+    var getErrorMessage2 = (error) => error instanceof Error ? error.message : String(error);
     var isRetryableStatus = (status) => status === 429 || status !== void 0 && status >= 500;
     exports2.isRetryableStatus = isRetryableStatus;
     var withRetry = async (label, fn, attempts = 3) => {
@@ -26589,7 +26589,7 @@ var require_retry = __commonJS({
           const status = getErrorStatus(error);
           const retryable = (0, exports2.isRetryableStatus)(status);
           if (!retryable || attempt === attempts) {
-            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage(error)}`);
+            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage2(error)}`);
           }
           console.log(`[retry] ${label}: retrying attempt ${attempt + 1}/${attempts}`);
           await sleep(300 * attempt);
@@ -43577,6 +43577,14 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 var import_core = __toESM(require_core());
+
+// ../../packages/actions-common/src/errors.ts
+var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
+
+// ../../packages/actions-common/src/action.ts
+var formatActionFailure = (action, error) => `[${action}] ${getErrorMessage(error)}`;
+
+// src/index.ts
 var import_core2 = __toESM(require_dist());
 async function run() {
   try {
@@ -43593,8 +43601,7 @@ async function run() {
     (0, import_core.setOutput)("pr_url", pr.data.html_url);
     (0, import_core.info)(`[relasy] Draft release finished: ${pr.data.html_url}`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    (0, import_core.setFailed)(message);
+    (0, import_core.setFailed)(formatActionFailure("draft-release", error));
   }
 }
 if (require.main === module) {

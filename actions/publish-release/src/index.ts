@@ -1,7 +1,11 @@
 import { setFailed, getInput, setOutput, info } from "@actions/core";
 import { Octokit } from "@octokit/rest";
 import { context } from "@actions/github";
-import { getErrorStatus, resolveRepo } from "@relasy/actions-common";
+import {
+  formatActionFailure,
+  getErrorStatus,
+  resolveRepo,
+} from "@relasy/actions-common";
 import { Relasy, withRetry } from "@relasy/core";
 
 const getBody = (): string => {
@@ -81,8 +85,12 @@ export async function run() {
       }
     })();
 
-    const message = error instanceof Error ? error.message : String(error);
-    setFailed(`publish-release failed for ${owner}/${repo}: ${message}`);
+    setFailed(
+      formatActionFailure(
+        "publish-release",
+        `failed for ${owner}/${repo}: ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
   }
 }
 

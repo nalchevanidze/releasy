@@ -9,6 +9,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/exec": "^1.1.1",
+    "@relasy/actions-common": "workspace:*",
     "@relasy/core": "workspace:*"
   },
   "devDependencies": {

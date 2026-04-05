@@ -1,6 +1,10 @@
 import { setFailed, info } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import { requireGitHubToken, resolveRepo } from "@relasy/actions-common";
+import {
+  formatActionFailure,
+  requireGitHubToken,
+  resolveRepo,
+} from "@relasy/actions-common";
 import { Relasy } from "@relasy/core";
 
 const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
@@ -67,8 +71,7 @@ export async function run() {
       `[relasy] Label reconciliation finished. created=${created}, updated=${updated}`,
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    setFailed(`bootstrap-labels failed: ${message}`);
+    setFailed(formatActionFailure("bootstrap-labels", error));
   }
 }
 
