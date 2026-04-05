@@ -11,7 +11,7 @@
 
 - `draft-release`: `contents: write`, `pull-requests: write`
 - `publish-release`: `contents: write`
-- `validate-pr-labels`: `contents: read`, `pull-requests: read`
+- `validate-pr-labels`: `contents: read`, `pull-requests: read` (or `pull-requests: write` + `issues: write` when auto-adding inferred labels)
 - `bootstrap-labels`: `contents: read`, `issues: write`
 
 ## Local runs

@@ -23443,6 +23443,19 @@ var require_gh = __commonJS({
             };
           }
           const resolvedBaseBranch = await this.resolveBaseBranch();
+          (0, git_1.git)("add", ".");
+          (0, git_1.git)("status");
+          try {
+            (0, git_1.git)("commit", "-m", name);
+          } catch {
+            console.log("[relasy] No new changes to commit before drafting release PR.");
+          }
+          try {
+            (0, git_1.git)("push", "origin", `HEAD:${name}`);
+          } catch {
+            const encoded = Buffer.from(`x-access-token:${token()}`).toString("base64");
+            (0, git_1.git)("-c", `http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}`, "push", `https://${this.path}.git`, `HEAD:${name}`);
+          }
           const existing = await (0, retry_1.withRetry)("Check existing release PR", async () => {
             const { data } = await this.octokit.rest.pulls.list({
               owner: this.org,
@@ -23462,19 +23475,6 @@ var require_gh = __commonJS({
                 html_url: existing.html_url
               }
             };
-          }
-          (0, git_1.git)("add", ".");
-          (0, git_1.git)("status");
-          try {
-            (0, git_1.git)("commit", "-m", name);
-          } catch {
-            console.log("[relasy] No new changes to commit before drafting release PR.");
-          }
-          try {
-            (0, git_1.git)("push", "origin", `HEAD:${name}`);
-          } catch {
-            const encoded = Buffer.from(`x-access-token:${token()}`).toString("base64");
-            (0, git_1.git)("-c", `http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}`, "push", `https://${this.path}.git`, `HEAD:${name}`);
           }
           return (0, retry_1.withRetry)("Create release PR", async () => {
             const pr = await this.octokit.rest.pulls.create({
@@ -30785,12 +30785,7 @@ var require_load = __commonJS({
         const content = await (0, promises_1.readFile)(yamlPath, "utf8");
         return parseConfigInput(js_yaml_1.default.load(content) ?? {});
       }
-      if (await exists2("./relasy.json")) {
-        console.warn("[relasy][deprecation] relasy.json is deprecated. Please migrate to relasy.yaml.");
-        const content = await (0, promises_1.readFile)("./relasy.json", "utf8");
-        return parseConfigInput(JSON.parse(content));
-      }
-      throw new Error("Missing configuration file. Expected relasy.yaml (preferred), relasy.yml, or relasy.json.");
+      throw new Error("Missing configuration file. Expected relasy.yaml or relasy.yml.");
     };
     exports2.loadRawConfig = loadRawConfig;
     var loadConfig = async () => {
@@ -43665,7 +43660,6 @@ var require_render = __commonJS({
     var newLine = (size) => (0, ramda_1.range)(0, size).map(() => "\n").join("");
     var lines = (xs, size = 1) => xs.filter(Boolean).join(newLine(size));
     var space = (n, txt = "") => `${(0, ramda_1.range)(0, n * 2).map(() => " ").join("")}${txt}`;
-    var stat2 = (topics) => lines(topics.filter(([_, value]) => value).map(([topic, value]) => space(1, `- ${topic} ${value}`)));
     var indent = (txt, n = 1) => space(n, txt.replace(/\n/g, `
 ${space(n)}`));
     var applyTemplate = (template, values) => Object.entries(values).reduce((acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value), template);
@@ -43691,9 +43685,9 @@ ${space(n)}`));
         this.change = (change) => {
           const { title, body, pkgs } = change;
           const details = body ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1) : "";
-          const stats = stat2([
-            ["\u{1F4E6}", lines(pkgs.map(this.pkg))],
-            ["\u{1F464}", this.author(change)]
+          const stats = lines([
+            ...pkgs.map((pkg) => space(1, `- \u{1F4E6} ${this.pkg(pkg)}`)),
+            space(1, `- \u{1F464} ${this.author(change)}`)
           ]);
           const defaultItem = lines([
             `* ${this.ref(change)}: ${title?.trim()}`,
@@ -43906,6 +43900,9 @@ var require_package_scopes = __commonJS({
     };
     exports2.inferPackageScopes = inferPackageScopes;
     var matchesAnyInFiles = (changedFiles, patterns) => changedFiles.some((f) => matchesAny(f, patterns));
+    var emitWarn = (iRelasy, message) => {
+      iRelasy.logger?.warn?.(`[relasy] ${message}`);
+    };
     var evaluatePackageScopeRules = (iRelasy, labels, changedFiles) => {
       const hasPkgPathConfig = Object.values(iRelasy.config.pkgs).some((pkg) => (pkg.paths ?? []).length > 0);
       if (!hasPkgPathConfig) {
@@ -43919,11 +43916,23 @@ var require_package_scopes = __commonJS({
       const { inferredScopes, existingScopes, missingScopes, conflictingScopes } = (0, exports2.inferPackageScopes)(iRelasy, labels, changedFiles);
       const missingRule = iRelasy.config.policies?.rules?.inferredPackageMissing ?? "error";
       const conflictRule = iRelasy.config.policies?.rules?.labelConflict ?? "error";
-      if (missingRule === "error" && missingScopes.length > 0) {
-        return (0, result_1.fail)("LABEL_POLICY_ERROR", `Missing inferred package labels: ${missingScopes.map((s) => `\u{1F4E6} ${s}`).join(", ")}`);
+      if (missingScopes.length > 0) {
+        const message = `Missing inferred package labels: ${missingScopes.map((s) => `\u{1F4E6} ${s}`).join(", ")}`;
+        if (missingRule === "error") {
+          return (0, result_1.fail)("LABEL_POLICY_ERROR", message);
+        }
+        if (missingRule === "warn") {
+          emitWarn(iRelasy, message);
+        }
       }
-      if (conflictRule === "error" && conflictingScopes.length > 0) {
-        return (0, result_1.fail)("LABEL_POLICY_ERROR", `Package label conflict detected. Labels not inferred from changed files: ${conflictingScopes.map((s) => `\u{1F4E6} ${s}`).join(", ")}`);
+      if (conflictingScopes.length > 0) {
+        const message = `Package label conflict detected. Labels not inferred from changed files: ${conflictingScopes.map((s) => `\u{1F4E6} ${s}`).join(", ")}`;
+        if (conflictRule === "error") {
+          return (0, result_1.fail)("LABEL_POLICY_ERROR", message);
+        }
+        if (conflictRule === "warn") {
+          emitWarn(iRelasy, message);
+        }
       }
       return (0, result_1.ok)({
         inferredScopes,

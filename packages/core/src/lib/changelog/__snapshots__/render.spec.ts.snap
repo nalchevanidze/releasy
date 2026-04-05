@@ -23,7 +23,7 @@ exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
 #### Features
 * [#10](https://github.com/acme/demo/issues/10): Ship onboarding
   - 📦 [web](https://npmjs.com/package/@acme/web)
-[core](https://npmjs.com/package/@acme/core)
+  - 📦 [core](https://npmjs.com/package/@acme/core)
   - 👤 [@author](https://example.com/author)
 
 #### Fixes
