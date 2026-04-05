@@ -155,7 +155,7 @@ export const main = async () => {
       throw new Error(`[${validated.code}] ${validated.message}`);
     }
 
-    const normalizedInput = normalizeConfigInputKeys(raw);
+    const normalizedInput = normalizeConfigInputKeys(raw) as Record<string, unknown>;
     const migrated = normalizeConfig(validated.data, "owner/repo");
 
     await writeRelasyConfig({
