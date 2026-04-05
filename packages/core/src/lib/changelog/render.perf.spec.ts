@@ -9,7 +9,6 @@ vi.mock("../git", () => ({
 
 const api: Api = {
   config: {
-    configVersion: 1,
     gh: "acme/demo",
     pkgs: { core: { name: "@acme/core" } },
     project: { type: "npm" },
@@ -21,8 +20,18 @@ const api: Api = {
       docs: "Documentation",
       test: "Testing",
     },
-    labelPolicy: "strict",
-    changelog: { groupByPackage: true },
+    policies: {
+      labelMode: "strict",
+      autoAddInferredPackages: false,
+      detectionUse: ["labels"],
+      rules: {
+        labelConflict: "error",
+        inferredPackageMissing: "error",
+        detectionConflict: "error",
+        nonPrCommit: "skip",
+      },
+    },
+    changelog: { grouping: "package" },
   },
   github: {
     setup: () => undefined,

@@ -21,7 +21,8 @@ vi.mock("@relasy/core", () => ({
     data: {
       version: "v1.2.3",
       baseBranch: "main",
-      labelPolicy: "strict",
+      labelMode: "strict",
+      detectionUse: ["labels"],
     },
   })),
   draftRelease: vi.fn(async () => ({

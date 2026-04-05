@@ -30963,14 +30963,15 @@ var require_schema = __commonJS({
       return result;
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.ConfigSchema = exports2.RulesConfigSchema = exports2.ChangeDefinitionSchema = exports2.PkgConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = void 0;
+    exports2.ConfigSchema = exports2.PoliciesConfigSchema = exports2.RulesConfigSchema = exports2.ChangeDefinitionSchema = exports2.PkgConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = void 0;
     var z = __importStar(require_zod());
     exports2.ChangelogConfigSchema = z.object({
-      headerTemplate: z.string().optional(),
-      sectionTemplate: z.string().optional(),
-      itemTemplate: z.string().optional(),
-      sectionTitles: z.record(z.string(), z.string()).optional(),
-      groupByPackage: z.boolean().optional()
+      templates: z.object({
+        header: z.string().optional(),
+        section: z.string().optional(),
+        item: z.string().optional()
+      }).optional(),
+      grouping: z.enum(["package", "scope", "none"]).optional()
     }).optional();
     exports2.changeTypes = {
       breaking: "Breaking change (major bump)",
@@ -30984,44 +30985,49 @@ var require_schema = __commonJS({
       type: z.literal("custom"),
       bump: z.string(),
       version: z.string(),
-      // Optional fields
       pkg: z.string().optional(),
       postBump: z.string().optional(),
       baseBranch: z.string().optional()
-    });
+    }).strict();
     exports2.NPMManagerSchema = z.object({
       type: z.literal("npm"),
       build: z.string().optional(),
       postBump: z.string().optional(),
       baseBranch: z.string().optional()
-    });
+    }).strict();
     exports2.ManagerSchema = z.union([exports2.NPMManagerSchema, exports2.CustomManagerSchema]);
     exports2.PkgConfigSchema = z.union([
       z.string(),
       z.object({
         name: z.string(),
         paths: z.union([z.string(), z.array(z.string()).min(1)]).optional()
-      })
+      }).strict()
     ]);
     exports2.ChangeDefinitionSchema = z.object({
-      title: z.string().optional(),
-      icon: z.string().optional(),
+      title: z.string(),
+      icon: z.string(),
+      bump: z.enum(["major", "minor", "patch"]),
       paths: z.union([z.string(), z.array(z.string()).min(1)]).optional()
-    });
+    }).strict();
     exports2.RulesConfigSchema = z.object({
-      requireInferredPackageLabels: z.boolean().optional(),
-      blockOnLabelConflict: z.boolean().optional()
+      labelConflict: z.enum(["skip", "warn", "error"]).optional(),
+      inferredPackageMissing: z.enum(["skip", "warn", "error"]).optional(),
+      detectionConflict: z.enum(["skip", "warn", "error"]).optional(),
+      nonPrCommit: z.enum(["skip", "warn", "error"]).optional()
+    }).optional();
+    exports2.PoliciesConfigSchema = z.object({
+      labelMode: z.enum(["strict", "permissive"]).optional(),
+      autoAddInferredPackages: z.boolean().optional(),
+      detectionUse: z.array(z.enum(["labels", "commits"])).min(1).optional(),
+      rules: exports2.RulesConfigSchema
     }).optional();
     exports2.ConfigSchema = z.object({
-      configVersion: z.literal(1).optional(),
       pkgs: z.record(z.string(), exports2.PkgConfigSchema),
       project: exports2.ManagerSchema,
-      labelPolicy: z.enum(["strict", "permissive"]).optional(),
-      nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
+      policies: exports2.PoliciesConfigSchema,
       changes: z.record(z.string(), exports2.ChangeDefinitionSchema).optional(),
-      rules: exports2.RulesConfigSchema,
       changelog: exports2.ChangelogConfigSchema
-    });
+    }).strict();
   }
 });
 
@@ -33825,7 +33831,7 @@ var require_defaults = __commonJS({
   "../../packages/core/dist/lib/config/defaults.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.defaultChangeTypeEmojis = exports2.defaultChangeTypes = void 0;
+    exports2.defaultRuleLevels = exports2.defaultDetectionUse = exports2.defaultLabelMode = exports2.defaultChangeTypeBumps = exports2.defaultChangeTypeEmojis = exports2.defaultChangeTypes = void 0;
     exports2.defaultChangeTypes = {
       breaking: "Breaking change (major bump)",
       feature: "New feature (minor bump)",
@@ -33842,6 +33848,22 @@ var require_defaults = __commonJS({
       docs: "\u{1F4DA}",
       test: "\u2705"
     };
+    exports2.defaultChangeTypeBumps = {
+      breaking: "major",
+      feature: "minor",
+      fix: "patch",
+      chore: "patch",
+      docs: "patch",
+      test: "patch"
+    };
+    exports2.defaultLabelMode = "strict";
+    exports2.defaultDetectionUse = ["labels"];
+    exports2.defaultRuleLevels = {
+      labelConflict: "error",
+      inferredPackageMissing: "error",
+      detectionConflict: "error",
+      nonPrCommit: "skip"
+    };
   }
 });
 
@@ -33853,7 +33875,7 @@ var require_load = __commonJS({
       return mod && mod.__esModule ? mod : { "default": mod };
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadConfig = exports2.loadRawConfig = exports2.normalizeConfig = exports2.validateChangelogTemplates = void 0;
+    exports2.normalizeConfigInputKeys = exports2.loadConfig = exports2.loadRawConfig = exports2.normalizeConfig = exports2.validateChangelogTemplates = void 0;
     var promises_1 = require("fs/promises");
     var js_yaml_1 = __importDefault(require_js_yaml());
     var git_1 = require_git();
@@ -33882,14 +33904,14 @@ var require_load = __commonJS({
     var validateChangelogTemplates = (changelog) => {
       if (!changelog)
         return;
-      if (changelog.headerTemplate) {
-        validateTemplate("changelog.headerTemplate", changelog.headerTemplate, ["VERSION", "DATE"], ["VERSION", "DATE"]);
+      if (changelog.templates?.header) {
+        validateTemplate("changelog.templates.header", changelog.templates.header, ["VERSION", "DATE"], ["VERSION", "DATE"]);
       }
-      if (changelog.sectionTemplate) {
-        validateTemplate("changelog.sectionTemplate", changelog.sectionTemplate, ["LABEL", "CHANGES"], ["LABEL", "CHANGES"]);
+      if (changelog.templates?.section) {
+        validateTemplate("changelog.templates.section", changelog.templates.section, ["LABEL", "CHANGES"], ["LABEL", "CHANGES"]);
       }
-      if (changelog.itemTemplate) {
-        validateTemplate("changelog.itemTemplate", changelog.itemTemplate, ["REF", "TITLE"], ["REF", "TITLE", "AUTHOR", "PACKAGES", "BODY", "DETAILS", "STATS"]);
+      if (changelog.templates?.item) {
+        validateTemplate("changelog.templates.item", changelog.templates.item, ["REF", "TITLE"], ["REF", "TITLE", "AUTHOR", "PACKAGES", "BODY", "DETAILS", "STATS"]);
       }
     };
     exports2.validateChangelogTemplates = validateChangelogTemplates;
@@ -33907,18 +33929,64 @@ var require_load = __commonJS({
     var normalizeChanges = (changes) => {
       const titles = { ...defaults_1.defaultChangeTypes };
       const icons = { ...defaults_1.defaultChangeTypeEmojis };
+      const bumps = { ...defaults_1.defaultChangeTypeBumps };
       const scopes = {};
       if (!changes)
-        return { titles, icons, scopes };
+        return { titles, icons, bumps, scopes };
       for (const [key, value] of Object.entries(changes)) {
-        if (value.title)
-          titles[key] = value.title;
-        if (value.icon)
-          icons[key] = value.icon;
-        if (value.paths)
+        titles[key] = value.title;
+        icons[key] = value.icon;
+        bumps[key] = value.bump;
+        if (value.paths) {
           scopes[key] = { paths: toPathList(value.paths) };
+        }
       }
-      return { titles, icons, scopes };
+      return { titles, icons, bumps, scopes };
+    };
+    var toCamel = (key) => key.replace(/-([a-zA-Z0-9])/g, (_, char) => char.toUpperCase());
+    var isPlainObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+    var normalizeKeysDeep = (value, path = "root") => {
+      if (Array.isArray(value)) {
+        return value.map((item, index) => normalizeKeysDeep(item, `${path}[${index}]`));
+      }
+      if (!isPlainObject(value)) {
+        return value;
+      }
+      const out = {};
+      for (const [key, child] of Object.entries(value)) {
+        const normalizedKey = toCamel(key);
+        if (normalizedKey in out) {
+          throw new Error(`Duplicate semantic key detected at ${path}: "${key}" conflicts with another key normalized to "${normalizedKey}".`);
+        }
+        out[normalizedKey] = normalizeKeysDeep(child, `${path}.${key}`);
+      }
+      return out;
+    };
+    var hasLegacyFields = (cfg) => {
+      const topLegacy = [
+        "configVersion",
+        "labelPolicy",
+        "nonPrCommitsPolicy",
+        "rules"
+      ].some((key) => key in cfg);
+      const changelog = cfg.changelog;
+      const changelogLegacy = isPlainObject(changelog) ? ["headerTemplate", "sectionTemplate", "itemTemplate", "groupByPackage"].some((key) => key in changelog) : false;
+      return topLegacy || changelogLegacy;
+    };
+    var hasNewFields = (cfg) => {
+      const topNew = ["policies", "changes", "changelog"].some((key) => key in cfg);
+      const changelogNew = isPlainObject(cfg.changelog) && ("templates" in cfg.changelog || "grouping" in cfg.changelog);
+      return topNew || changelogNew;
+    };
+    var parseConfigInput = (input) => {
+      const normalized = normalizeKeysDeep(input);
+      if (!isPlainObject(normalized)) {
+        throw new Error("Configuration root must be an object.");
+      }
+      if (hasLegacyFields(normalized) && hasNewFields(normalized)) {
+        throw new Error("Mixed legacy and new schema keys detected. Use only canonical beta schema keys.");
+      }
+      return schema_1.ConfigSchema.parse(normalized);
     };
     var normalizeConfig = (config, gh) => {
       (0, exports2.validateChangelogTemplates)(config.changelog);
@@ -33928,19 +33996,21 @@ var require_load = __commonJS({
         ...config,
         pkgs: normalizedPkgs,
         gh,
-        configVersion: config.configVersion ?? 1,
-        labelPolicy: config.labelPolicy ?? "strict",
-        nonPrCommitsPolicy: config.nonPrCommitsPolicy ?? "skip",
+        policies: {
+          labelMode: config.policies?.labelMode ?? defaults_1.defaultLabelMode,
+          autoAddInferredPackages: config.policies?.autoAddInferredPackages ?? false,
+          detectionUse: config.policies?.detectionUse ?? defaults_1.defaultDetectionUse,
+          rules: {
+            labelConflict: config.policies?.rules?.labelConflict ?? defaults_1.defaultRuleLevels.labelConflict,
+            inferredPackageMissing: config.policies?.rules?.inferredPackageMissing ?? defaults_1.defaultRuleLevels.inferredPackageMissing,
+            detectionConflict: config.policies?.rules?.detectionConflict ?? defaults_1.defaultRuleLevels.detectionConflict,
+            nonPrCommit: config.policies?.rules?.nonPrCommit ?? defaults_1.defaultRuleLevels.nonPrCommit
+          }
+        },
         changeTypes: normalizedChanges.titles,
         changeTypeEmojis: normalizedChanges.icons,
-        changeTypeScopes: Object.keys(normalizedChanges.scopes).length > 0 ? normalizedChanges.scopes : void 0,
-        changelog: {
-          ...config.changelog,
-          sectionTitles: {
-            ...config.changelog?.sectionTitles ?? {},
-            ...normalizedChanges.titles
-          }
-        }
+        changeTypeBumps: normalizedChanges.bumps,
+        changeTypeScopes: Object.keys(normalizedChanges.scopes).length > 0 ? normalizedChanges.scopes : void 0
       };
     };
     exports2.normalizeConfig = normalizeConfig;
@@ -33956,12 +34026,12 @@ var require_load = __commonJS({
       const yamlPath = await exists("./relasy.yaml") ? "./relasy.yaml" : await exists("./relasy.yml") ? "./relasy.yml" : void 0;
       if (yamlPath) {
         const content = await (0, promises_1.readFile)(yamlPath, "utf8");
-        return schema_1.ConfigSchema.parse(js_yaml_1.default.load(content) ?? {});
+        return parseConfigInput(js_yaml_1.default.load(content) ?? {});
       }
       if (await exists("./relasy.json")) {
         console.warn("[relasy][deprecation] relasy.json is deprecated. Please migrate to relasy.yaml.");
         const content = await (0, promises_1.readFile)("./relasy.json", "utf8");
-        return schema_1.ConfigSchema.parse(JSON.parse(content));
+        return parseConfigInput(JSON.parse(content));
       }
       throw new Error("Missing configuration file. Expected relasy.yaml (preferred), relasy.yml, or relasy.json.");
     };
@@ -33972,6 +34042,8 @@ var require_load = __commonJS({
       return (0, exports2.normalizeConfig)(config, gh);
     };
     exports2.loadConfig = loadConfig;
+    var normalizeConfigInputKeys = (input) => normalizeKeysDeep(input);
+    exports2.normalizeConfigInputKeys = normalizeConfigInputKeys;
   }
 });
 
@@ -33980,7 +34052,7 @@ var require_config = __commonJS({
   "../../packages/core/dist/lib/config.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.validateChangelogTemplates = exports2.normalizeConfig = exports2.loadRawConfig = exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
+    exports2.validateChangelogTemplates = exports2.normalizeConfigInputKeys = exports2.normalizeConfig = exports2.loadRawConfig = exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
     var schema_1 = require_schema();
     Object.defineProperty(exports2, "changeTypes", { enumerable: true, get: function() {
       return schema_1.changeTypes;
@@ -34006,6 +34078,9 @@ var require_config = __commonJS({
     } });
     Object.defineProperty(exports2, "normalizeConfig", { enumerable: true, get: function() {
       return load_1.normalizeConfig;
+    } });
+    Object.defineProperty(exports2, "normalizeConfigInputKeys", { enumerable: true, get: function() {
+      return load_1.normalizeConfigInputKeys;
     } });
     Object.defineProperty(exports2, "validateChangelogTemplates", { enumerable: true, get: function() {
       return load_1.validateChangelogTemplates;
@@ -46408,7 +46483,7 @@ var require_labels = __commonJS({
         try {
           return (0, parse_1.parseLabel)(config, label);
         } catch (error) {
-          if ((config.labelPolicy ?? "strict") === "permissive") {
+          if ((config.policies?.labelMode ?? "strict") === "permissive") {
             return void 0;
           }
           throw error;
@@ -46448,18 +46523,64 @@ var require_fetch2 = __commonJS({
       return void 0;
     };
     exports2.parsePRNumberFromCommitMessage = parsePRNumberFromCommitMessage;
-    var toSyntheticChange = (commit) => {
+    var parseConventionalType = (text, availableChangeTypes) => {
+      const normalized = text.trim();
+      if (!normalized)
+        return void 0;
+      const breakingByFooter = /(^|\n)BREAKING CHANGE:/m.test(normalized);
+      const match = normalized.match(/^(?<type>[a-zA-Z]+)(\([^)]+\))?(?<breaking>!)?:/m);
+      if (breakingByFooter || match?.groups?.breaking) {
+        return availableChangeTypes.includes("breaking") ? "breaking" : void 0;
+      }
+      const commitType = (match?.groups?.type || "").toLowerCase();
+      const map = {
+        feat: "feature",
+        feature: "feature",
+        fix: "fix",
+        docs: "docs",
+        test: "test",
+        chore: "chore",
+        refactor: "chore",
+        perf: "chore",
+        ci: "chore",
+        build: "chore"
+      };
+      const mapped = map[commitType];
+      return mapped && availableChangeTypes.includes(mapped) ? mapped : void 0;
+    };
+    var resolveDetectedType = (api, labelsType, commitsType) => {
+      const detectionUse = api.config.policies?.detectionUse ?? ["labels"];
+      const conflictRule = api.config.policies?.rules?.detectionConflict ?? "error";
+      if (labelsType && commitsType && labelsType !== commitsType) {
+        const message = `Detection conflict: labels resolved "${labelsType}" but commits resolved "${commitsType}".`;
+        if (conflictRule === "error") {
+          throw new Error(message);
+        }
+        if (conflictRule === "warn") {
+          api.logger.warn(`[relasy] ${message}`);
+        }
+      }
+      for (const source of detectionUse) {
+        if (source === "labels" && labelsType)
+          return labelsType;
+        if (source === "commits" && commitsType)
+          return commitsType;
+      }
+      return labelsType || commitsType || "chore";
+    };
+    var toSyntheticChange = (api, commit) => {
       const [title, ...bodyLines] = commit.message.split("\n");
       const body = bodyLines.join("\n").trim();
       const authorLogin = commit.author?.user?.login || commit.author?.name || "unknown";
       const authorUrl = commit.author?.user?.url || "";
+      const commitDetected = parseConventionalType(commit.message, Object.keys(api.config.changeTypes));
       return {
         number: 0,
         title: title.trim() || `Commit ${commit.oid.slice(0, 7)}`,
         body,
         author: { login: authorLogin, url: authorUrl },
         labels: { nodes: [] },
-        type: "chore",
+        type: commitDetected || "chore",
         pkgs: [],
         sourceCommit: commit.oid
       };
@@ -46499,27 +46620,37 @@ var require_fetch2 = __commonJS({
         };
         this.toChange = (pr) => {
           const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
+          const fromLabels = changeTypes.find(Boolean)?.changeType;
+          const fromCommits = parseConventionalType(`${pr.title}
+${pr.body || ""}`, Object.keys(this.api.config.changeTypes));
           return {
             ...pr,
-            type: changeTypes.find(Boolean)?.changeType ?? "chore",
+            type: resolveDetectedType(this.api, fromLabels, fromCommits),
             pkgs: pkgs.map(({ pkg }) => pkg)
           };
         };
         this.changes = async (version) => {
           const commits = await this.commits((0, git_1.commitsAfterVersion)(version));
           const resolutions = commits.map(this.toResolution);
-          const prNumbers = [...new Set(resolutions.filter((r) => r.kind === "pr").map((r) => r.prNumber))];
+          const prNumbers = [
+            ...new Set(resolutions.filter((r) => r.kind === "pr").map((r) => r.prNumber))
+          ];
           const nonPrCommits = resolutions.filter((r) => r.kind === "non-pr").map((r) => r.commit);
-          const policy = this.api.config.nonPrCommitsPolicy ?? "skip";
-          if (policy === "strict-fail" && nonPrCommits.length > 0) {
-            const examples = nonPrCommits.slice(0, 3).map((c) => c.oid.slice(0, 7)).join(", ");
-            throw new Error(`Found ${nonPrCommits.length} commits without associated PRs (examples: ${examples}). Set nonPrCommitsPolicy to "skip" or "include" to continue.`);
-          }
           const prChanges = (await this.pullRequests(prNumbers)).map(this.toChange);
-          if (policy !== "include") {
+          const commitsEnabled = (this.api.config.policies?.detectionUse ?? ["labels"]).includes("commits");
+          if (!commitsEnabled || nonPrCommits.length === 0) {
             return prChanges;
           }
-          const syntheticChanges = nonPrCommits.map(toSyntheticChange);
+          const rule = this.api.config.policies?.rules?.nonPrCommit ?? "skip";
+          if (rule === "error") {
+            const examples = nonPrCommits.slice(0, 3).map((c) => c.oid.slice(0, 7)).join(", ");
+            throw new Error(`Found ${nonPrCommits.length} commits without associated PRs (examples: ${examples}). Adjust policies.rules.non-pr-commit to warn or skip to continue.`);
+          }
+          if (rule === "skip") {
+            return prChanges;
+          }
+          this.api.logger.warn(`[relasy] Including ${nonPrCommits.length} commits without PR linkage due to policies.rules.non-pr-commit=warn`);
+          const syntheticChanges = nonPrCommits.map((c) => toSyntheticChange(this.api, c));
           return [...prChanges, ...syntheticChanges];
         };
       }
@@ -46572,7 +46703,7 @@ ${space(n)}`));
             ["\u{1F464}", this.author(change)]
           ]);
           const defaultItem = lines([`* ${this.ref(change)}: ${title?.trim()}`, stats, details]);
-          const template = this.api.config.changelog?.itemTemplate;
+          const template = this.api.config.changelog?.templates?.item;
           if (!template)
             return defaultItem;
           return applyTemplate(template, {
@@ -46587,7 +46718,7 @@ ${space(n)}`));
         };
         this.section = (label, changes) => {
           const renderedChanges = lines(changes.map(this.change));
-          const template = this.api.config.changelog?.sectionTemplate;
+          const template = this.api.config.changelog?.templates?.section;
           if (!template) {
             return lines([`#### ${label}`, renderedChanges]);
           }
@@ -46609,18 +46740,23 @@ ${space(n)}`));
         this.changes = (tag, changes) => {
           const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
           const sectionTitles = {
-            ...this.api.config.changeTypes,
-            ...this.api.config.changelog?.sectionTitles ?? {}
+            ...this.api.config.changeTypes
           };
-          const headerTemplate = this.api.config.changelog?.headerTemplate;
+          const headerTemplate = this.api.config.changelog?.templates?.header;
           const header = headerTemplate ? applyTemplate(headerTemplate, {
             VERSION: tag.toString(),
             DATE: (0, git_1.getDate)()
           }) : `## ${tag.toString()} (${(0, git_1.getDate)()})`;
-          return lines([
-            header,
-            ...Object.entries(sectionTitles).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.api.config.changelog?.groupByPackage ? this.sectionByPackage(label, groups[type]) : this.section(label, groups[type]) : "")
-          ], 2);
+          const grouping = this.api.config.changelog?.grouping ?? "none";
+          const sections = grouping === "none" ? [lines(changes.map(this.change))] : Object.entries(sectionTitles).flatMap(([type, label]) => {
+            if (!(0, utils_1.isKey)(groups, type))
+              return "";
+            if (grouping === "package") {
+              return this.sectionByPackage(label, groups[type]);
+            }
+            return this.section(label, groups[type]);
+          });
+          return lines([header, ...sections], 2);
         };
       }
     };
@@ -46637,14 +46773,13 @@ var require_changelog = __commonJS({
     var git_1 = require_git();
     var fetch_1 = require_fetch2();
     var render_1 = require_render();
-    var detectChangeType = (changes) => {
-      if (changes.find((c) => c.type === "breaking")) {
-        return "major";
-      }
-      if (changes.find((c) => c.type === "feature")) {
-        return "minor";
-      }
-      return "patch";
+    var detectChangeType = (changes, changeTypeBumps) => {
+      const rank = { patch: 0, minor: 1, major: 2 };
+      const highest = changes.reduce((current, change) => {
+        const bump = changeTypeBumps[change.type] ?? (change.type === "breaking" ? "major" : change.type === "feature" ? "minor" : "patch");
+        return rank[bump] > rank[current] ? bump : current;
+      }, "patch");
+      return highest;
     };
     var renderChangelog = async (api) => {
       const version = api.module.version();
@@ -46657,7 +46792,7 @@ var require_changelog = __commonJS({
         }
       }
       const changes = await new fetch_1.FetchApi(api).changes(version);
-      await api.module.bump(detectChangeType(changes));
+      await api.module.bump(detectChangeType(changes, api.config?.changeTypeBumps ?? {}));
       return new render_1.RenderAPI(api).changes(api.module.version(), changes);
     };
     exports2.renderChangelog = renderChangelog;
@@ -46785,12 +46920,12 @@ var require_package_scopes = __commonJS({
         });
       }
       const { inferredScopes, existingScopes, missingScopes, conflictingScopes } = (0, exports2.inferPackageScopes)(iRelasy, labels, changedFiles);
-      const requireInferred = iRelasy.config.rules?.requireInferredPackageLabels ?? true;
-      const blockConflict = iRelasy.config.rules?.blockOnLabelConflict ?? false;
-      if (requireInferred && missingScopes.length > 0) {
+      const missingRule = iRelasy.config.policies?.rules?.inferredPackageMissing ?? "error";
+      const conflictRule = iRelasy.config.policies?.rules?.labelConflict ?? "error";
+      if (missingRule === "error" && missingScopes.length > 0) {
         return (0, result_1.fail)("LABEL_POLICY_ERROR", `Missing inferred package labels: ${missingScopes.map((s) => `\u{1F4E6} ${s}`).join(", ")}`);
       }
-      if (blockConflict && conflictingScopes.length > 0) {
+      if (conflictRule === "error" && conflictingScopes.length > 0) {
         return (0, result_1.fail)("LABEL_POLICY_ERROR", `Package label conflict detected. Labels not inferred from changed files: ${conflictingScopes.map((s) => `\u{1F4E6} ${s}`).join(", ")}`);
       }
       return (0, result_1.ok)({
@@ -46816,7 +46951,8 @@ var require_plan = __commonJS({
         return (0, result_1.ok)({
           version: iRelasy.version().toString(),
           baseBranch: iRelasy.config.project.baseBranch ?? "(auto-detect default branch)",
-          labelPolicy: iRelasy.config.labelPolicy ?? "strict"
+          labelMode: iRelasy.config.policies?.labelMode ?? "strict",
+          detectionUse: iRelasy.config.policies?.detectionUse ?? ["labels"]
         });
       } catch (error) {
         return (0, result_1.fail)("UNKNOWN_ERROR", error instanceof Error ? error.message : String(error));
@@ -46836,7 +46972,8 @@ var require_validate_config = __commonJS({
     var config_1 = require_config();
     var validateConfig = (input) => {
       try {
-        const parsed = config_1.ConfigSchema.parse(input);
+        const normalized = (0, config_1.normalizeConfigInputKeys)(input);
+        const parsed = config_1.ConfigSchema.parse(normalized);
         return (0, result_1.ok)(parsed);
       } catch (error) {
         return (0, result_1.fail)("INVALID_CONFIG", error instanceof Error ? error.message : String(error));
@@ -46969,7 +47106,7 @@ async function run() {
     const plan = await (0, import_core2.buildReleasePlan)(iRelasy);
     if (plan.ok) {
       (0, import_core.info)(
-        `[relasy] plan: version=${plan.data.version}, baseBranch=${plan.data.baseBranch}, labelPolicy=${plan.data.labelPolicy}`
+        `[relasy] plan: version=${plan.data.version}, baseBranch=${plan.data.baseBranch}, labelMode=${plan.data.labelMode}, detectionUse=${plan.data.detectionUse.join("+")}`
       );
     }
     const result = await (0, import_core2.draftRelease)(iRelasy);

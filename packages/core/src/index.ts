@@ -1,7 +1,11 @@
 import { Api } from "./lib/changelog/types";
 import { Github } from "./lib/gh";
 import { loadConfig } from "./lib/config";
-export { normalizeConfig, validateChangelogTemplates } from "./lib/config";
+export {
+  normalizeConfig,
+  normalizeConfigInputKeys,
+  validateChangelogTemplates,
+} from "./lib/config";
 import { setupEnv } from "./lib/utils";
 import { setupToolchain } from "./lib/project";
 import { renderChangelog } from "./lib/changelog";

@@ -183,9 +183,10 @@ const hasLegacyFields = (cfg: Record<string, unknown>) => {
     "rules",
   ].some((key) => key in cfg);
 
-  const changelogLegacy = isPlainObject(cfg.changelog)
+  const changelog = cfg.changelog;
+  const changelogLegacy = isPlainObject(changelog)
     ? ["headerTemplate", "sectionTemplate", "itemTemplate", "groupByPackage"].some(
-        (key) => key in cfg.changelog,
+        (key) => key in changelog,
       )
     : false;
 

@@ -6,23 +6,13 @@ import {
   exit,
   loadRelasy,
   normalizeConfig,
+  normalizeConfigInputKeys,
   validateChangelogTemplates,
   validateConfig,
 } from "@relasy/core";
 import { access, readFile, writeFile } from "fs/promises";
 import yaml from "js-yaml";
 import dotenv from "dotenv";
-
-type RawRelasyConfig = {
-  configVersion?: number;
-  pkgs: Record<string, string | { name: string; paths?: string[] }>;
-  project: Record<string, unknown>;
-  changelog?: {
-    headerTemplate?: string;
-    sectionTemplate?: string;
-    itemTemplate?: string;
-  };
-};
 
 const exists = async (path: string) => {
   try {
@@ -40,7 +30,7 @@ const resolveConfigPath = async (): Promise<string> => {
   return "./relasy.yaml";
 };
 
-const readRelasyConfig = async (): Promise<RawRelasyConfig> => {
+const readRelasyConfig = async (): Promise<unknown> => {
   const path = await resolveConfigPath();
   const content = await readFile(path, "utf8");
 
@@ -48,11 +38,35 @@ const readRelasyConfig = async (): Promise<RawRelasyConfig> => {
     return JSON.parse(content);
   }
 
-  return (yaml.load(content) ?? {}) as RawRelasyConfig;
+  return yaml.load(content) ?? {};
+};
+
+const camelToKebab = (key: string) =>
+  key.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const toKebabCaseDeep = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map((x) => toKebabCaseDeep(x));
+  }
+
+  if (!isPlainObject(value)) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, child]) => [
+      camelToKebab(key),
+      toKebabCaseDeep(child),
+    ]),
+  );
 };
 
 const writeRelasyConfig = async (config: unknown) => {
-  await writeFile("./relasy.yaml", yaml.dump(config, { lineWidth: 120 }), "utf8");
+  const kebab = toKebabCaseDeep(config);
+  await writeFile("./relasy.yaml", yaml.dump(kebab, { lineWidth: 120 }), "utf8");
 };
 
 const applyTemplate = (template: string, values: Record<string, string>) =>
@@ -75,7 +89,6 @@ export const main = async () => {
     }
 
     const skeleton = {
-      configVersion: 1,
       pkgs: {
         core: {
           name: "@scope/core",
@@ -83,14 +96,34 @@ export const main = async () => {
         },
       },
       project: { type: "npm" },
-      labelPolicy: "strict",
-      nonPrCommitsPolicy: "skip",
-      rules: {
-        requireInferredPackageLabels: true,
-        blockOnLabelConflict: false,
+      policies: {
+        labelMode: "strict",
+        autoAddInferredPackages: false,
+        detectionUse: ["labels"],
+        rules: {
+          labelConflict: "error",
+          inferredPackageMissing: "error",
+          detectionConflict: "error",
+          nonPrCommit: "skip",
+        },
+      },
+      changes: {
+        feature: {
+          icon: "✨",
+          title: "New Features",
+          bump: "minor",
+        },
+        fix: {
+          icon: "🐛",
+          title: "Bug Fixes",
+          bump: "patch",
+        },
       },
       changelog: {
-        headerTemplate: "## {{VERSION}} ({{DATE}})",
+        templates: {
+          header: "## {{VERSION}} ({{DATE}})",
+        },
+        grouping: "package",
       },
     };
 
@@ -122,45 +155,65 @@ export const main = async () => {
       throw new Error(`[${validated.code}] ${validated.message}`);
     }
 
+    const normalizedInput = normalizeConfigInputKeys(raw);
     const migrated = normalizeConfig(validated.data, "owner/repo");
 
-    const persisted = {
-      ...raw,
-      configVersion: migrated.configVersion ?? 1,
-      labelPolicy: migrated.labelPolicy,
-      nonPrCommitsPolicy: migrated.nonPrCommitsPolicy,
-    };
+    await writeRelasyConfig({
+      ...normalizedInput,
+      pkgs: migrated.pkgs,
+      policies: migrated.policies,
+      changes: Object.fromEntries(
+        Object.entries(migrated.changeTypes).map(([key, title]) => [
+          key,
+          {
+            title,
+            icon: migrated.changeTypeEmojis?.[key],
+            bump: migrated.changeTypeBumps?.[key],
+            paths: migrated.changeTypeScopes?.[key]?.paths,
+          },
+        ]),
+      ),
+      changelog: {
+        templates: migrated.changelog?.templates,
+        grouping: migrated.changelog?.grouping,
+      },
+    });
 
-    await writeRelasyConfig(persisted);
-    console.log("[relasy] Config migrated to relasy.yaml latest compatible shape.");
+    console.log(
+      "[relasy] Config migrated to latest schema shape (kebab-case + canonical policy keys).",
+    );
   });
 
   cli.command("template-lint").action(async () => {
-    const raw = await readRelasyConfig();
+    const raw = normalizeConfigInputKeys(await readRelasyConfig()) as {
+      changelog?: { templates?: { header?: string; section?: string; item?: string } };
+    };
     validateChangelogTemplates(raw.changelog);
     console.log("[relasy] Changelog templates are valid.");
   });
 
   cli.command("template-preview").action(async () => {
-    const raw = await readRelasyConfig();
+    const raw = normalizeConfigInputKeys(await readRelasyConfig()) as {
+      changelog?: { templates?: { header?: string; section?: string; item?: string } };
+    };
     validateChangelogTemplates(raw.changelog);
 
-    const header = raw.changelog?.headerTemplate
-      ? applyTemplate(raw.changelog.headerTemplate, {
+    const header = raw.changelog?.templates?.header
+      ? applyTemplate(raw.changelog.templates.header, {
           VERSION: "v1.2.3",
           DATE: "2026-04-05",
         })
       : "## v1.2.3 (2026-04-05)";
 
-    const section = raw.changelog?.sectionTemplate
-      ? applyTemplate(raw.changelog.sectionTemplate, {
+    const section = raw.changelog?.templates?.section
+      ? applyTemplate(raw.changelog.templates.section, {
           LABEL: "Features",
           CHANGES: "* #123: Add preview support",
         })
       : "#### Features\n* #123: Add preview support";
 
-    const item = raw.changelog?.itemTemplate
-      ? applyTemplate(raw.changelog.itemTemplate, {
+    const item = raw.changelog?.templates?.item
+      ? applyTemplate(raw.changelog.templates.item, {
           REF: "#123",
           TITLE: "Add preview support",
           AUTHOR: "@dev",
@@ -211,7 +264,8 @@ export const main = async () => {
     console.log("[relasy] Release plan");
     console.log(`- version: ${result.data.version}`);
     console.log(`- baseBranch: ${result.data.baseBranch}`);
-    console.log(`- labelPolicy: ${result.data.labelPolicy}`);
+    console.log(`- labelMode: ${result.data.labelMode}`);
+    console.log(`- detectionUse: ${result.data.detectionUse.join(",")}`);
   });
 
   cli.parse();

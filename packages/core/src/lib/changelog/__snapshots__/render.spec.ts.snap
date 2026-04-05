@@ -3,7 +3,6 @@
 exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no author url) 1`] = `
 "## v4.1.0 (2026-04-05)
 
-#### Chores
 * commit abcdef1: Standalone commit
   - 👤 @ci-bot
   - <details>
@@ -18,16 +17,16 @@ exports[`RenderAPI snapshots > custom section/item templates 1`] = `
 - [#40](https://github.com/acme/demo/issues/40) | Template driven entry | [@author](https://example.com/author) | [core](https://npmjs.com/package/@acme/core)"
 `;
 
-exports[`RenderAPI snapshots > default header + no grouping + custom section titles 1`] = `
+exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
 "## v2.0.0 (2026-04-05)
 
-#### ✨ Product Features
+#### Features
 * [#10](https://github.com/acme/demo/issues/10): Ship onboarding
   - 📦 [web](https://npmjs.com/package/@acme/web)
 [core](https://npmjs.com/package/@acme/core)
   - 👤 [@author](https://example.com/author)
 
-#### 🐛 Resolved Issues
+#### Fixes
 * [#11](https://github.com/acme/demo/issues/11): Fix race condition
   - 📦 [core](https://npmjs.com/package/@acme/core)
   - 👤 [@author](https://example.com/author)"
@@ -36,13 +35,13 @@ exports[`RenderAPI snapshots > default header + no grouping + custom section tit
 exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 "## v3.4.0 (2026-04-05)
 
-#### 🚨 Breaking
+#### Breaking
 ##### 📦 core
 * [#20](https://github.com/acme/demo/issues/20): Drop legacy auth
   - 📦 [core](https://npmjs.com/package/@acme/core)
   - 👤 [@author](https://example.com/author)
 
-#### ✨ Features
+#### Features
 ##### 📦 core
 * [#21](https://github.com/acme/demo/issues/21): Add cache layer
   - 📦 [core](https://npmjs.com/package/@acme/core)
@@ -52,7 +51,7 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
   - 📦 [web](https://npmjs.com/package/@acme/web)
   - 👤 [@author](https://example.com/author)
 
-#### 🐛 Fixes
+#### Fixes
 ##### 📦 web
 * [#23](https://github.com/acme/demo/issues/23): Fix pagination
   - 📦 [web](https://npmjs.com/package/@acme/web)
@@ -61,7 +60,7 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 * [#24](https://github.com/acme/demo/issues/24): Fix typo
   - 👤 [@author](https://example.com/author)
 
-#### 🧹 Chores
+#### Chores
 ##### 📦 cli
 * [#25](https://github.com/acme/demo/issues/25): Bump deps
   - 📦 [cli](https://npmjs.com/package/@acme/cli)

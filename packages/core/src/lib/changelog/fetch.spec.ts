@@ -26,14 +26,12 @@ describe("parsePRNumberFromCommitMessage", () => {
   });
 
   test("returns undefined when no PR number exists", () => {
-    expect(
-      parsePRNumberFromCommitMessage("chore: update docs"),
-    ).toBeUndefined();
+    expect(parsePRNumberFromCommitMessage("chore: update docs")).toBeUndefined();
   });
 });
 
-describe("FetchApi non-PR commit policy", () => {
-  const buildApi = (policy: "include" | "skip" | "strict-fail") => {
+describe("FetchApi non-PR commit rule", () => {
+  const buildApi = (rule: "skip" | "warn" | "error", detectionUse: Array<"labels" | "commits"> = ["labels", "commits"]) => {
     const commits = [
       {
         oid: "abc1234",
@@ -54,12 +52,14 @@ describe("FetchApi non-PR commit policy", () => {
     const prs = [
       {
         number: 10,
-        title: "From PR",
+        title: "feat: From PR",
         body: "",
         author: { login: "dev", url: "https://u/dev" },
         labels: { nodes: [] },
       },
     ];
+
+    const warn = vi.fn();
 
     return {
       config: {
@@ -71,9 +71,18 @@ describe("FetchApi non-PR commit policy", () => {
           feature: "Features",
           fix: "Fixes",
           chore: "Chores",
+          docs: "Docs",
+          test: "Tests",
         },
-        labelPolicy: "strict",
-        nonPrCommitsPolicy: policy,
+        policies: {
+          labelMode: "strict",
+          autoAddInferredPackages: false,
+          detectionUse,
+          rules: {
+            nonPrCommit: rule,
+            detectionConflict: "error",
+          },
+        },
       },
       github: {
         setup: () => undefined,
@@ -97,27 +106,34 @@ describe("FetchApi non-PR commit policy", () => {
         bump: async () => undefined,
         pkg: (id: string) => `https://npmjs.com/package/${id}`,
       },
-      logger: { info: () => undefined, warn: () => undefined, error: () => undefined },
+      logger: { info: () => undefined, warn, error: () => undefined },
     } as any;
   };
 
-  test("skip policy ignores non-PR commits", async () => {
+  test("skip ignores non-PR commits", async () => {
     const changes = await new FetchApi(buildApi("skip")).changes(Version.parse("1.0.0"));
     expect(changes).toHaveLength(1);
     expect(changes[0].number).toBe(10);
   });
 
-  test("include policy creates synthetic changes for non-PR commits", async () => {
-    const changes = await new FetchApi(buildApi("include")).changes(Version.parse("1.0.0"));
+  test("warn includes synthetic changes for non-PR commits", async () => {
+    const changes = await new FetchApi(buildApi("warn")).changes(Version.parse("1.0.0"));
     expect(changes).toHaveLength(2);
     expect(changes.find((c) => c.sourceCommit === "def5678")?.title).toContain(
       "standalone commit",
     );
   });
 
-  test("strict-fail policy throws on non-PR commits", async () => {
+  test("error throws on non-PR commits", async () => {
     await expect(
-      new FetchApi(buildApi("strict-fail")).changes(Version.parse("1.0.0")),
+      new FetchApi(buildApi("error")).changes(Version.parse("1.0.0")),
     ).rejects.toThrow("without associated PRs");
+  });
+
+  test("non-pr rule ignored when commits detection is disabled", async () => {
+    const changes = await new FetchApi(buildApi("error", ["labels"]))
+      .changes(Version.parse("1.0.0"));
+
+    expect(changes).toHaveLength(1);
   });
 });

@@ -24,7 +24,17 @@ const baseApi = (changelog?: Api["config"]["changelog"]): Api => ({
       docs: "Documentation",
       test: "Testing",
     },
-    labelPolicy: "strict",
+    policies: {
+      labelMode: "strict",
+      autoAddInferredPackages: false,
+      detectionUse: ["labels"],
+      rules: {
+        labelConflict: "error",
+        inferredPackageMissing: "error",
+        detectionConflict: "error",
+        nonPrCommit: "skip",
+      },
+    },
     changelog,
   },
   github: {
@@ -61,8 +71,10 @@ const c = (overrides: Partial<Change>): Change => ({
 describe("RenderAPI snapshots", () => {
   test("template + package grouping + multiline body", () => {
     const api = baseApi({
-      headerTemplate: "## Release {{VERSION}} on {{DATE}}",
-      groupByPackage: true,
+      templates: {
+        header: "## Release {{VERSION}} on {{DATE}}",
+      },
+      grouping: "package",
     });
 
     const changes: Change[] = [
@@ -94,12 +106,9 @@ describe("RenderAPI snapshots", () => {
     expect(markdown).toMatchSnapshot();
   });
 
-  test("default header + no grouping + custom section titles", () => {
+  test("default header + scope grouping", () => {
     const api = baseApi({
-      sectionTitles: {
-        feature: "✨ Product Features",
-        fix: "🐛 Resolved Issues",
-      },
+      grouping: "scope",
     });
 
     const changes: Change[] = [
@@ -123,13 +132,7 @@ describe("RenderAPI snapshots", () => {
 
   test("large mixed release snapshot", () => {
     const api = baseApi({
-      groupByPackage: true,
-      sectionTitles: {
-        breaking: "🚨 Breaking",
-        feature: "✨ Features",
-        fix: "🐛 Fixes",
-        chore: "🧹 Chores",
-      },
+      grouping: "package",
     });
 
     const changes: Change[] = [
@@ -148,11 +151,11 @@ describe("RenderAPI snapshots", () => {
 
   test("custom section/item templates", () => {
     const api = baseApi({
-      sectionTemplate: "### {{LABEL}}\n{{CHANGES}}",
-      itemTemplate: "- {{REF}} | {{TITLE}} | {{AUTHOR}} | {{PACKAGES}}",
-      sectionTitles: {
-        feature: "Features",
+      templates: {
+        section: "### {{LABEL}}\n{{CHANGES}}",
+        item: "- {{REF}} | {{TITLE}} | {{AUTHOR}} | {{PACKAGES}}",
       },
+      grouping: "scope",
     });
 
     const markdown = new RenderAPI(api).changes(Version.parse("4.0.0"), [

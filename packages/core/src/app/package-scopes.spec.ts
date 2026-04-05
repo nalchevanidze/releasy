@@ -7,9 +7,11 @@ const iRelasy = {
       core: { name: "@acme/core", paths: ["packages/core/**"] },
       cli: { name: "@acme/cli", paths: ["packages/cli/**"] },
     },
-    rules: {
-      requireInferredPackageLabels: true,
-      blockOnLabelConflict: true,
+    policies: {
+      rules: {
+        inferredPackageMissing: "error",
+        labelConflict: "error",
+      },
     },
   },
   parseLabels: (labels: string[]) => ({
@@ -72,9 +74,11 @@ describe("package scope rules", () => {
       ...iRelasy,
       config: {
         ...iRelasy.config,
-        rules: {
-          requireInferredPackageLabels: false,
-          blockOnLabelConflict: true,
+        policies: {
+          rules: {
+            inferredPackageMissing: "skip",
+            labelConflict: "error",
+          },
         },
       },
     };

@@ -1,8 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { normalizeConfig, validateChangelogTemplates } from "./load";
+import {
+  normalizeConfig,
+  normalizeConfigInputKeys,
+  validateChangelogTemplates,
+} from "./load";
 
-describe("config normalization/versioning", () => {
-  test("defaults configVersion and policies for legacy shape", () => {
+describe("config normalization", () => {
+  test("defaults policy fields", () => {
     const out = normalizeConfig(
       {
         pkgs: { core: "@acme/core" },
@@ -11,26 +15,30 @@ describe("config normalization/versioning", () => {
       "acme/demo",
     );
 
-    expect(out.configVersion).toBe(1);
-    expect(out.labelPolicy).toBe("strict");
-    expect(out.nonPrCommitsPolicy).toBe("skip");
+    expect(out.policies.labelMode).toBe("strict");
+    expect(out.policies.detectionUse).toEqual(["labels"]);
+    expect(out.policies.rules.nonPrCommit).toBe("skip");
   });
 
-  test("normalizes single-string pkg paths into lists", () => {
-    const out = normalizeConfig(
-      {
-        pkgs: {
-          core: { name: "@acme/core", paths: "packages/core/**" },
-        },
-        project: { type: "npm" },
+  test("normalizes kebab-case keys and single-string paths", () => {
+    const normalized = normalizeConfigInputKeys({
+      pkgs: {
+        core: { name: "@acme/core", paths: "packages/core/**" },
       },
-      "acme/demo",
-    );
+      project: { type: "npm", "base-branch": "main" },
+      policies: {
+        "label-mode": "strict",
+        "detection-use": ["labels"],
+      },
+    }) as any;
 
+    expect(normalized.project.baseBranch).toBe("main");
+
+    const out = normalizeConfig(normalized, "acme/demo");
     expect(out.pkgs.core.paths).toEqual(["packages/core/**"]);
   });
 
-  test("derives change titles/icons/scopes from changes map", () => {
+  test("derives change titles/icons/bumps/scopes from changes map", () => {
     const out = normalizeConfig(
       {
         pkgs: { core: "@acme/core" },
@@ -53,22 +61,15 @@ describe("config normalization/versioning", () => {
     expect(out.changeTypeScopes?.docs.paths).toEqual(["docs/**/*.md"]);
   });
 
-  test("requires bump when custom change entry is declared", () => {
+  test("throws on duplicate semantic keys after normalization", () => {
     expect(() =>
-      normalizeConfig(
-        {
-          pkgs: { core: "@acme/core" },
-          project: { type: "npm" },
-          changes: {
-            docs: {
-              title: "Documentation",
-              icon: "📚",
-            },
-          },
+      normalizeConfigInputKeys({
+        policies: {
+          "label-mode": "strict",
+          labelMode: "permissive",
         },
-        "acme/demo",
-      ),
-    ).toThrow("changes.docs.bump is required");
+      }),
+    ).toThrow("Duplicate semantic key");
   });
 });
 
@@ -76,9 +77,11 @@ describe("template guardrails", () => {
   test("accepts valid templates", () => {
     expect(() =>
       validateChangelogTemplates({
-        headerTemplate: "## {{VERSION}} ({{DATE}})",
-        sectionTemplate: "#### {{LABEL}}\n{{CHANGES}}",
-        itemTemplate: "* {{REF}} {{TITLE}} {{AUTHOR}} {{PACKAGES}}",
+        templates: {
+          header: "## {{VERSION}} ({{DATE}})",
+          section: "#### {{LABEL}}\n{{CHANGES}}",
+          item: "* {{REF}} {{TITLE}} {{AUTHOR}} {{PACKAGES}}",
+        },
       }),
     ).not.toThrow();
   });
@@ -86,7 +89,9 @@ describe("template guardrails", () => {
   test("rejects missing required placeholders", () => {
     expect(() =>
       validateChangelogTemplates({
-        sectionTemplate: "#### {{LABEL}}",
+        templates: {
+          section: "#### {{LABEL}}",
+        },
       }),
     ).toThrow("missing required placeholders");
   });
@@ -94,7 +99,9 @@ describe("template guardrails", () => {
   test("rejects unknown placeholders", () => {
     expect(() =>
       validateChangelogTemplates({
-        itemTemplate: "* {{REF}} {{TITLE}} {{WHATEVER}}",
+        templates: {
+          item: "* {{REF}} {{TITLE}} {{WHATEVER}}",
+        },
       }),
     ).toThrow("unknown placeholders");
   });
