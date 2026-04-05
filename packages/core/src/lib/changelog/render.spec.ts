@@ -24,6 +24,14 @@ const baseApi = (changelog?: Api["config"]["changelog"]): Api => ({
       docs: "Documentation",
       test: "Testing",
     },
+    changeTypeEmojis: {
+      breaking: "💥",
+      feature: "✨",
+      fix: "🐛",
+      chore: "🧹",
+      docs: "📚",
+      test: "🧪",
+    },
     policies: {
       labelMode: "strict",
       autoAddInferredPackages: false,
@@ -311,6 +319,54 @@ describe("RenderAPI snapshots", () => {
         title: "Increase coverage for renderer",
         pkgs: ["core"],
       }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("default layout renders top-level visual summary", () => {
+    const api = baseApi({
+      grouping: "scope",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.7"), [
+      c({ number: 57, type: "feature", title: "Ship composer", pkgs: ["core"] }),
+      c({ number: 58, type: "feature", title: "Ship presets", pkgs: ["web"] }),
+      c({ number: 59, type: "fix", title: "Fix lint script", pkgs: ["cli"] }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("custom item template skips default visual summary", () => {
+    const api = baseApi({
+      templates: {
+        item: "- {{TITLE}}",
+      },
+      grouping: "scope",
+    });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.8"), [
+      c({ number: 60, type: "docs", title: "Add style guide", pkgs: ["core"] }),
+    ]);
+
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("section icons come from user config changeTypeEmojis", () => {
+    const api = baseApi({
+      grouping: "scope",
+    });
+
+    api.config.changeTypeEmojis = {
+      ...api.config.changeTypeEmojis,
+      feature: "🚀",
+      fix: "🛠️",
+    };
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.0.9"), [
+      c({ number: 61, type: "feature", title: "Ship inline editor", pkgs: ["web"] }),
+      c({ number: 62, type: "fix", title: "Handle stale cache", pkgs: ["core"] }),
     ]);
 
     expect(markdown).toMatchSnapshot();

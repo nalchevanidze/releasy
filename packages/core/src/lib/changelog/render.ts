@@ -146,12 +146,34 @@ export class RenderAPI {
     });
   };
 
-  private section = (label: string, changes: Change[]) => {
+  private iconForType = (type: string) =>
+    this.api.config.changeTypeEmojis?.[type] || "";
+
+  private sectionHeading = (type: string, label: string) => {
+    const icon = this.iconForType(type);
+    return icon ? `#### ${icon} ${label}` : `#### ${label}`;
+  };
+
+  private summary = (changes: Change[]) => {
+    const packageCount = new Set(changes.flatMap((change) => change.pkgs)).size;
+    const byType = groupBy(({ type }) => type, changes);
+
+    const typeSummary = Object.entries(this.api.config.changeTypes)
+      .filter(([type]) => isKey(byType, type))
+      .map(([type]) => {
+        const icon = this.iconForType(type) || "•";
+        return `${icon} ${byType[type].length}`;
+      });
+
+    return `> ${typeSummary.join(" · ")} · 📦 ${packageCount || 0} packages · 🔢 ${changes.length} changes`;
+  };
+
+  private section = (type: string, label: string, changes: Change[]) => {
     const renderedChanges = lines(changes.map(this.change));
     const template = this.api.config.changelog?.templates?.section;
 
     if (!template) {
-      return lines([`#### ${label}`, renderedChanges]);
+      return lines([this.sectionHeading(type, label), renderedChanges]);
     }
 
     return applyTemplate(template, {
@@ -160,14 +182,14 @@ export class RenderAPI {
     });
   };
 
-  private sectionByPackage = (label: string, changes: Change[]) => {
+  private sectionByPackage = (type: string, label: string, changes: Change[]) => {
     const byPkg = groupBy(
       (change: Change) => this.packageGroupKey(change.pkgs),
       changes,
     );
 
     return lines([
-      `#### ${label}`,
+      this.sectionHeading(type, label),
       ...Object.entries(byPkg).flatMap(([pkgKey, pkgChanges]) => {
         const pkgTitle = this.packageGroupTitle(pkgKey);
         return lines([`##### 📦 ${pkgTitle}`, ...pkgChanges.map(this.change)]);
@@ -202,12 +224,19 @@ export class RenderAPI {
             if (!isKey(groups, type)) return "";
 
             if (grouping === "package") {
-              return this.sectionByPackage(label, groups[type]);
+              return this.sectionByPackage(type, label, groups[type]);
             }
 
-            return this.section(label, groups[type]);
+            return this.section(type, label, groups[type]);
           });
 
-    return lines([header, ...sections], 2);
+    const hasCustomLayout = Boolean(
+      this.api.config.changelog?.templates?.item ||
+        this.api.config.changelog?.templates?.section,
+    );
+
+    const summary = hasCustomLayout ? "" : this.summary(changes);
+
+    return lines([header, summary, ...sections], 2);
   };
 }

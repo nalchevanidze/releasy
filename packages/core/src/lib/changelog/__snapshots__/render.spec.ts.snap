@@ -3,9 +3,18 @@
 exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no author url) 1`] = `
 "## v4.1.0 (2026-04-05)
 
+> 🧹 1 · 📦 0 packages · 🔢 1 changes
+
 * commit abcdef1 — **Standalone commit**
   _📦 General · 🧑‍💻 @ci-bot_
   📝 raw commit body"
+`;
+
+exports[`RenderAPI snapshots > custom item template skips default visual summary 1`] = `
+"## v4.0.8 (2026-04-05)
+
+#### 📚 Documentation
+- Add style guide"
 `;
 
 exports[`RenderAPI snapshots > custom section/item templates 1`] = `
@@ -18,13 +27,31 @@ exports[`RenderAPI snapshots > custom section/item templates 1`] = `
 exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
 "## v2.0.0 (2026-04-05)
 
-#### Features
+> ✨ 1 · 🐛 1 · 📦 2 packages · 🔢 2 changes
+
+#### ✨ Features
 * [#10](https://github.com/acme/demo/issues/10) — **Ship onboarding**
   _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
 
-#### Fixes
+#### 🐛 Fixes
 * [#11](https://github.com/acme/demo/issues/11) — **Fix race condition**
   _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
+`;
+
+exports[`RenderAPI snapshots > default layout renders top-level visual summary 1`] = `
+"## v4.0.7 (2026-04-05)
+
+> ✨ 2 · 🐛 1 · 📦 3 packages · 🔢 3 changes
+
+#### ✨ Features
+* [#57](https://github.com/acme/demo/issues/57) — **Ship composer**
+  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_
+* [#58](https://github.com/acme/demo/issues/58) — **Ship presets**
+  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+
+#### 🐛 Fixes
+* [#59](https://github.com/acme/demo/issues/59) — **Fix lint script**
+  _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > empty change list renders a friendly empty-state note 1`] = `
@@ -36,6 +63,8 @@ _No user-facing changes since the last tag._"
 exports[`RenderAPI snapshots > grouping none renders a flat list without sections 1`] = `
 "## v4.0.1 (2026-04-05)
 
+> ✨ 1 · 🐛 1 · 📦 2 packages · 🔢 2 changes
+
 * [#50](https://github.com/acme/demo/issues/50) — **Add keyboard shortcuts**
   _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
 * [#51](https://github.com/acme/demo/issues/51) — **Handle null session**
@@ -45,7 +74,7 @@ exports[`RenderAPI snapshots > grouping none renders a flat list without section
 exports[`RenderAPI snapshots > item template can consume DETAILS and STATS placeholders 1`] = `
 "## v4.0.4 (2026-04-05)
 
-#### Documentation
+#### 📚 Documentation
 * Add migration guide
   source=[#55](https://github.com/acme/demo/issues/55)
   stats=  - 📦 Packages (2): [cli](https://npmjs.com/package/@acme/cli), [core](https://npmjs.com/package/@acme/core)
@@ -60,12 +89,14 @@ exports[`RenderAPI snapshots > item template can consume DETAILS and STATS place
 exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 "## v3.4.0 (2026-04-05)
 
-#### Breaking
+> 💥 1 · ✨ 2 · 🐛 2 · 🧹 2 · 📦 3 packages · 🔢 7 changes
+
+#### 💥 Breaking
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
 * [#20](https://github.com/acme/demo/issues/20) — **Drop legacy auth**
   _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_
 
-#### Features
+#### ✨ Features
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
 * [#21](https://github.com/acme/demo/issues/21) — **Add cache layer**
   _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_
@@ -73,7 +104,7 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 * [#22](https://github.com/acme/demo/issues/22) — **Add dashboard**
   _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
 
-#### Fixes
+#### 🐛 Fixes
 ##### 📦 [web](https://npmjs.com/package/@acme/web)
 * [#23](https://github.com/acme/demo/issues/23) — **Fix pagination**
   _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
@@ -81,7 +112,7 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 * [#24](https://github.com/acme/demo/issues/24) — **Fix typo**
   _📦 General · 🧑‍💻 [@author](https://example.com/author)_
 
-#### Chores
+#### 🧹 Chores
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
 * [#25](https://github.com/acme/demo/issues/25) — **Bump deps**
   _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@author](https://example.com/author)_
@@ -93,7 +124,9 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 exports[`RenderAPI snapshots > package grouping normalizes multi-package keys 1`] = `
 "## v3.4.1 (2026-04-05)
 
-#### Features
+> ✨ 2 · 📦 2 packages · 🔢 2 changes
+
+#### ✨ Features
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)
 * [#30](https://github.com/acme/demo/issues/30) — **Ship shared auth layer**
   _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
@@ -104,12 +137,28 @@ exports[`RenderAPI snapshots > package grouping normalizes multi-package keys 1`
 exports[`RenderAPI snapshots > package grouping renders normalized multi-package sections 1`] = `
 "## v4.0.2 (2026-04-05)
 
-#### Fixes
+> 🐛 2 · 📦 2 packages · 🔢 2 changes
+
+#### 🐛 Fixes
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)
 * [#52](https://github.com/acme/demo/issues/52) — **Align package order**
   _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
 * [#53](https://github.com/acme/demo/issues/53) — **Keep grouping stable**
   _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_"
+`;
+
+exports[`RenderAPI snapshots > section icons come from user config changeTypeEmojis 1`] = `
+"## v4.0.9 (2026-04-05)
+
+> 🚀 1 · 🛠️ 1 · 📦 2 packages · 🔢 2 changes
+
+#### 🚀 Features
+* [#61](https://github.com/acme/demo/issues/61) — **Ship inline editor**
+  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+
+#### 🛠️ Fixes
+* [#62](https://github.com/acme/demo/issues/62) — **Handle stale cache**
+  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > section templates are ignored when grouping is none 1`] = `
@@ -122,7 +171,9 @@ exports[`RenderAPI snapshots > section templates are ignored when grouping is no
 exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] = `
 "## Release v1.2.3 on 2026-04-05
 
-#### Features
+> ✨ 1 · 🐛 1 · 🧹 1 · 📦 2 packages · 🔢 3 changes
+
+#### ✨ Features
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
 * [#1](https://github.com/acme/demo/issues/1) — **Add dark mode**
   _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@alice](https://example.com/alice)_
@@ -132,12 +183,12 @@ exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] 
   > Second line
   </details>
 
-#### Fixes
+#### 🐛 Fixes
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
 * [#2](https://github.com/acme/demo/issues/2) — **Fix login**
   _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@bob](https://example.com/bob)_
 
-#### Chores
+#### 🧹 Chores
 ##### 📦 General
 * [#3](https://github.com/acme/demo/issues/3) — **Minor cleanup**
   _📦 General · 🧑‍💻 [@chris](https://example.com/chris)_"
@@ -146,7 +197,9 @@ exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] 
 exports[`RenderAPI snapshots > unknown package labels fall back to raw names with links when available 1`] = `
 "## v4.0.3 (2026-04-05)
 
-#### Features
+> ✨ 1 · 📦 1 packages · 🔢 1 changes
+
+#### ✨ Features
 * [#54](https://github.com/acme/demo/issues/54) — **Wire analytics hook**
   _📦 [sdk](https://npmjs.com/package/sdk) · 🧑‍💻 [@author](https://example.com/author)_"
 `;

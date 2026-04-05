@@ -197,6 +197,17 @@ If neither `build` nor `post-bump` is set, Relasy auto-detects the package manag
 - `templates.item` (string): custom entry template with `{{REF}}`, `{{TITLE}}`, `{{AUTHOR}}`, `{{PACKAGES}}`, `{{BODY}}`, `{{DETAILS}}`, `{{STATS}}`
 - `grouping` (`package | scope | none`): how entries are grouped in output
 
+Default renderer behavior (when templates are not provided):
+
+- section icons are taken from `changes.<type>.icon` (`changeTypeEmojis` internally)
+- adds a compact top summary row (`type counts`, `package count`, `total changes`)
+- renders package + author metadata in a compact secondary line
+- uses smart PR body rendering:
+  - short one-line bodies are shown inline
+  - multiline/long bodies are collapsed into `<details>`
+- if there are no changes since the last tag, renders:
+  - `_No user-facing changes since the last tag._`
+
 `policies.rules.non-pr-commit` controls handling of commits without PR linkage:
 
 - `skip`: ignore non-PR commits
@@ -322,38 +333,38 @@ When `project.type` is `"custom"`:
 Example output (placeholders only):
 
 ```md
-## 1.4.0 (2026-01-14)
+## v1.4.0 (2026-01-14)
 
-#### Breaking Changes
+> 💥 1 · ✨ 3 · 🐛 1 · 🧹 1 · 📦 3 packages · 🔢 6 changes
 
-- [#123](https://github.com/acme/awesome-monorepo/pull/123): Remove legacy auth middleware
-  - 📦 server
-  - 👤 @contributor-1
+#### 💥 Breaking Changes
 
-#### New Features
+* [#123](https://github.com/acme/awesome-monorepo/pull/123) — **Remove legacy auth middleware**
+  _📦 [server](https://npmjs.com/package/@acme/server) · 🧑‍💻 [@contributor-1](https://github.com/contributor-1)_
 
-- [#141](https://github.com/acme/awesome-monorepo/pull/141): Add caching for search endpoint
-  - 📦 server
-  - 👤 @contributor-2
-- [#155](https://github.com/acme/awesome-monorepo/pull/155): Add dark mode toggle
-  - 📦 client
-  - 👤 @contributor-3
-- [#162](https://github.com/acme/awesome-monorepo/pull/162): Share auth types across apps
-  - 📦 client
-  - 📦 server
-  - 👤 @contributor-6
+#### ✨ New Features
 
-#### Bug Fixes
+* [#141](https://github.com/acme/awesome-monorepo/pull/141) — **Add caching for search endpoint**
+  _📦 [server](https://npmjs.com/package/@acme/server) · 🧑‍💻 [@contributor-2](https://github.com/contributor-2)_
+* [#155](https://github.com/acme/awesome-monorepo/pull/155) — **Add dark mode toggle**
+  _📦 [client](https://npmjs.com/package/@acme/client) · 🧑‍💻 [@contributor-3](https://github.com/contributor-3)_
+* [#162](https://github.com/acme/awesome-monorepo/pull/162) — **Share auth types across apps**
+  _📦 [client](https://npmjs.com/package/@acme/client), [server](https://npmjs.com/package/@acme/server) · 🧑‍💻 [@contributor-6](https://github.com/contributor-6)_
+  <details>
+    <summary>📝 PR details</summary>
 
-- [#160](https://github.com/acme/awesome-monorepo/pull/160): Fix pagination edge case for empty results
-  - 📦 client
-  - 👤 @contributor-4
+  > Includes shared DTO contracts and migration notes.
+  </details>
 
-#### Minor Changes
+#### 🐛 Bug Fixes
 
-- [#166](https://github.com/acme/awesome-monorepo/pull/166): Update local dev docs
-  - 📦 docs
-  - 👤 @contributor-5
+* [#160](https://github.com/acme/awesome-monorepo/pull/160) — **Fix pagination edge case for empty results**
+  _📦 [client](https://npmjs.com/package/@acme/client) · 🧑‍💻 [@contributor-4](https://github.com/contributor-4)_
+
+#### 🧹 Minor Changes
+
+* [#166](https://github.com/acme/awesome-monorepo/pull/166) — **Update local dev docs**
+  _📦 [docs](https://npmjs.com/package/@acme/docs) · 🧑‍💻 [@contributor-5](https://github.com/contributor-5)_
 ```
 
 ---
