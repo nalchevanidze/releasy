@@ -49,7 +49,10 @@ export class RenderAPI {
     if (!pkgLinks.length) return space(1, "- 📦 General");
     if (pkgLinks.length === 1) return space(1, `- 📦 ${pkgLinks[0]}`);
 
-    return space(1, `- 📦 Packages (${pkgLinks.length}): ${pkgLinks.join(", ")}`);
+    return space(
+      1,
+      `- 📦 Packages (${pkgLinks.length}): ${pkgLinks.join(", ")}`,
+    );
   };
 
   private packageInline = (pkgs: string[]) => {
@@ -182,7 +185,11 @@ export class RenderAPI {
     });
   };
 
-  private sectionByPackage = (type: string, label: string, changes: Change[]) => {
+  private sectionByPackage = (
+    type: string,
+    label: string,
+    changes: Change[],
+  ) => {
     const byPkg = groupBy(
       (change: Change) => this.packageGroupKey(change.pkgs),
       changes,
@@ -232,7 +239,7 @@ export class RenderAPI {
 
     const hasCustomLayout = Boolean(
       this.api.config.changelog?.templates?.item ||
-        this.api.config.changelog?.templates?.section,
+      this.api.config.changelog?.templates?.section,
     );
 
     const summary = hasCustomLayout ? "" : this.summary(changes);

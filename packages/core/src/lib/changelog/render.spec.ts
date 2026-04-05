@@ -226,8 +226,18 @@ describe("RenderAPI snapshots", () => {
     });
 
     const markdown = new RenderAPI(api).changes(Version.parse("4.0.1"), [
-      c({ number: 50, type: "feature", title: "Add keyboard shortcuts", pkgs: ["web"] }),
-      c({ number: 51, type: "fix", title: "Handle null session", pkgs: ["core"] }),
+      c({
+        number: 50,
+        type: "feature",
+        title: "Add keyboard shortcuts",
+        pkgs: ["web"],
+      }),
+      c({
+        number: 51,
+        type: "fix",
+        title: "Handle null session",
+        pkgs: ["core"],
+      }),
     ]);
 
     expect(markdown).toMatchSnapshot();
@@ -330,7 +340,12 @@ describe("RenderAPI snapshots", () => {
     });
 
     const markdown = new RenderAPI(api).changes(Version.parse("4.0.7"), [
-      c({ number: 57, type: "feature", title: "Ship composer", pkgs: ["core"] }),
+      c({
+        number: 57,
+        type: "feature",
+        title: "Ship composer",
+        pkgs: ["core"],
+      }),
       c({ number: 58, type: "feature", title: "Ship presets", pkgs: ["web"] }),
       c({ number: 59, type: "fix", title: "Fix lint script", pkgs: ["cli"] }),
     ]);
@@ -365,8 +380,18 @@ describe("RenderAPI snapshots", () => {
     };
 
     const markdown = new RenderAPI(api).changes(Version.parse("4.0.9"), [
-      c({ number: 61, type: "feature", title: "Ship inline editor", pkgs: ["web"] }),
-      c({ number: 62, type: "fix", title: "Handle stale cache", pkgs: ["core"] }),
+      c({
+        number: 61,
+        type: "feature",
+        title: "Ship inline editor",
+        pkgs: ["web"],
+      }),
+      c({
+        number: 62,
+        type: "fix",
+        title: "Handle stale cache",
+        pkgs: ["core"],
+      }),
     ]);
 
     expect(markdown).toMatchSnapshot();

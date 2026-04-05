@@ -339,31 +339,32 @@ Example output (placeholders only):
 
 #### 💥 Breaking Changes
 
-* [#123](https://github.com/acme/awesome-monorepo/pull/123) — **Remove legacy auth middleware**
+- [#123](https://github.com/acme/awesome-monorepo/pull/123) — **Remove legacy auth middleware**
   _📦 [server](https://npmjs.com/package/@acme/server) · 🧑‍💻 [@contributor-1](https://github.com/contributor-1)_
 
 #### ✨ New Features
 
-* [#141](https://github.com/acme/awesome-monorepo/pull/141) — **Add caching for search endpoint**
+- [#141](https://github.com/acme/awesome-monorepo/pull/141) — **Add caching for search endpoint**
   _📦 [server](https://npmjs.com/package/@acme/server) · 🧑‍💻 [@contributor-2](https://github.com/contributor-2)_
-* [#155](https://github.com/acme/awesome-monorepo/pull/155) — **Add dark mode toggle**
+- [#155](https://github.com/acme/awesome-monorepo/pull/155) — **Add dark mode toggle**
   _📦 [client](https://npmjs.com/package/@acme/client) · 🧑‍💻 [@contributor-3](https://github.com/contributor-3)_
-* [#162](https://github.com/acme/awesome-monorepo/pull/162) — **Share auth types across apps**
+- [#162](https://github.com/acme/awesome-monorepo/pull/162) — **Share auth types across apps**
   _📦 [client](https://npmjs.com/package/@acme/client), [server](https://npmjs.com/package/@acme/server) · 🧑‍💻 [@contributor-6](https://github.com/contributor-6)_
   <details>
     <summary>📝 PR details</summary>
 
   > Includes shared DTO contracts and migration notes.
+
   </details>
 
 #### 🐛 Bug Fixes
 
-* [#160](https://github.com/acme/awesome-monorepo/pull/160) — **Fix pagination edge case for empty results**
+- [#160](https://github.com/acme/awesome-monorepo/pull/160) — **Fix pagination edge case for empty results**
   _📦 [client](https://npmjs.com/package/@acme/client) · 🧑‍💻 [@contributor-4](https://github.com/contributor-4)_
 
 #### 🧹 Minor Changes
 
-* [#166](https://github.com/acme/awesome-monorepo/pull/166) — **Update local dev docs**
+- [#166](https://github.com/acme/awesome-monorepo/pull/166) — **Update local dev docs**
   _📦 [docs](https://npmjs.com/package/@acme/docs) · 🧑‍💻 [@contributor-5](https://github.com/contributor-5)_
 ```
 
