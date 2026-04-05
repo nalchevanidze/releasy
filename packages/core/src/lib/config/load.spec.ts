@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  loadRawConfig,
   normalizeConfig,
   normalizeConfigInputKeys,
   validateChangelogTemplates,
@@ -70,6 +71,37 @@ describe("config normalization", () => {
         },
       }),
     ).toThrow("Duplicate semantic key");
+  });
+});
+
+describe("config file loading", () => {
+  test("loads relasy.yaml successfully via injected filesystem deps", async () => {
+    const cfg = await loadRawConfig({
+      exists: async (path) => path === "./relasy.yaml",
+      readTextFile: async () =>
+        [
+          "pkgs:",
+          "  core:",
+          "    name: '@acme/core'",
+          "project:",
+          "  type: npm",
+        ].join("\n"),
+    });
+
+    expect(cfg.project.type).toBe("npm");
+    expect((cfg.pkgs as any).core.name ?? (cfg.pkgs as any).core).toBe(
+      "@acme/core",
+    );
+  });
+
+  test("rejects relasy.json-only behavior by requiring YAML paths", async () => {
+    await expect(
+      loadRawConfig({
+        exists: async () => false,
+      }),
+    ).rejects.toThrow(
+      "Missing configuration file. Expected relasy.yaml or relasy.yml.",
+    );
   });
 });
 

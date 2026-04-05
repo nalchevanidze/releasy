@@ -19,13 +19,6 @@ const space = (n: number, txt: string = "") =>
     .map(() => " ")
     .join("")}${txt}`;
 
-const stat = (topics: [string, string][]) =>
-  lines(
-    topics
-      .filter(([_, value]) => value)
-      .map(([topic, value]) => space(1, `- ${topic} ${value}`)),
-  );
-
 const indent = (txt: string, n: number = 1) =>
   space(n, txt.replace(/\n/g, `\n${space(n)}`));
 
@@ -66,9 +59,9 @@ export class RenderAPI {
       ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1)
       : "";
 
-    const stats = stat([
-      ["📦", lines(pkgs.map(this.pkg))],
-      ["👤", this.author(change)],
+    const stats = lines([
+      ...pkgs.map((pkg) => space(1, `- 📦 ${this.pkg(pkg)}`)),
+      space(1, `- 👤 ${this.author(change)}`),
     ]);
 
     const defaultItem = lines([

@@ -63,6 +63,53 @@ const parseConventionalType = (
   return mapped && availableChangeTypes.includes(mapped) ? mapped : undefined;
 };
 
+const bumpRank = (bump: "major" | "minor" | "patch") =>
+  bump === "major" ? 2 : bump === "minor" ? 1 : 0;
+
+const bumpForChangeType = (
+  api: Api,
+  changeType: string,
+): "major" | "minor" | "patch" =>
+  api.config.changeTypeBumps?.[changeType] ??
+  (changeType === "breaking"
+    ? "major"
+    : changeType === "feature"
+      ? "minor"
+      : "patch");
+
+const highestDetectedType = (api: Api, types: string[]): string | undefined => {
+  if (types.length === 0) return undefined;
+
+  return [...new Set(types)].reduce((current, next) =>
+    bumpRank(bumpForChangeType(api, next)) >
+    bumpRank(bumpForChangeType(api, current))
+      ? next
+      : current,
+  );
+};
+
+const detectTypeFromPRCommits = (api: Api, pr: PR): string | undefined => {
+  const commitNodes = pr.commits?.nodes ?? [];
+  const detected = commitNodes
+    .map(({ commit }) =>
+      parseConventionalType(
+        `${commit.messageHeadline || ""}\n${commit.messageBody || ""}`,
+        Object.keys(api.config.changeTypes),
+      ),
+    )
+    .filter((x): x is string => Boolean(x));
+
+  if (detected.length > 0) {
+    return highestDetectedType(api, detected);
+  }
+
+  // fallback for compatibility when commit payload is unavailable
+  return parseConventionalType(
+    `${pr.title}\n${pr.body || ""}`,
+    Object.keys(api.config.changeTypes),
+  );
+};
+
 const resolveDetectedType = (
   api: Api,
   labelsType?: string,
@@ -147,6 +194,14 @@ export class FetchApi {
       body
       author { login url }
       labels(first: 10) { nodes { name } }
+      commits(first: 50) {
+        nodes {
+          commit {
+            messageHeadline
+            messageBody
+          }
+        }
+      }
     }`,
     )(items);
 
@@ -170,10 +225,7 @@ export class FetchApi {
     );
 
     const fromLabels = changeTypes.find(Boolean)?.changeType;
-    const fromCommits = parseConventionalType(
-      `${pr.title}\n${pr.body || ""}`,
-      Object.keys(this.api.config.changeTypes),
-    );
+    const fromCommits = detectTypeFromPRCommits(this.api, pr);
 
     return {
       ...pr,

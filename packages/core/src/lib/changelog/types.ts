@@ -21,6 +21,14 @@ export type PR = {
   body: string;
   author: { login: string; url: string };
   labels: { nodes: { name: string }[] };
+  commits?: {
+    nodes: Array<{
+      commit: {
+        messageHeadline?: string;
+        messageBody?: string;
+      };
+    }>;
+  };
 };
 
 export type Change = PR & {
