@@ -26,10 +26,8 @@ pkgs:
 
 policies:
   label-mode: strict
-  auto-add-inferred-packages: false
-  detection-use:
-    - labels
-    - commits
+  auto-add-inferred-packages: true
+  detection-use: [labels, commits]
   rules:
     label-conflict: error
     inferred-package-missing: error
