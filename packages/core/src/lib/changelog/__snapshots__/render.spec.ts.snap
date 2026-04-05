@@ -3,12 +3,9 @@
 exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no author url) 1`] = `
 "## v4.1.0 (2026-04-05)
 
-* commit abcdef1: Standalone commit
-  - 📦 General
-  - 👤 @ci-bot
-  - <details>
-      raw commit body
-    </details>"
+* commit abcdef1 — **Standalone commit**
+  _📦 General · 🧑‍💻 @ci-bot_
+  📝 raw commit body"
 `;
 
 exports[`RenderAPI snapshots > custom section/item templates 1`] = `
@@ -22,14 +19,12 @@ exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
 "## v2.0.0 (2026-04-05)
 
 #### Features
-* [#10](https://github.com/acme/demo/issues/10): Ship onboarding
-  - 📦 Packages (2): [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web)
-  - 👤 [@author](https://example.com/author)
+* [#10](https://github.com/acme/demo/issues/10) — **Ship onboarding**
+  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
 
 #### Fixes
-* [#11](https://github.com/acme/demo/issues/11): Fix race condition
-  - 📦 [core](https://npmjs.com/package/@acme/core)
-  - 👤 [@author](https://example.com/author)"
+* [#11](https://github.com/acme/demo/issues/11) — **Fix race condition**
+  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > empty change list renders a friendly empty-state note 1`] = `
@@ -41,12 +36,10 @@ _No user-facing changes since the last tag._"
 exports[`RenderAPI snapshots > grouping none renders a flat list without sections 1`] = `
 "## v4.0.1 (2026-04-05)
 
-* [#50](https://github.com/acme/demo/issues/50): Add keyboard shortcuts
-  - 📦 [web](https://npmjs.com/package/@acme/web)
-  - 👤 [@author](https://example.com/author)
-* [#51](https://github.com/acme/demo/issues/51): Handle null session
-  - 📦 [core](https://npmjs.com/package/@acme/core)
-  - 👤 [@author](https://example.com/author)"
+* [#50](https://github.com/acme/demo/issues/50) — **Add keyboard shortcuts**
+  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+* [#51](https://github.com/acme/demo/issues/51) — **Handle null session**
+  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > item template can consume DETAILS and STATS placeholders 1`] = `
@@ -56,11 +49,12 @@ exports[`RenderAPI snapshots > item template can consume DETAILS and STATS place
 * Add migration guide
   source=[#55](https://github.com/acme/demo/issues/55)
   stats=  - 📦 Packages (2): [cli](https://npmjs.com/package/@acme/cli), [core](https://npmjs.com/package/@acme/core)
-  - 👤 [@author](https://example.com/author)
-  details=  - <details>
-      Step 1
-      Step 2
-    </details>"
+  - 🧑‍💻 [@author](https://example.com/author)
+  details=  <details>
+    <summary>📝 PR details</summary>
+  > Step 1
+  > Step 2
+  </details>"
 `;
 
 exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
@@ -68,39 +62,32 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 
 #### Breaking
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
-* [#20](https://github.com/acme/demo/issues/20): Drop legacy auth
-  - 📦 [core](https://npmjs.com/package/@acme/core)
-  - 👤 [@author](https://example.com/author)
+* [#20](https://github.com/acme/demo/issues/20) — **Drop legacy auth**
+  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_
 
 #### Features
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
-* [#21](https://github.com/acme/demo/issues/21): Add cache layer
-  - 📦 [core](https://npmjs.com/package/@acme/core)
-  - 👤 [@author](https://example.com/author)
+* [#21](https://github.com/acme/demo/issues/21) — **Add cache layer**
+  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_
 ##### 📦 [web](https://npmjs.com/package/@acme/web)
-* [#22](https://github.com/acme/demo/issues/22): Add dashboard
-  - 📦 [web](https://npmjs.com/package/@acme/web)
-  - 👤 [@author](https://example.com/author)
+* [#22](https://github.com/acme/demo/issues/22) — **Add dashboard**
+  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
 
 #### Fixes
 ##### 📦 [web](https://npmjs.com/package/@acme/web)
-* [#23](https://github.com/acme/demo/issues/23): Fix pagination
-  - 📦 [web](https://npmjs.com/package/@acme/web)
-  - 👤 [@author](https://example.com/author)
+* [#23](https://github.com/acme/demo/issues/23) — **Fix pagination**
+  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
 ##### 📦 General
-* [#24](https://github.com/acme/demo/issues/24): Fix typo
-  - 📦 General
-  - 👤 [@author](https://example.com/author)
+* [#24](https://github.com/acme/demo/issues/24) — **Fix typo**
+  _📦 General · 🧑‍💻 [@author](https://example.com/author)_
 
 #### Chores
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
-* [#25](https://github.com/acme/demo/issues/25): Bump deps
-  - 📦 [cli](https://npmjs.com/package/@acme/cli)
-  - 👤 [@author](https://example.com/author)
+* [#25](https://github.com/acme/demo/issues/25) — **Bump deps**
+  _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@author](https://example.com/author)_
 ##### 📦 General
-* [#26](https://github.com/acme/demo/issues/26): Refactor scripts
-  - 📦 General
-  - 👤 [@author](https://example.com/author)"
+* [#26](https://github.com/acme/demo/issues/26) — **Refactor scripts**
+  _📦 General · 🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > package grouping normalizes multi-package keys 1`] = `
@@ -108,12 +95,10 @@ exports[`RenderAPI snapshots > package grouping normalizes multi-package keys 1`
 
 #### Features
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)
-* [#30](https://github.com/acme/demo/issues/30): Ship shared auth layer
-  - 📦 Packages (2): [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web)
-  - 👤 [@author](https://example.com/author)
-* [#31](https://github.com/acme/demo/issues/31): Expand auth docs
-  - 📦 Packages (2): [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web)
-  - 👤 [@author](https://example.com/author)"
+* [#30](https://github.com/acme/demo/issues/30) — **Ship shared auth layer**
+  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+* [#31](https://github.com/acme/demo/issues/31) — **Expand auth docs**
+  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > package grouping renders normalized multi-package sections 1`] = `
@@ -121,20 +106,17 @@ exports[`RenderAPI snapshots > package grouping renders normalized multi-package
 
 #### Fixes
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)
-* [#52](https://github.com/acme/demo/issues/52): Align package order
-  - 📦 Packages (2): [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web)
-  - 👤 [@author](https://example.com/author)
-* [#53](https://github.com/acme/demo/issues/53): Keep grouping stable
-  - 📦 Packages (2): [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web)
-  - 👤 [@author](https://example.com/author)"
+* [#52](https://github.com/acme/demo/issues/52) — **Align package order**
+  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+* [#53](https://github.com/acme/demo/issues/53) — **Keep grouping stable**
+  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > section templates are ignored when grouping is none 1`] = `
 "## v4.0.6 (2026-04-05)
 
-* [#56](https://github.com/acme/demo/issues/56): Increase coverage for renderer
-  - 📦 [core](https://npmjs.com/package/@acme/core)
-  - 👤 [@author](https://example.com/author)"
+* [#56](https://github.com/acme/demo/issues/56) — **Increase coverage for renderer**
+  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] = `
@@ -142,32 +124,29 @@ exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] 
 
 #### Features
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
-* [#1](https://github.com/acme/demo/issues/1): Add dark mode
-  - 📦 [core](https://npmjs.com/package/@acme/core)
-  - 👤 [@alice](https://example.com/alice)
-  - <details>
-      Detailed note
-      Second line
-    </details>
+* [#1](https://github.com/acme/demo/issues/1) — **Add dark mode**
+  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@alice](https://example.com/alice)_
+  <details>
+    <summary>📝 PR details</summary>
+  > Detailed note
+  > Second line
+  </details>
 
 #### Fixes
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
-* [#2](https://github.com/acme/demo/issues/2): Fix login
-  - 📦 [cli](https://npmjs.com/package/@acme/cli)
-  - 👤 [@bob](https://example.com/bob)
+* [#2](https://github.com/acme/demo/issues/2) — **Fix login**
+  _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@bob](https://example.com/bob)_
 
 #### Chores
 ##### 📦 General
-* [#3](https://github.com/acme/demo/issues/3): Minor cleanup
-  - 📦 General
-  - 👤 [@chris](https://example.com/chris)"
+* [#3](https://github.com/acme/demo/issues/3) — **Minor cleanup**
+  _📦 General · 🧑‍💻 [@chris](https://example.com/chris)_"
 `;
 
 exports[`RenderAPI snapshots > unknown package labels fall back to raw names with links when available 1`] = `
 "## v4.0.3 (2026-04-05)
 
 #### Features
-* [#54](https://github.com/acme/demo/issues/54): Wire analytics hook
-  - 📦 [sdk](https://npmjs.com/package/sdk)
-  - 👤 [@author](https://example.com/author)"
+* [#54](https://github.com/acme/demo/issues/54) — **Wire analytics hook**
+  _📦 [sdk](https://npmjs.com/package/sdk) · 🧑‍💻 [@author](https://example.com/author)_"
 `;

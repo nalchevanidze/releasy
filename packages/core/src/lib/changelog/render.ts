@@ -52,6 +52,46 @@ export class RenderAPI {
     return space(1, `- 📦 Packages (${pkgLinks.length}): ${pkgLinks.join(", ")}`);
   };
 
+  private packageInline = (pkgs: string[]) => {
+    const pkgLinks = this.packageLinks(pkgs);
+
+    if (!pkgLinks.length) return "📦 General";
+    if (pkgLinks.length === 1) return `📦 ${pkgLinks[0]}`;
+
+    return `📦 ${pkgLinks.join(", ")}`;
+  };
+
+  private authorInline = (change: Change) => `🧑‍💻 ${this.author(change)}`;
+
+  private quoteBlock = (text: string) =>
+    text
+      .split("\n")
+      .map((line) => `> ${line}`)
+      .join("\n");
+
+  private renderBody = (body: string) => {
+    const cleaned = body.trim();
+    if (!cleaned) return "";
+
+    const isSingleLine = !cleaned.includes("\n");
+    const isShort = cleaned.length <= 140;
+
+    if (isSingleLine && isShort) {
+      return space(1, `📝 ${cleaned}`);
+    }
+
+    return indent(
+      lines([
+        "<details>",
+        "  <summary>📝 PR details</summary>",
+        "",
+        this.quoteBlock(cleaned),
+        "</details>",
+      ]),
+      1,
+    );
+  };
+
   private packageGroupKey = (pkgs: string[]) => {
     const normalized = this.normalizedPkgs(pkgs);
     return normalized.length ? normalized.join(",") : "other";
@@ -79,18 +119,16 @@ export class RenderAPI {
 
   private change = (change: Change): string => {
     const { title, body, pkgs } = change;
-    const details = body
-      ? indent(lines(["- <details>", indent(body, 2), "  </details>"]), 1)
-      : "";
+    const details = this.renderBody(body || "");
 
     const stats = lines([
       this.packageStats(pkgs),
-      space(1, `- 👤 ${this.author(change)}`),
+      space(1, `- 🧑‍💻 ${this.author(change)}`),
     ]);
 
     const defaultItem = lines([
-      `* ${this.ref(change)}: ${title?.trim()}`,
-      stats,
+      `* ${this.ref(change)} — **${title?.trim() || "Untitled change"}**`,
+      space(1, `_${this.packageInline(pkgs)} · ${this.authorInline(change)}_`),
       details,
     ]);
     const template = this.api.config.changelog?.templates?.item;
