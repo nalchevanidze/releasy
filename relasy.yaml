@@ -30,24 +30,6 @@ labelPolicy: strict
 nonPrCommitsPolicy: skip
 
 changes:
-  breaking:
-    icon: 💥
-    title: Breaking Changes
-    bump: major
-  feature:
-    icon: ✨
-    title: New Features
-    bump: minor
-    paths: packages/**/src/**
-  fix:
-    icon: 🐛
-    title: Bug Fixes
-    bump: patch
-    paths: '**/bugfix/**'
-  chore:
-    icon: 🧹
-    title: Minor Changes
-    bump: patch
   docs:
     icon: 📚
     title: Documentation

@@ -107,12 +107,21 @@ configVersion: 1
 pkgs:
   shortName:
     name: long-package-identifier
-    paths:
-      - "packages/shortName/**"
+    paths: packages/shortName/**
 project:
   type: npm
 labelPolicy: strict
 nonPrCommitsPolicy: skip
+changes:
+  feature:
+    icon: ✨
+    title: New Features
+    bump: minor
+    paths: packages/**/src/**
+  fix:
+    icon: 🐛
+    title: Bug Fixes
+    bump: patch
 rules:
   requireInferredPackageLabels: true
   blockOnLabelConflict: false
@@ -165,12 +174,18 @@ If omitted, Relasy defaults to version `1` for backward compatibility. See `CONF
 - `strict` (default): fail on invalid labels
 - `permissive`: ignore invalid labels and continue
 
+`changes` configures each change type (for labels, bumping, and inference):
+
+- `changes.<type>.icon` (string): label prefix/icon (e.g. `💥`, `✨`)
+- `changes.<type>.title` (string): changelog section title
+- `changes.<type>.bump` (`major|minor|patch`): semantic version significance
+- `changes.<type>.paths` (string or string[]): optional path rules for fallback inference
+
 `changelog` supports optional rendering controls:
 
 - `headerTemplate` (string): supports `{{VERSION}}` and `{{DATE}}`
 - `sectionTemplate` (string): custom section template with `{{LABEL}}` and `{{CHANGES}}`
 - `itemTemplate` (string): custom entry template with `{{REF}}`, `{{TITLE}}`, `{{AUTHOR}}`, `{{PACKAGES}}`, `{{BODY}}`, `{{DETAILS}}`, `{{STATS}}`
-- `sectionTitles` (object): override section names for `breaking|feature|fix|chore`
 - `groupByPackage` (boolean): group entries by package labels in each section
 
 `nonPrCommitsPolicy` controls commits that are not linked to PRs:
@@ -193,36 +208,59 @@ If `type` is `"custom"`, the following fields are required:
 
 ### npm project (single pkg)
 
-```json
-{
-  "pkgs": {
-    "core": "relasy/core"
-  },
-  "project": {
-    "type": "npm",
-    "build": "pnpm run build"
-  }
-}
+```yaml
+pkgs:
+  core:
+    name: relasy/core
+project:
+  type: npm
+  build: pnpm run build
+changes:
+  breaking:
+    icon: 💥
+    title: Breaking Changes
+    bump: major
+  feature:
+    icon: ✨
+    title: New Features
+    bump: minor
+  fix:
+    icon: 🐛
+    title: Bug Fixes
+    bump: patch
 ```
 
 ### custom project (multiple pkgs)
 
-```json
-{
-  "pkgs": {
-    "server": "morpheus-graphql",
-    "client": "morpheus-graphql-client",
-    "core": "morpheus-graphql-core"
-  },
-  "project": {
-    "type": "custom",
-    "pkg": "https://hackage.haskell.org/package/{{PKG}}",
-    "version": "hconf version",
-    "bump": "hconf next {{BUMP}}",
-    "postBump": "hconf setup 9.6.3"
-  }
-}
+```yaml
+pkgs:
+  server:
+    name: morpheus-graphql
+  client:
+    name: morpheus-graphql-client
+  core:
+    name: morpheus-graphql-core
+project:
+  type: custom
+  pkg: https://hackage.haskell.org/package/{{PKG}}
+  version: hconf version
+  bump: hconf next {{BUMP}}
+  postBump: hconf setup 9.6.3
+changes:
+  breaking:
+    icon: 💥
+    title: Breaking Changes
+    bump: major
+  feature:
+    icon: ✨
+    title: New Features
+    bump: minor
+  fix:
+    icon: 🐛
+    title: Bug Fixes
+    bump: patch
 ```
+
 
 **Notes:**
 
