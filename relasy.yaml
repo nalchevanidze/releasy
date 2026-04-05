@@ -1,5 +1,3 @@
-configVersion: 1
-
 pkgs:
   core:
     name: '@relasy/core'
@@ -26,10 +24,37 @@ pkgs:
 project:
   type: npm
 
-labelPolicy: strict
-nonPrCommitsPolicy: skip
+policies:
+  label-mode: strict
+  auto-add-inferred-packages: false
+  detection-use:
+    - labels
+    - commits
+  rules:
+    label-conflict: error
+    inferred-package-missing: error
+    detection-conflict: error
+    non-pr-commit: warn
 
 changes:
+  breaking:
+    icon: 💥
+    title: Breaking Changes
+    bump: major
+  feature:
+    icon: ✨
+    title: New Features
+    bump: minor
+    paths: packages/**/src/**
+  fix:
+    icon: 🐛
+    title: Bug Fixes
+    bump: patch
+    paths: '**/bugfix/**'
+  chore:
+    icon: 🧹
+    title: Minor Changes
+    bump: patch
   docs:
     icon: 📚
     title: Documentation
@@ -45,10 +70,7 @@ changes:
       - '**/*.spec.ts'
       - '**/*.test.ts'
 
-rules:
-  requireInferredPackageLabels: true
-  blockOnLabelConflict: false
-
 changelog:
-  headerTemplate: '## {{VERSION}} ({{DATE}})'
-  groupByPackage: true
+  templates:
+    header: '## {{VERSION}} ({{DATE}})'
+  grouping: package

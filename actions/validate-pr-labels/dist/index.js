@@ -49255,13 +49255,16 @@ var require_dist = __commonJS({
       for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m, p);
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = exports2.validateChangelogTemplates = exports2.normalizeConfig = void 0;
+    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = exports2.validateChangelogTemplates = exports2.normalizeConfigInputKeys = exports2.normalizeConfig = void 0;
     var types_1 = require_types();
     var gh_1 = require_gh();
     var config_1 = require_config();
     var config_2 = require_config();
     Object.defineProperty(exports2, "normalizeConfig", { enumerable: true, get: function() {
       return config_2.normalizeConfig;
+    } });
+    Object.defineProperty(exports2, "normalizeConfigInputKeys", { enumerable: true, get: function() {
+      return config_2.normalizeConfigInputKeys;
     } });
     Object.defineProperty(exports2, "validateChangelogTemplates", { enumerable: true, get: function() {
       return config_2.validateChangelogTemplates;
@@ -49424,9 +49427,10 @@ async function run() {
     const requireChangeType = (0, import_core.getInput)("require_change_type", {
       required: false
     }) === "true";
-    const autoAddPackageLabels = (0, import_core.getInput)("auto_add_package_labels", {
+    const autoAddInput = (0, import_core.getInput)("auto_add_package_labels", {
       required: false
-    }) === "true";
+    });
+    const autoAddPackageLabels = autoAddInput === "" ? iRelasy.config.policies?.autoAddInferredPackages ?? false : autoAddInput === "true";
     let labels = await getCurrentPrLabels();
     const changedFiles = await getCurrentPrFiles();
     const labelResult = (0, import_core2.checkLabels)(

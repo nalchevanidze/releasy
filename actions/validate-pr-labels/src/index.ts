@@ -112,10 +112,14 @@ export async function run() {
         required: false,
       }) === "true";
 
+    const autoAddInput = getInput("auto_add_package_labels", {
+      required: false,
+    });
+
     const autoAddPackageLabels =
-      getInput("auto_add_package_labels", {
-        required: false,
-      }) === "true";
+      autoAddInput === ""
+        ? (iRelasy.config.policies?.autoAddInferredPackages ?? false)
+        : autoAddInput === "true";
 
     let labels = await getCurrentPrLabels();
     const changedFiles = await getCurrentPrFiles();
