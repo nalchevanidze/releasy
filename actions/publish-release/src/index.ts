@@ -30,6 +30,14 @@ const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const getErrorStatus = (error: unknown): number | undefined =>
+  typeof error === "object" && error !== null && "status" in error
+    ? (error as { status?: number }).status
+    : undefined;
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 const withRetry = async <T>(
   label: string,
   fn: () => Promise<T>,
@@ -37,14 +45,14 @@ const withRetry = async <T>(
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
-      const status = error?.status as number | undefined;
+    } catch (error: unknown) {
+      const status = getErrorStatus(error);
       const retryable =
         status === 429 || (status !== undefined && status >= 500);
 
       if (!retryable || attempt === 3) {
         throw new Error(
-          `${label} failed after ${attempt} attempt(s): ${error?.message ?? String(error)}`,
+          `${label} failed after ${attempt} attempt(s): ${getErrorMessage(error)}`,
         );
       }
 
@@ -83,8 +91,8 @@ async function run() {
         });
 
         return data;
-      } catch (error: any) {
-        if (error?.status === 404) {
+      } catch (error: unknown) {
+        if (getErrorStatus(error) === 404) {
           return undefined;
         }
 

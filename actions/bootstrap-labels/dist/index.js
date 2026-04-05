@@ -28808,16 +28808,18 @@ var require_gh = __commonJS({
     };
     var isDryRun2 = () => process.env.RELASY_DRY_RUN === "true";
     var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    var getErrorStatus = (error) => typeof error === "object" && error !== null && "status" in error ? error.status : void 0;
+    var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
     var withRetry = async (label, fn) => {
       const attempts = 3;
       for (let attempt = 1; attempt <= attempts; attempt++) {
         try {
           return await fn();
         } catch (error) {
-          const status = error?.status;
+          const status = getErrorStatus(error);
           const retryable = status === 429 || status !== void 0 && status >= 500;
           if (!retryable || attempt === attempts) {
-            throw new Error(`${label} failed after ${attempt} attempt(s): ${error?.message ?? String(error)}`);
+            throw new Error(`${label} failed after ${attempt} attempt(s): ${getErrorMessage(error)}`);
           }
           await sleep(300 * attempt);
         }

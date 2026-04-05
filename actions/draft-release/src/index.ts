@@ -19,8 +19,9 @@ async function run() {
     setOutput("pr_url", pr.data.html_url);
 
     info(`Draft release finished: ${pr.data.html_url}`);
-  } catch (e: any) {
-    setFailed(e?.message ?? String(e));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    setFailed(message);
   }
 }
 

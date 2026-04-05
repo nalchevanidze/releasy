@@ -432,3 +432,13 @@ Optional:
 ## Contributing
 
 Issues and PRs are welcome.
+
+### Dist artifact policy
+
+This repository commits bundled action artifacts under `actions/*/dist/index.js`.
+
+When you change action sources in `actions/*/src`, run:
+
+- `npm run build`
+
+and include the corresponding `dist` updates in the same PR so GitHub Actions can run directly from the repository ref.

@@ -38,15 +38,30 @@ const resolvePrNumber = () => {
   return number;
 };
 
+type LabelLike = string | { name?: string } | null | undefined;
+
+const toLabelName = (label: LabelLike): string | undefined => {
+  if (typeof label === "string") {
+    return label;
+  }
+
+  if (label && typeof label.name === "string") {
+    return label.name;
+  }
+
+  return undefined;
+};
+
 export async function getCurrentPrLabels(
   params: Params = {},
 ): Promise<string[]> {
-  const prFromPayload = context.payload.pull_request as any | undefined;
-  const toName = (l: any) => (typeof l === "string" ? l : l?.name);
+  const prFromPayload = context.payload.pull_request as
+    | { labels?: LabelLike[] }
+    | undefined;
 
   // 1) Fast path: use event payload (no API call)
   if (prFromPayload && !params.refetch) {
-    return (prFromPayload.labels ?? []).map(toName).filter(Boolean);
+    return (prFromPayload.labels ?? []).map(toLabelName).filter(Boolean) as string[];
   }
 
   // 2) Fetch from API (latest state)
@@ -67,7 +82,7 @@ export async function getCurrentPrLabels(
     pull_number: prNumber,
   });
 
-  return (pr.labels ?? []).map(toName).filter(Boolean);
+  return (pr.labels ?? []).map(toLabelName).filter(Boolean) as string[];
 }
 
 async function run() {
