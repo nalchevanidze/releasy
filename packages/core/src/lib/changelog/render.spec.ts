@@ -7,31 +7,10 @@ vi.mock("../git", () => ({
   getDate: () => "2026-04-05",
 }));
 
-const changes: Change[] = [
-  {
-    number: 1,
-    title: "Add dark mode",
-    body: "Detailed note",
-    author: { login: "alice", url: "https://example.com/alice" },
-    labels: { nodes: [] },
-    type: "feature",
-    pkgs: ["core"],
-  },
-  {
-    number: 2,
-    title: "Fix login",
-    body: "",
-    author: { login: "bob", url: "https://example.com/bob" },
-    labels: { nodes: [] },
-    type: "fix",
-    pkgs: ["cli"],
-  },
-];
-
-const api: Api = {
+const baseApi = (changelog?: Api["config"]["changelog"]): Api => ({
   config: {
     gh: "acme/demo",
-    pkgs: { core: "@acme/core", cli: "@acme/cli" },
+    pkgs: { core: "@acme/core", cli: "@acme/cli", web: "@acme/web" },
     project: { type: "npm" },
     changeTypes: {
       breaking: "Breaking",
@@ -40,10 +19,7 @@ const api: Api = {
       chore: "Chores",
     },
     labelPolicy: "strict",
-    changelog: {
-      headerTemplate: "## Release {{VERSION}} on {{DATE}}",
-      groupByPackage: true,
-    },
+    changelog,
   },
   github: {
     setup: () => undefined,
@@ -63,12 +39,104 @@ const api: Api = {
     warn: () => undefined,
     error: () => undefined,
   },
-};
+});
+
+const c = (overrides: Partial<Change>): Change => ({
+  number: 1,
+  title: "placeholder",
+  body: "",
+  author: { login: "author", url: "https://example.com/author" },
+  labels: { nodes: [] },
+  type: "chore",
+  pkgs: ["core"],
+  ...overrides,
+});
 
 describe("RenderAPI snapshots", () => {
-  test("renders changelog with template and package grouping", () => {
-    const markdown = new RenderAPI(api).changes(Version.parse("1.2.3"), changes);
+  test("template + package grouping + multiline body", () => {
+    const api = baseApi({
+      headerTemplate: "## Release {{VERSION}} on {{DATE}}",
+      groupByPackage: true,
+    });
 
+    const changes: Change[] = [
+      c({
+        number: 1,
+        title: "Add dark mode",
+        body: "Detailed note\nSecond line",
+        author: { login: "alice", url: "https://example.com/alice" },
+        type: "feature",
+        pkgs: ["core"],
+      }),
+      c({
+        number: 2,
+        title: "Fix login",
+        author: { login: "bob", url: "https://example.com/bob" },
+        type: "fix",
+        pkgs: ["cli"],
+      }),
+      c({
+        number: 3,
+        title: "Minor cleanup",
+        author: { login: "chris", url: "https://example.com/chris" },
+        type: "chore",
+        pkgs: [],
+      }),
+    ];
+
+    const markdown = new RenderAPI(api).changes(Version.parse("1.2.3"), changes);
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("default header + no grouping + custom section titles", () => {
+    const api = baseApi({
+      sectionTitles: {
+        feature: "✨ Product Features",
+        fix: "🐛 Resolved Issues",
+      },
+    });
+
+    const changes: Change[] = [
+      c({
+        number: 10,
+        title: "Ship onboarding",
+        type: "feature",
+        pkgs: ["web", "core"],
+      }),
+      c({
+        number: 11,
+        title: "Fix race condition",
+        type: "fix",
+        pkgs: ["core"],
+      }),
+    ];
+
+    const markdown = new RenderAPI(api).changes(Version.parse("2.0.0"), changes);
+    expect(markdown).toMatchSnapshot();
+  });
+
+  test("large mixed release snapshot", () => {
+    const api = baseApi({
+      groupByPackage: true,
+      sectionTitles: {
+        breaking: "🚨 Breaking",
+        feature: "✨ Features",
+        fix: "🐛 Fixes",
+        chore: "🧹 Chores",
+      },
+    });
+
+    const changes: Change[] = [
+      c({ number: 20, title: "Drop legacy auth", type: "breaking", pkgs: ["core"] }),
+      c({ number: 21, title: "Add cache layer", type: "feature", pkgs: ["core"] }),
+      c({ number: 22, title: "Add dashboard", type: "feature", pkgs: ["web"] }),
+      c({ number: 23, title: "Fix pagination", type: "fix", pkgs: ["web"] }),
+      c({ number: 24, title: "Fix typo", type: "fix", pkgs: [] }),
+      c({ number: 25, title: "Bump deps", type: "chore", pkgs: ["cli"] }),
+      c({ number: 26, title: "Refactor scripts", type: "chore", pkgs: [] }),
+    ];
+
+    const markdown = new RenderAPI(api).changes(Version.parse("3.4.0"), changes);
     expect(markdown).toMatchSnapshot();
   });
 });

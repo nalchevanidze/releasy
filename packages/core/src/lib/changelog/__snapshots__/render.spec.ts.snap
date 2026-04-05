@@ -1,6 +1,59 @@
 // Vitest Snapshot v1
 
-exports[`RenderAPI snapshots > renders changelog with template and package grouping 1`] = `
+exports[`RenderAPI snapshots > default header + no grouping + custom section titles 1`] = `
+"## v2.0.0 (2026-04-05)
+
+#### ✨ Product Features
+* [#10](https://github.com/acme/demo/issues/10): Ship onboarding
+  - 📦 [web](https://npmjs.com/package/@acme/web)
+[core](https://npmjs.com/package/@acme/core)
+  - 👤 [@author](https://example.com/author)
+
+#### 🐛 Resolved Issues
+* [#11](https://github.com/acme/demo/issues/11): Fix race condition
+  - 📦 [core](https://npmjs.com/package/@acme/core)
+  - 👤 [@author](https://example.com/author)"
+`;
+
+exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
+"## v3.4.0 (2026-04-05)
+
+#### 🚨 Breaking
+##### 📦 core
+* [#20](https://github.com/acme/demo/issues/20): Drop legacy auth
+  - 📦 [core](https://npmjs.com/package/@acme/core)
+  - 👤 [@author](https://example.com/author)
+
+#### ✨ Features
+##### 📦 core
+* [#21](https://github.com/acme/demo/issues/21): Add cache layer
+  - 📦 [core](https://npmjs.com/package/@acme/core)
+  - 👤 [@author](https://example.com/author)
+##### 📦 web
+* [#22](https://github.com/acme/demo/issues/22): Add dashboard
+  - 📦 [web](https://npmjs.com/package/@acme/web)
+  - 👤 [@author](https://example.com/author)
+
+#### 🐛 Fixes
+##### 📦 web
+* [#23](https://github.com/acme/demo/issues/23): Fix pagination
+  - 📦 [web](https://npmjs.com/package/@acme/web)
+  - 👤 [@author](https://example.com/author)
+##### 📦 General
+* [#24](https://github.com/acme/demo/issues/24): Fix typo
+  - 👤 [@author](https://example.com/author)
+
+#### 🧹 Chores
+##### 📦 cli
+* [#25](https://github.com/acme/demo/issues/25): Bump deps
+  - 📦 [cli](https://npmjs.com/package/@acme/cli)
+  - 👤 [@author](https://example.com/author)
+##### 📦 General
+* [#26](https://github.com/acme/demo/issues/26): Refactor scripts
+  - 👤 [@author](https://example.com/author)"
+`;
+
+exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] = `
 "## Release v1.2.3 on 2026-04-05
 
 #### Features
@@ -10,11 +63,17 @@ exports[`RenderAPI snapshots > renders changelog with template and package group
   - 👤 [@alice](https://example.com/alice)
   - <details>
       Detailed note
+      Second line
     </details>
 
 #### Fixes
 ##### 📦 cli
 * [#2](https://github.com/acme/demo/issues/2): Fix login
   - 📦 [cli](https://npmjs.com/package/@acme/cli)
-  - 👤 [@bob](https://example.com/bob)"
+  - 👤 [@bob](https://example.com/bob)
+
+#### Chores
+##### 📦 General
+* [#3](https://github.com/acme/demo/issues/3): Minor cleanup
+  - 👤 [@chris](https://example.com/chris)"
 `;
