@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
         with:
-          ref: main
+          ref: ${{ vars.RELASY_BASE_BRANCH || 'main' }}
           fetch-depth: 0
 
       - name: Setup Node (with pnpm cache)

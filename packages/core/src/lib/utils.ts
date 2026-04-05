@@ -1,4 +1,9 @@
-import { execSync, exec as execProcess } from "node:child_process";
+import {
+  execSync,
+  exec as execProcess,
+  execFileSync,
+  execFile as execFileProcess,
+} from "node:child_process";
 import { promisify } from "node:util";
 
 const options = {
@@ -13,8 +18,16 @@ export const isKey = <T extends string>(
 
 export const exec = (command: string) => execSync(command, options)?.trimEnd();
 
+export const execFile = (file: string, args: string[]) =>
+  execFileSync(file, args, options)?.trimEnd();
+
 export const execVoid = (cmd: string) =>
   promisify(execProcess)(cmd, options).then(({ stdout }) =>
+    console.log(stdout),
+  );
+
+export const execFileVoid = (file: string, args: string[]) =>
+  promisify(execFileProcess)(file, args, options).then(({ stdout }) =>
     console.log(stdout),
   );
 

@@ -17,7 +17,7 @@ const resolveRepo = () => {
 
 const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
-async function run() {
+export async function run() {
   try {
     const relasy = await Relasy.load();
     const { owner, repo } = resolveRepo();
@@ -41,11 +41,11 @@ async function run() {
     const existingLabelNames = labels.map((l) => l.name);
     const desiredLabels = relasy.labels(existingLabelNames);
 
-    info(`fetched labels: ${JSON.stringify(existingLabelNames)}`);
+    info(`[relasy] fetched labels: ${JSON.stringify(existingLabelNames)}`);
 
     if (isDryRun()) {
       info(
-        `[dry-run] Would reconcile ${desiredLabels.length} labels in ${owner}/${repo}`,
+        `[relasy][dry-run] Would reconcile ${desiredLabels.length} labels in ${owner}/${repo}`,
       );
       return;
     }
@@ -81,7 +81,7 @@ async function run() {
     );
 
     info(
-      `Label reconciliation finished. created=${created}, updated=${updated}`,
+      `[relasy] Label reconciliation finished. created=${created}, updated=${updated}`,
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

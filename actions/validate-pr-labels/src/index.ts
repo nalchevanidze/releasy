@@ -85,12 +85,12 @@ export async function getCurrentPrLabels(
   return (pr.labels ?? []).map(toLabelName).filter(Boolean) as string[];
 }
 
-async function run() {
+export async function run() {
   try {
     const headRef = context.payload.pull_request?.head?.ref;
 
     if (headRef?.startsWith("release-")) {
-      info("Skipping label validation for release branch PR");
+      info("[relasy] Skipping label validation for release branch PR");
       return;
     }
 

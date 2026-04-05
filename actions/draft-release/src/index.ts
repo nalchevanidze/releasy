@@ -1,7 +1,7 @@
 import { info, setFailed, setOutput } from "@actions/core";
 import { Relasy } from "@relasy/core";
 
-async function run() {
+export async function run() {
   try {
     const relasy = await Relasy.load();
     const body = await relasy.changelog();
@@ -18,7 +18,7 @@ async function run() {
     setOutput("pr_number", String(pr.data.number));
     setOutput("pr_url", pr.data.html_url);
 
-    info(`Draft release finished: ${pr.data.html_url}`);
+    info(`[relasy] Draft release finished: ${pr.data.html_url}`);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     setFailed(message);

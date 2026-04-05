@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   publish_release:
-    if: ${{ github.base_ref == 'main' && startsWith(github.head_ref, 'release-') && github.event.pull_request.merged == true  }}
+    if: ${{ github.base_ref == (vars.RELASY_BASE_BRANCH || 'main') && startsWith(github.head_ref, 'release-') && github.event.pull_request.merged == true  }}
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.publish.outputs.upload_url }}

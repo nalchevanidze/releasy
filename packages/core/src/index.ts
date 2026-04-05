@@ -5,6 +5,7 @@ import { setupEnv } from "./lib/utils";
 import { setupToolchain } from "./lib/project";
 import { renderChangelog } from "./lib/changelog";
 import { genLabels, parseLabels } from "./lib/labels";
+export { withRetry } from "./lib/retry";
 export { exit } from "./lib/utils";
 
 export class Relasy extends Api {

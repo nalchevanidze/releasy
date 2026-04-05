@@ -1,7 +1,7 @@
-import { exec } from "./utils";
+import { execFile } from "./utils";
 import { Version } from "./version";
 
-const git = (...cmd: string[]) => exec(["git", ...cmd].join(" "));
+const git = (...cmd: string[]) => execFile("git", cmd);
 
 export const remote = () => {
   const url = git("remote", "get-url", "origin").trim();

@@ -4,6 +4,7 @@ let gitMock = vi.fn();
 let isUserSetMock = vi.fn();
 let pullsListMock = vi.fn();
 let pullsCreateMock = vi.fn();
+let reposGetMock = vi.fn();
 
 vi.mock("./git", () => ({
   git: (...args: string[]) => gitMock(...args),
@@ -16,6 +17,9 @@ vi.mock("@octokit/rest", () => ({
       pulls: {
         list: (...args: unknown[]) => pullsListMock(...args),
         create: (...args: unknown[]) => pullsCreateMock(...args),
+      },
+      repos: {
+        get: (...args: unknown[]) => reposGetMock(...args),
       },
     },
     graphql: vi.fn(),
@@ -33,6 +37,9 @@ describe("Github release flow", () => {
     pullsListMock = vi.fn().mockResolvedValue({ data: [] });
     pullsCreateMock = vi.fn().mockResolvedValue({
       data: { number: 12, html_url: "https://github.com/org/repo/pull/12" },
+    });
+    reposGetMock = vi.fn().mockResolvedValue({
+      data: { default_branch: "main" },
     });
   });
 
@@ -52,6 +59,22 @@ describe("Github release flow", () => {
 
     expect(pullsCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({ base: "develop" }),
+    );
+  });
+
+  test("auto-detects default branch when baseBranch is not configured", async () => {
+    const [{ Github }, { Version }] = await Promise.all([
+      import("./gh"),
+      import("./version"),
+    ]);
+
+    const github = new Github("org/repo");
+
+    await github.release(Version.parse("1.2.3"), "notes");
+
+    expect(reposGetMock).toHaveBeenCalledWith({ owner: "org", repo: "repo" });
+    expect(pullsListMock).toHaveBeenCalledWith(
+      expect.objectContaining({ base: "main" }),
     );
   });
 
