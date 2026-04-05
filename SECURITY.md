@@ -17,6 +17,7 @@
 ## Local runs
 
 When running outside Actions context, set:
+
 - `GITHUB_TOKEN`
 - `RELASY_OWNER`
 - `RELASY_REPO`

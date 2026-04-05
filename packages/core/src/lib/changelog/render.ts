@@ -71,7 +71,11 @@ export class RenderAPI {
       ["👤", this.author(change)],
     ]);
 
-    const defaultItem = lines([`* ${this.ref(change)}: ${title?.trim()}`, stats, details]);
+    const defaultItem = lines([
+      `* ${this.ref(change)}: ${title?.trim()}`,
+      stats,
+      details,
+    ]);
     const template = this.api.config.changelog?.templates?.item;
 
     if (!template) return defaultItem;

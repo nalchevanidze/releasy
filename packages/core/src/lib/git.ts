@@ -18,14 +18,10 @@ const getDate = () => git("log", "-1", "--format=%cd", "--date=short");
 export const lastTag = () => git("describe", "--abbrev=0", "--tags");
 
 const commitsAfter = (tag: string) =>
-  git("rev-list", "--reverse", `${tag}..`)
-    .split("\n")
-    .filter(Boolean);
+  git("rev-list", "--reverse", `${tag}..`).split("\n").filter(Boolean);
 
 const commitsAll = () =>
-  git("rev-list", "--reverse", "HEAD")
-    .split("\n")
-    .filter(Boolean);
+  git("rev-list", "--reverse", "HEAD").split("\n").filter(Boolean);
 
 const isUserSet = () => {
   try {

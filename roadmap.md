@@ -79,4 +79,3 @@
   - [ ] Validate only canonical normalized object.
   - [ ] Ensure CLI (`plan`, `validate-config`, `migrate-config`) emits only canonical new-key terminology.
   - [ ] Document naming conventions and examples in README.
-

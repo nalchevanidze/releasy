@@ -29,7 +29,9 @@ export const withRetry = async <T>(
         );
       }
 
-      console.log(`[retry] ${label}: retrying attempt ${attempt + 1}/${attempts}`);
+      console.log(
+        `[retry] ${label}: retrying attempt ${attempt + 1}/${attempts}`,
+      );
       await sleep(300 * attempt);
     }
   }

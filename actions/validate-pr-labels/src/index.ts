@@ -6,7 +6,11 @@ import {
   resolvePrNumber,
   resolveRepo,
 } from "@relasy/actions-common";
-import { checkLabels, evaluatePackageScopeRules, loadRelasy } from "@relasy/core";
+import {
+  checkLabels,
+  evaluatePackageScopeRules,
+  loadRelasy,
+} from "@relasy/core";
 
 type Params = {
   token?: string;
@@ -36,7 +40,9 @@ export async function getCurrentPrLabels(
 
   // 1) Fast path: use event payload (no API call)
   if (prFromPayload && !params.refetch) {
-    return (prFromPayload.labels ?? []).map(toLabelName).filter(Boolean) as string[];
+    return (prFromPayload.labels ?? [])
+      .map(toLabelName)
+      .filter(Boolean) as string[];
   }
 
   // 2) Fetch from API (latest state)
@@ -55,7 +61,9 @@ export async function getCurrentPrLabels(
   return (pr.labels ?? []).map(toLabelName).filter(Boolean) as string[];
 }
 
-export async function getCurrentPrFiles(params: Params = {}): Promise<string[]> {
+export async function getCurrentPrFiles(
+  params: Params = {},
+): Promise<string[]> {
   const token = params.token ?? requireGitHubToken();
   const { owner, repo } = resolveRepo(context);
   const prNumber = resolvePrNumber(context);
@@ -133,19 +141,28 @@ export async function run() {
     if (!labelResult.ok) {
       throw new Error(`[${labelResult.code}] ${labelResult.message}`);
     }
-    const scopeResult = evaluatePackageScopeRules(iRelasy, labels, changedFiles);
+    const scopeResult = evaluatePackageScopeRules(
+      iRelasy,
+      labels,
+      changedFiles,
+    );
 
     if (!scopeResult.ok) {
       const message = `[${scopeResult.code}] ${scopeResult.message}`;
 
-      if (autoAddPackageLabels && message.includes("Missing inferred package labels")) {
+      if (
+        autoAddPackageLabels &&
+        message.includes("Missing inferred package labels")
+      ) {
         const labelsToAdd = scopeResult.message
           .replace("Missing inferred package labels: ", "")
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean);
 
-        info(`[relasy] Auto-adding inferred package labels: ${labelsToAdd.join(", ")}`);
+        info(
+          `[relasy] Auto-adding inferred package labels: ${labelsToAdd.join(", ")}`,
+        );
         await addPackageLabels(labelsToAdd);
         labels = await getCurrentPrLabels({ refetch: true });
       } else {
@@ -153,14 +170,24 @@ export async function run() {
       }
     }
 
-    const finalScopeResult = evaluatePackageScopeRules(iRelasy, labels, changedFiles);
+    const finalScopeResult = evaluatePackageScopeRules(
+      iRelasy,
+      labels,
+      changedFiles,
+    );
     if (!finalScopeResult.ok) {
       throw new Error(`[${finalScopeResult.code}] ${finalScopeResult.message}`);
     }
 
     setOutput("change_type", labelResult.data.changeType);
-    setOutput("inferred_package_labels", finalScopeResult.data.inferredScopes.join(","));
-    setOutput("missing_package_labels", finalScopeResult.data.missingScopes.join(","));
+    setOutput(
+      "inferred_package_labels",
+      finalScopeResult.data.inferredScopes.join(","),
+    );
+    setOutput(
+      "missing_package_labels",
+      finalScopeResult.data.missingScopes.join(","),
+    );
   } catch (error) {
     setFailed(formatActionFailure("validate-pr-labels", error));
   }

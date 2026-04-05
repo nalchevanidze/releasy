@@ -46,10 +46,7 @@ describe("draft-release outputs contract", () => {
     await run();
 
     expect(setOutput).toHaveBeenCalledWith("version", "v1.2.3");
-    expect(setOutput).toHaveBeenCalledWith(
-      "release_branch",
-      "release-v1.2.3",
-    );
+    expect(setOutput).toHaveBeenCalledWith("release_branch", "release-v1.2.3");
     expect(setOutput).toHaveBeenCalledWith("pr_number", "7");
     expect(setOutput).toHaveBeenCalledWith(
       "pr_url",

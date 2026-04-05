@@ -10,7 +10,9 @@
 ## Design boundaries
 
 ### 1) Core domain (`@relasy/core`)
+
 Responsible for:
+
 - loading/validating config
 - detecting version bump from configured signals (labels, commits, or both)
 - generating changelog
@@ -19,7 +21,9 @@ Responsible for:
 Core should not depend on action runtime APIs (`@actions/*`).
 
 ### 2) Action domain (`@relasy/actions-common`)
+
 Responsible for:
+
 - resolving owner/repo/pr context from GitHub event + local env fallbacks
 - token requirements
 - action error formatting / action logging helpers
@@ -27,7 +31,9 @@ Responsible for:
 This package should stay free of project-specific release logic.
 
 ### 3) Action entrypoints (`actions/*`)
+
 Responsible for:
+
 - wiring runtime inputs/outputs
 - invoking core APIs
 - reporting failures with actionable messages
@@ -56,6 +62,7 @@ Relasy configuration is organized by concern:
 - `changelog`: rendering templates + grouping strategy
 
 Schema style decision:
+
 - YAML keys are canonical **kebab-case** for readability.
 - Loader normalizes keys to camelCase internally before validation.
 

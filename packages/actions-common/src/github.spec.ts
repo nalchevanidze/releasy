@@ -13,18 +13,18 @@ describe("actions-common github helpers", () => {
   });
 
   test("resolveRepo falls back to env vars", () => {
-    const repo = resolveRepo(
-      { repo: {} },
-      { RELASY_OWNER: "env-org", RELASY_REPO: "env-repo" } as NodeJS.ProcessEnv,
-    );
+    const repo = resolveRepo({ repo: {} }, {
+      RELASY_OWNER: "env-org",
+      RELASY_REPO: "env-repo",
+    } as NodeJS.ProcessEnv);
 
     expect(repo).toEqual({ owner: "env-org", repo: "env-repo" });
   });
 
   test("resolveRepo throws when owner/repo are missing", () => {
-    expect(() =>
-      resolveRepo({ repo: {} }, {} as NodeJS.ProcessEnv),
-    ).toThrow("Could not resolve owner/repo");
+    expect(() => resolveRepo({ repo: {} }, {} as NodeJS.ProcessEnv)).toThrow(
+      "Could not resolve owner/repo",
+    );
   });
 
   test("resolvePrNumber prefers payload PR number", () => {
@@ -50,20 +50,18 @@ describe("actions-common github helpers", () => {
   });
 
   test("resolvePrNumber falls back to env", () => {
-    const number = resolvePrNumber(
-      { repo: {}, issue: {}, payload: {} },
-      { RELASY_PR_NUMBER: "42" } as NodeJS.ProcessEnv,
-    );
+    const number = resolvePrNumber({ repo: {}, issue: {}, payload: {} }, {
+      RELASY_PR_NUMBER: "42",
+    } as NodeJS.ProcessEnv);
 
     expect(number).toBe(42);
   });
 
   test("resolvePrNumber throws when unavailable/invalid", () => {
     expect(() =>
-      resolvePrNumber(
-        { repo: {}, issue: {}, payload: {} },
-        { RELASY_PR_NUMBER: "nan" } as NodeJS.ProcessEnv,
-      ),
+      resolvePrNumber({ repo: {}, issue: {}, payload: {} }, {
+        RELASY_PR_NUMBER: "nan",
+      } as NodeJS.ProcessEnv),
     ).toThrow("Could not determine PR number");
   });
 
@@ -82,7 +80,9 @@ describe("actions-common github helpers", () => {
       },
     };
 
-    await expect(assertRepoAccess(octokit, "acme", "demo")).resolves.toBeUndefined();
+    await expect(
+      assertRepoAccess(octokit, "acme", "demo"),
+    ).resolves.toBeUndefined();
   });
 
   test("assertRepoAccess throws actionable message when repo access fails", async () => {

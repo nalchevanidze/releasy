@@ -44,7 +44,13 @@ export const renderChangelog = async (api: Api) => {
   const changes = await new FetchApi(api).changes(version);
 
   await api.module.bump(
-    detectChangeType(changes, (api.config?.changeTypeBumps ?? {}) as Record<string, "major" | "minor" | "patch">),
+    detectChangeType(
+      changes,
+      (api.config?.changeTypeBumps ?? {}) as Record<
+        string,
+        "major" | "minor" | "patch"
+      >,
+    ),
   );
 
   return new RenderAPI(api).changes(api.module.version(), changes);

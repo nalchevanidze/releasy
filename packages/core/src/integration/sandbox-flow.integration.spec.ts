@@ -48,7 +48,10 @@ describe("sandbox flow harness (high-fidelity local e2e)", () => {
       github: {
         setup: () => undefined,
         release: async () => ({
-          data: { number: 42, html_url: "https://github.com/acme/demo/pull/42" },
+          data: {
+            number: 42,
+            html_url: "https://github.com/acme/demo/pull/42",
+          },
         }),
       },
       parseLabels: (_labels: string[]) => ({
@@ -56,7 +59,12 @@ describe("sandbox flow harness (high-fidelity local e2e)", () => {
         pkgs: [],
       }),
       config: {
-        changeTypes: { feature: "Features", fix: "Fixes", chore: "Chores", breaking: "Breaking" },
+        changeTypes: {
+          feature: "Features",
+          fix: "Fixes",
+          chore: "Chores",
+          breaking: "Breaking",
+        },
       },
     };
 

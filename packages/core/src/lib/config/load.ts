@@ -151,7 +151,9 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 
 const normalizeKeysDeep = (value: unknown, path = "root"): unknown => {
   if (Array.isArray(value)) {
-    return value.map((item, index) => normalizeKeysDeep(item, `${path}[${index}]`));
+    return value.map((item, index) =>
+      normalizeKeysDeep(item, `${path}[${index}]`),
+    );
   }
 
   if (!isPlainObject(value)) {
@@ -185,9 +187,12 @@ const hasLegacyFields = (cfg: Record<string, unknown>) => {
 
   const changelog = cfg.changelog;
   const changelogLegacy = isPlainObject(changelog)
-    ? ["headerTemplate", "sectionTemplate", "itemTemplate", "groupByPackage"].some(
-        (key) => key in changelog,
-      )
+    ? [
+        "headerTemplate",
+        "sectionTemplate",
+        "itemTemplate",
+        "groupByPackage",
+      ].some((key) => key in changelog)
     : false;
 
   return topLegacy || changelogLegacy;
@@ -197,7 +202,8 @@ const hasNewFields = (cfg: Record<string, unknown>) => {
   const topNew = ["policies", "changes", "changelog"].some((key) => key in cfg);
 
   const changelogNew =
-    isPlainObject(cfg.changelog) && ("templates" in cfg.changelog || "grouping" in cfg.changelog);
+    isPlainObject(cfg.changelog) &&
+    ("templates" in cfg.changelog || "grouping" in cfg.changelog);
 
   return topNew || changelogNew;
 };
@@ -229,11 +235,13 @@ export const normalizeConfig = (config: RawConfig, gh: string): Config => {
     gh,
     policies: {
       labelMode: config.policies?.labelMode ?? defaultLabelMode,
-      autoAddInferredPackages: config.policies?.autoAddInferredPackages ?? false,
+      autoAddInferredPackages:
+        config.policies?.autoAddInferredPackages ?? false,
       detectionUse: config.policies?.detectionUse ?? defaultDetectionUse,
       rules: {
         labelConflict:
-          config.policies?.rules?.labelConflict ?? defaultRuleLevels.labelConflict,
+          config.policies?.rules?.labelConflict ??
+          defaultRuleLevels.labelConflict,
         inferredPackageMissing:
           config.policies?.rules?.inferredPackageMissing ??
           defaultRuleLevels.inferredPackageMissing,
@@ -266,7 +274,7 @@ const exists = async (path: string) => {
 export const loadRawConfig = async (): Promise<RawConfig> => {
   const yamlPath = (await exists("./relasy.yaml"))
     ? "./relasy.yaml"
-    : await exists("./relasy.yml")
+    : (await exists("./relasy.yml"))
       ? "./relasy.yml"
       : undefined;
 
@@ -296,4 +304,5 @@ export const loadConfig = async (): Promise<Config> => {
   return normalizeConfig(config, gh);
 };
 
-export const normalizeConfigInputKeys = (input: unknown) => normalizeKeysDeep(input);
+export const normalizeConfigInputKeys = (input: unknown) =>
+  normalizeKeysDeep(input);

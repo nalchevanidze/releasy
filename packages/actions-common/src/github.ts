@@ -54,7 +54,9 @@ export const requireGitHubToken = (
 export const assertRepoAccess = async (
   octokit: {
     rest: {
-      repos: { get: (args: { owner: string; repo: string }) => Promise<unknown> };
+      repos: {
+        get: (args: { owner: string; repo: string }) => Promise<unknown>;
+      };
     };
   },
   owner: string,

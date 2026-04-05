@@ -18,7 +18,11 @@ export async function run() {
     const octokit = getOctokit(token);
     await assertRepoAccess(
       octokit as {
-        rest: { repos: { get: (args: { owner: string; repo: string }) => Promise<unknown> } };
+        rest: {
+          repos: {
+            get: (args: { owner: string; repo: string }) => Promise<unknown>;
+          };
+        };
       },
       owner,
       repo,

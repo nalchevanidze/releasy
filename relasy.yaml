@@ -3,25 +3,25 @@ project:
 
 pkgs:
   core:
-    name: '@relasy/core'
+    name: "@relasy/core"
     paths: packages/core/**
   cli:
-    name: '@relasy/cli'
+    name: "@relasy/cli"
     paths: packages/cli/**
   actions-common:
-    name: '@relasy/actions-common'
+    name: "@relasy/actions-common"
     paths: packages/actions-common/**
   draft:
-    name: '@relasy/draft-release-action'
+    name: "@relasy/draft-release-action"
     paths: actions/draft-release/**
   publish:
-    name: '@relasy/publish-release-action'
+    name: "@relasy/publish-release-action"
     paths: actions/publish-release/**
   labels:
-    name: '@relasy/validate-pr-labels-action'
+    name: "@relasy/validate-pr-labels-action"
     paths: actions/validate-pr-labels/**
   bootstrap:
-    name: '@relasy/bootstrap-labels-action'
+    name: "@relasy/bootstrap-labels-action"
     paths: actions/bootstrap-labels/**
 
 policies:
@@ -43,12 +43,11 @@ changes:
     bump: patch
     paths:
       - packages/docs/**/*.md
-      - '**/*.md'
+      - "**/*.md"
   test:
     icon: ✅
     title: Testing
     bump: patch
     paths:
-      - '**/*.spec.ts'
-      - '**/*.test.ts'
-
+      - "**/*.spec.ts"
+      - "**/*.test.ts"

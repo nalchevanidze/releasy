@@ -37,7 +37,10 @@ const context = {
   },
 };
 
-const checkLabels = vi.fn(() => ({ ok: true, data: { changeType: "feature" } }));
+const checkLabels = vi.fn(() => ({
+  ok: true,
+  data: { changeType: "feature" },
+}));
 const evaluatePackageScopeRules = vi.fn(() => ({
   ok: true,
   data: {
@@ -82,7 +85,8 @@ vi.mock("@relasy/core", () => ({
     })),
   })),
   checkLabels: (...args: unknown[]) => checkLabels(...args),
-  evaluatePackageScopeRules: (...args: unknown[]) => evaluatePackageScopeRules(...args),
+  evaluatePackageScopeRules: (...args: unknown[]) =>
+    evaluatePackageScopeRules(...args),
 }));
 
 describe("validate-pr-labels action", () => {
@@ -95,8 +99,12 @@ describe("validate-pr-labels action", () => {
     });
     process.env.GITHUB_TOKEN = "token";
 
-    pullsGet.mockResolvedValue({ data: { labels: [{ name: "✨ feature" }, { name: "📦 core" }] } });
-    pullsListFiles.mockResolvedValue([{ filename: "packages/core/src/index.ts" }]);
+    pullsGet.mockResolvedValue({
+      data: { labels: [{ name: "✨ feature" }, { name: "📦 core" }] },
+    });
+    pullsListFiles.mockResolvedValue([
+      { filename: "packages/core/src/index.ts" },
+    ]);
     paginate.mockResolvedValue([{ filename: "packages/core/src/index.ts" }]);
   });
 

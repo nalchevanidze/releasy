@@ -42,8 +42,12 @@ export const inferPackageScopes = (
     .pkgs.map((p) => p.pkg)
     .sort();
 
-  const missingScopes = inferredScopes.filter((s) => !existingScopes.includes(s));
-  const conflictingScopes = existingScopes.filter((s) => !inferredScopes.includes(s));
+  const missingScopes = inferredScopes.filter(
+    (s) => !existingScopes.includes(s),
+  );
+  const conflictingScopes = existingScopes.filter(
+    (s) => !inferredScopes.includes(s),
+  );
 
   return { inferredScopes, existingScopes, missingScopes, conflictingScopes };
 };

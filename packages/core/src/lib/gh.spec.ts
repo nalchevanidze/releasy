@@ -93,7 +93,11 @@ describe("Github release flow", () => {
 
     expect(out.data.number).toBe(99);
     expect(pullsCreateMock).not.toHaveBeenCalled();
-    expect(gitMock).not.toHaveBeenCalledWith("push", "origin", "HEAD:release-v1.2.3");
+    expect(gitMock).not.toHaveBeenCalledWith(
+      "push",
+      "origin",
+      "HEAD:release-v1.2.3",
+    );
   });
 
   test("falls back to authenticated https push when origin push fails", async () => {
@@ -117,13 +121,19 @@ describe("Github release flow", () => {
 
     await github.release(Version.parse("1.2.3"), "notes");
 
-    expect(gitMock).toHaveBeenCalledWith("push", "origin", "HEAD:release-v1.2.3");
+    expect(gitMock).toHaveBeenCalledWith(
+      "push",
+      "origin",
+      "HEAD:release-v1.2.3",
+    );
 
     const fallbackCall = gitMock.mock.calls.find(
       (args) => args[0] === "-c" && String(args[2]).includes("push"),
     );
 
     expect(fallbackCall).toBeDefined();
-    expect(String(fallbackCall?.[1])).toContain("extraheader=AUTHORIZATION: basic");
+    expect(String(fallbackCall?.[1])).toContain(
+      "extraheader=AUTHORIZATION: basic",
+    );
   });
 });

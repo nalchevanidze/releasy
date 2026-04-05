@@ -20,7 +20,9 @@ const inferChangeTypeFromFiles = (
 ): string | undefined => {
   for (const [changeType, scope] of Object.entries(scopes)) {
     const matched = changedFiles.some((file) =>
-      scope.paths.some((pattern) => globToRegExp(pattern).test(file.replace(/\\/g, "/"))),
+      scope.paths.some((pattern) =>
+        globToRegExp(pattern).test(file.replace(/\\/g, "/")),
+      ),
     );
 
     if (matched) return changeType;

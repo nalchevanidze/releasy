@@ -66,7 +66,11 @@ const toKebabCaseDeep = (value: unknown): unknown => {
 
 const writeRelasyConfig = async (config: unknown) => {
   const kebab = toKebabCaseDeep(config);
-  await writeFile("./relasy.yaml", yaml.dump(kebab, { lineWidth: 120 }), "utf8");
+  await writeFile(
+    "./relasy.yaml",
+    yaml.dump(kebab, { lineWidth: 120 }),
+    "utf8",
+  );
 };
 
 const applyTemplate = (template: string, values: Record<string, string>) =>
@@ -155,7 +159,10 @@ export const main = async () => {
       throw new Error(`[${validated.code}] ${validated.message}`);
     }
 
-    const normalizedInput = normalizeConfigInputKeys(raw) as Record<string, unknown>;
+    const normalizedInput = normalizeConfigInputKeys(raw) as Record<
+      string,
+      unknown
+    >;
     const migrated = normalizeConfig(validated.data, "owner/repo");
 
     await writeRelasyConfig({
@@ -186,7 +193,9 @@ export const main = async () => {
 
   cli.command("template-lint").action(async () => {
     const raw = normalizeConfigInputKeys(await readRelasyConfig()) as {
-      changelog?: { templates?: { header?: string; section?: string; item?: string } };
+      changelog?: {
+        templates?: { header?: string; section?: string; item?: string };
+      };
     };
     validateChangelogTemplates(raw.changelog);
     console.log("[relasy] Changelog templates are valid.");
@@ -194,7 +203,9 @@ export const main = async () => {
 
   cli.command("template-preview").action(async () => {
     const raw = normalizeConfigInputKeys(await readRelasyConfig()) as {
-      changelog?: { templates?: { header?: string; section?: string; item?: string } };
+      changelog?: {
+        templates?: { header?: string; section?: string; item?: string };
+      };
     };
     validateChangelogTemplates(raw.changelog);
 

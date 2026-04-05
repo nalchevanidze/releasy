@@ -30,24 +30,22 @@ const buildApi = (options: BuildOptions = {}) => {
     commits,
   } = options;
 
-  const commitData =
-    commits ??
-    [
-      {
-        oid: "abc1234",
-        message: "feat: from pr (#10)",
-        author: { name: "Dev", user: { login: "dev", url: "https://u/dev" } },
-        associatedPullRequests: {
-          nodes: [{ number: 10, repository: { nameWithOwner: "acme/demo" } }],
-        },
+  const commitData = commits ?? [
+    {
+      oid: "abc1234",
+      message: "feat: from pr (#10)",
+      author: { name: "Dev", user: { login: "dev", url: "https://u/dev" } },
+      associatedPullRequests: {
+        nodes: [{ number: 10, repository: { nameWithOwner: "acme/demo" } }],
       },
-      {
-        oid: "def5678",
-        message: "chore: standalone commit",
-        author: { name: "Bot", user: null },
-        associatedPullRequests: { nodes: [] },
-      },
-    ];
+    },
+    {
+      oid: "def5678",
+      message: "chore: standalone commit",
+      author: { name: "Bot", user: null },
+      associatedPullRequests: { nodes: [] },
+    },
+  ];
 
   const prs = [
     {
@@ -132,7 +130,9 @@ describe("parsePRNumberFromCommitMessage", () => {
   });
 
   test("returns undefined when no PR number exists", () => {
-    expect(parsePRNumberFromCommitMessage("chore: update docs")).toBeUndefined();
+    expect(
+      parsePRNumberFromCommitMessage("chore: update docs"),
+    ).toBeUndefined();
   });
 });
 

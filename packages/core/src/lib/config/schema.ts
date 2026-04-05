@@ -125,7 +125,10 @@ export const PoliciesConfigSchema = z
   .object({
     labelMode: z.enum(["strict", "permissive"]).optional(),
     autoAddInferredPackages: z.boolean().optional(),
-    detectionUse: z.array(z.enum(["labels", "commits"])).min(1).optional(),
+    detectionUse: z
+      .array(z.enum(["labels", "commits"]))
+      .min(1)
+      .optional(),
     rules: RulesConfigSchema,
   })
   .optional();

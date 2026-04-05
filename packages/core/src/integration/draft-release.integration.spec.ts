@@ -12,7 +12,10 @@ describe("integration: draftRelease use-case", () => {
       github: {
         setup: () => undefined,
         release: async () => ({
-          data: { number: 42, html_url: "https://github.com/acme/demo/pull/42" },
+          data: {
+            number: 42,
+            html_url: "https://github.com/acme/demo/pull/42",
+          },
         }),
       },
     };

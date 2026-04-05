@@ -85,9 +85,9 @@ export const parseLabel = (
     return undefined;
   }
 
-  const dynamicTypePrefix = Object.values(config.changeTypeEmojis ?? {}).includes(
-    prefix,
-  )
+  const dynamicTypePrefix = Object.values(
+    config.changeTypeEmojis ?? {},
+  ).includes(prefix)
     ? "changeTypes"
     : undefined;
 
@@ -98,12 +98,21 @@ export const parseLabel = (
   const longNames: Record<string, string> =
     type === "pkgs"
       ? Object.fromEntries(
-          Object.entries(config.pkgs).map(([k, v]) => [k, typeof v === "string" ? v : v.name]),
+          Object.entries(config.pkgs).map(([k, v]) => [
+            k,
+            typeof v === "string" ? v : v.name,
+          ]),
         )
       : config[type];
 
   if (longNames[sub]) {
-    return createLabel(type, sub, longNames[sub], original, config.changeTypeEmojis);
+    return createLabel(
+      type,
+      sub,
+      longNames[sub],
+      original,
+      config.changeTypeEmojis,
+    );
   }
 
   const fields = Object.keys(longNames).join(", ");

@@ -6,7 +6,11 @@ export type ResultCode =
   | "UNKNOWN_ERROR";
 
 export type Success<T> = { ok: true; code: "OK"; data: T };
-export type Failure = { ok: false; code: Exclude<ResultCode, "OK">; message: string };
+export type Failure = {
+  ok: false;
+  code: Exclude<ResultCode, "OK">;
+  message: string;
+};
 
 export type Result<T> = Success<T> | Failure;
 

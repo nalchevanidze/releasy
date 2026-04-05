@@ -102,7 +102,10 @@ describe("RenderAPI snapshots", () => {
       }),
     ];
 
-    const markdown = new RenderAPI(api).changes(Version.parse("1.2.3"), changes);
+    const markdown = new RenderAPI(api).changes(
+      Version.parse("1.2.3"),
+      changes,
+    );
     expect(markdown).toMatchSnapshot();
   });
 
@@ -126,7 +129,10 @@ describe("RenderAPI snapshots", () => {
       }),
     ];
 
-    const markdown = new RenderAPI(api).changes(Version.parse("2.0.0"), changes);
+    const markdown = new RenderAPI(api).changes(
+      Version.parse("2.0.0"),
+      changes,
+    );
     expect(markdown).toMatchSnapshot();
   });
 
@@ -136,8 +142,18 @@ describe("RenderAPI snapshots", () => {
     });
 
     const changes: Change[] = [
-      c({ number: 20, title: "Drop legacy auth", type: "breaking", pkgs: ["core"] }),
-      c({ number: 21, title: "Add cache layer", type: "feature", pkgs: ["core"] }),
+      c({
+        number: 20,
+        title: "Drop legacy auth",
+        type: "breaking",
+        pkgs: ["core"],
+      }),
+      c({
+        number: 21,
+        title: "Add cache layer",
+        type: "feature",
+        pkgs: ["core"],
+      }),
       c({ number: 22, title: "Add dashboard", type: "feature", pkgs: ["web"] }),
       c({ number: 23, title: "Fix pagination", type: "fix", pkgs: ["web"] }),
       c({ number: 24, title: "Fix typo", type: "fix", pkgs: [] }),
@@ -145,7 +161,10 @@ describe("RenderAPI snapshots", () => {
       c({ number: 26, title: "Refactor scripts", type: "chore", pkgs: [] }),
     ];
 
-    const markdown = new RenderAPI(api).changes(Version.parse("3.4.0"), changes);
+    const markdown = new RenderAPI(api).changes(
+      Version.parse("3.4.0"),
+      changes,
+    );
     expect(markdown).toMatchSnapshot();
   });
 

@@ -46,7 +46,11 @@ const api: Api = {
     bump: async () => undefined,
     pkg: (id: string) => `https://npmjs.com/package/${id}`,
   },
-  logger: { info: () => undefined, warn: () => undefined, error: () => undefined },
+  logger: {
+    info: () => undefined,
+    warn: () => undefined,
+    error: () => undefined,
+  },
 };
 
 describe("RenderAPI scalability baseline", () => {

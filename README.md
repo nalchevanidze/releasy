@@ -286,7 +286,6 @@ changes:
     bump: patch
 ```
 
-
 **Notes:**
 
 - In custom mode, `{{PKG}}` is substituted with the resolved pkg identifier

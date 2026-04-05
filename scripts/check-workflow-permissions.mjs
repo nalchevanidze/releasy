@@ -2,7 +2,9 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const dir = ".github/workflows";
-const files = readdirSync(dir).filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
+const files = readdirSync(dir).filter(
+  (f) => f.endsWith(".yml") || f.endsWith(".yaml"),
+);
 
 const missing = files.filter((file) => {
   const content = readFileSync(join(dir, file), "utf8");
@@ -16,4 +18,6 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log(`[security] Workflow permissions check passed (${files.length} files).`);
+console.log(
+  `[security] Workflow permissions check passed (${files.length} files).`,
+);

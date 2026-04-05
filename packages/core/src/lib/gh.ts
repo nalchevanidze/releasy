@@ -158,7 +158,9 @@ export class Github {
     try {
       git("commit", "-m", name);
     } catch {
-      console.log("[relasy] No new changes to commit before drafting release PR.");
+      console.log(
+        "[relasy] No new changes to commit before drafting release PR.",
+      );
     }
 
     try {

@@ -37,7 +37,9 @@ const parseConventionalType = (
   if (!normalized) return undefined;
 
   const breakingByFooter = /(^|\n)BREAKING CHANGE:/m.test(normalized);
-  const match = normalized.match(/^(?<type>[a-zA-Z]+)(\([^)]+\))?(?<breaking>!)?:/m);
+  const match = normalized.match(
+    /^(?<type>[a-zA-Z]+)(\([^)]+\))?(?<breaking>!)?:/m,
+  );
 
   if (breakingByFooter || match?.groups?.breaking) {
     return availableChangeTypes.includes("breaking") ? "breaking" : undefined;
@@ -70,8 +72,7 @@ const resolveDetectedType = (
   const conflictRule = api.config.policies?.rules?.detectionConflict ?? "error";
 
   if (labelsType && commitsType && labelsType !== commitsType) {
-    const message =
-      `Detection conflict: labels resolved "${labelsType}" but commits resolved "${commitsType}".`;
+    const message = `Detection conflict: labels resolved "${labelsType}" but commits resolved "${commitsType}".`;
 
     if (conflictRule === "error") {
       throw new Error(message);
@@ -93,7 +94,8 @@ const resolveDetectedType = (
 const toSyntheticChange = (api: Api, commit: Commit): Change => {
   const [title, ...bodyLines] = commit.message.split("\n");
   const body = bodyLines.join("\n").trim();
-  const authorLogin = commit.author?.user?.login || commit.author?.name || "unknown";
+  const authorLogin =
+    commit.author?.user?.login || commit.author?.name || "unknown";
   const authorUrl = commit.author?.user?.url || "";
   const commitDetected = parseConventionalType(
     commit.message,
@@ -175,7 +177,11 @@ export class FetchApi {
 
     return {
       ...pr,
-      type: resolveDetectedType(this.api, fromLabels, fromCommits) as Change["type"],
+      type: resolveDetectedType(
+        this.api,
+        fromLabels,
+        fromCommits,
+      ) as Change["type"],
       pkgs: pkgs.map(({ pkg }) => pkg),
     };
   };
@@ -186,24 +192,26 @@ export class FetchApi {
     const prNumbers = [
       ...new Set(
         resolutions
-          .filter((r): r is Extract<CommitResolution, { kind: "pr" }> =>
-            r.kind === "pr",
+          .filter(
+            (r): r is Extract<CommitResolution, { kind: "pr" }> =>
+              r.kind === "pr",
           )
           .map((r) => r.prNumber),
       ),
     ];
 
     const nonPrCommits = resolutions
-      .filter((r): r is Extract<CommitResolution, { kind: "non-pr" }> =>
-        r.kind === "non-pr",
+      .filter(
+        (r): r is Extract<CommitResolution, { kind: "non-pr" }> =>
+          r.kind === "non-pr",
       )
       .map((r) => r.commit);
 
     const prChanges = (await this.pullRequests(prNumbers)).map(this.toChange);
 
-    const commitsEnabled = (this.api.config.policies?.detectionUse ?? ["labels"]).includes(
-      "commits",
-    );
+    const commitsEnabled = (
+      this.api.config.policies?.detectionUse ?? ["labels"]
+    ).includes("commits");
 
     if (!commitsEnabled || nonPrCommits.length === 0) {
       return prChanges;
@@ -230,7 +238,9 @@ export class FetchApi {
       `[relasy] Including ${nonPrCommits.length} commits without PR linkage due to policies.rules.non-pr-commit=warn`,
     );
 
-    const syntheticChanges = nonPrCommits.map((c) => toSyntheticChange(this.api, c));
+    const syntheticChanges = nonPrCommits.map((c) =>
+      toSyntheticChange(this.api, c),
+    );
     return [...prChanges, ...syntheticChanges];
   };
 }
