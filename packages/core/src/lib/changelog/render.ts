@@ -207,8 +207,12 @@ export class RenderAPI {
     ].join(" ");
   };
 
-  private defaultHeader = (tag: Version, previousTag?: string) => {
-    const date = formatDateLong(getDate());
+  private defaultHeader = (
+    tag: Version,
+    previousTag?: string,
+    releaseDate?: string,
+  ) => {
+    const date = formatDateLong(releaseDate || getDate());
     const current = normalizeVersionLabel(tag.toString());
 
     if (previousTag) {
@@ -254,7 +258,12 @@ export class RenderAPI {
     ]);
   };
 
-  public changes = (tag: Version, changes: Change[], previousTag?: string) => {
+  public changes = (
+    tag: Version,
+    changes: Change[],
+    previousTag?: string,
+    releaseDate?: string,
+  ) => {
     const groups = groupBy(({ type }) => type, changes);
     const sectionTitles = {
       ...this.api.config.changeTypes,
@@ -266,7 +275,7 @@ export class RenderAPI {
           VERSION: tag.toString(),
           DATE: getDate(),
         })
-      : this.defaultHeader(tag, previousTag);
+      : this.defaultHeader(tag, previousTag, releaseDate);
 
     const grouping = this.api.config.changelog?.grouping ?? "none";
 

@@ -3,17 +3,31 @@ import { renderChangelog } from "./index";
 import type { Api, Change } from "./types";
 
 const mockLastTag = vi.fn();
+const mockListTags = vi.fn();
+const mockDateAtRef = vi.fn();
 const mockChanges = vi.fn();
+const mockChangesSinceRef = vi.fn();
+const mockChangesBetweenRefs = vi.fn();
 const mockRender = vi.fn();
 
 vi.mock("../git", () => ({
   lastTag: () => mockLastTag(),
+  listTags: () => mockListTags(),
+  dateAtRef: (ref: string) => mockDateAtRef(ref),
 }));
 
 vi.mock("./fetch", () => ({
   FetchApi: class {
     changes(version: unknown) {
       return mockChanges(version);
+    }
+
+    changesSinceRef(ref: string) {
+      return mockChangesSinceRef(ref);
+    }
+
+    changesBetweenRefs(fromExclusive: string | undefined, to: string) {
+      return mockChangesBetweenRefs(fromExclusive, to);
     }
   },
 }));
@@ -60,6 +74,10 @@ describe("renderChangelog", () => {
     api.logger.warn = vi.fn();
     version.isEqual = vi.fn();
     mockChanges.mockResolvedValue([]);
+    mockChangesSinceRef.mockResolvedValue([]);
+    mockChangesBetweenRefs.mockResolvedValue([]);
+    mockListTags.mockReturnValue([]);
+    mockDateAtRef.mockReturnValue("2026-04-05");
     mockRender.mockReturnValue("ok");
   });
 
@@ -113,5 +131,25 @@ describe("renderChangelog", () => {
     expect(api.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining("policies.rules.version-tag-mismatch=warn"),
     );
+  });
+
+  test("supports preview mode from a custom start tag without bump", async () => {
+    await expect(
+      renderChangelog(api as Api, { sinceTag: "v1.2.0" }),
+    ).resolves.toBe("ok");
+
+    expect(mockChangesSinceRef).toHaveBeenCalledWith("v1.2.0");
+    expect(api.module.bump).not.toHaveBeenCalled();
+  });
+
+  test("supports full history mode from all tags", async () => {
+    mockListTags.mockReturnValue(["v1.0.0", "v1.1.0"]);
+
+    await expect(renderChangelog(api as Api, { all: true })).resolves.toBe(
+      "ok\n\nok",
+    );
+
+    expect(mockChangesBetweenRefs).toHaveBeenNthCalledWith(1, undefined, "v1.0.0");
+    expect(mockChangesBetweenRefs).toHaveBeenNthCalledWith(2, "v1.0.0", "v1.1.0");
   });
 });

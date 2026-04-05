@@ -2,7 +2,7 @@ import { pluck } from "ramda";
 import { Change, Api, Commit, PR } from "./types";
 import { parseLabels } from "../labels";
 import { Version } from "../version";
-import { commitsAfterVersion } from "../git";
+import { commitsAfterRef, commitsAfterVersion, commitsBetweenRefs } from "../git";
 
 export const parsePRNumberFromCommitMessage = (
   msg: string,
@@ -238,8 +238,10 @@ export class FetchApi {
     };
   };
 
-  public changes = async (version: Version): Promise<Change[]> => {
-    const commits = await this.commits(commitsAfterVersion(version));
+  private resolveChangesFromCommits = async (
+    commitOids: string[],
+  ): Promise<Change[]> => {
+    const commits = await this.commits(commitOids);
     const resolutions = commits.map(this.toResolution);
     const prNumbers = [
       ...new Set(
@@ -295,4 +297,16 @@ export class FetchApi {
     );
     return [...prChanges, ...syntheticChanges];
   };
+
+  public changes = async (version: Version): Promise<Change[]> =>
+    this.resolveChangesFromCommits(commitsAfterVersion(version));
+
+  public changesSinceRef = async (ref: string): Promise<Change[]> =>
+    this.resolveChangesFromCommits(commitsAfterRef(ref));
+
+  public changesBetweenRefs = async (
+    fromExclusive: string | undefined,
+    to: string,
+  ): Promise<Change[]> =>
+    this.resolveChangesFromCommits(commitsBetweenRefs(fromExclusive, to));
 }

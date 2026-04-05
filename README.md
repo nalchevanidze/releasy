@@ -532,7 +532,10 @@ jobs:
 Relasy CLI now supports:
 
 - `relasy init` — create a starter `relasy.yaml` if missing
-- `relasy changelog` — generate `./changelog.md`
+- `relasy changelog` — generate `./changelog.md` for the next release window
+  - `--since-tag <tag>`: preview changelog since a specific tag (no version bump)
+  - `--since-commit <sha>`: preview changelog since a specific commit (no version bump)
+  - `--all`: generate full changelog history for each tagged version
 - `relasy validate-config` — validate `relasy.yaml`
 - `relasy migrate-config` — normalize config to the latest schema shape (kebab-case YAML + canonical policy keys)
 - `relasy template-lint` — validate changelog template placeholders
