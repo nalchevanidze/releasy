@@ -94,6 +94,8 @@ At a high level, `relasy.json` describes:
 
 - the **pkgs** in your repo (single package or many packages/modules)
 - which **tooling** is used to resolve versioning/publishing details (`project`)
+- label parsing behavior (`labelPolicy`)
+- changelog rendering preferences (`changelog`)
 
 ### Schema overview
 
@@ -104,6 +106,11 @@ At a high level, `relasy.json` describes:
   },
   "project": {
     "type": "npm"
+  },
+  "labelPolicy": "strict",
+  "changelog": {
+    "headerTemplate": "## {{VERSION}} ({{DATE}})",
+    "groupByPackage": false
   }
 }
 ```
@@ -141,6 +148,17 @@ If neither `build` nor `postBump` is set, Relasy auto-detects the package manage
 - `pnpm run build`
 - `yarn build`
 - `npm run build`
+
+`labelPolicy` controls handling of invalid/unknown labels:
+
+- `strict` (default): fail on invalid labels
+- `permissive`: ignore invalid labels and continue
+
+`changelog` supports optional rendering controls:
+
+- `headerTemplate` (string): supports `{{VERSION}}` and `{{DATE}}`
+- `sectionTitles` (object): override section names for `breaking|feature|fix|chore`
+- `groupByPackage` (boolean): group entries by package labels in each section
 
 If `type` is `"custom"`, the following fields are required:
 
@@ -402,6 +420,15 @@ jobs:
 ```
 
 ---
+
+## CLI commands
+
+Relasy CLI now supports:
+
+- `relasy changelog` — generate `./changelog.md`
+- `relasy validate-config` — validate `relasy.json`
+- `relasy labels --check --labels "✨ feature,📦 core"` — validate label set and print resolved change type
+- `relasy plan` — print a release plan summary (version/base branch/label policy)
 
 ## Local runs and dry-run mode
 

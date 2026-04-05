@@ -59,15 +59,41 @@ export class RenderAPI {
   private section = (label: string, changes: Change[]) =>
     lines([`#### ${label}`, ...changes.map(this.change)]);
 
+  private sectionByPackage = (label: string, changes: Change[]) => {
+    const byPkg = groupBy((change: Change) => change.pkgs.join(",") || "other", changes);
+
+    return lines([
+      `#### ${label}`,
+      ...Object.entries(byPkg).flatMap(([pkgKey, pkgChanges]) => {
+        const pkgTitle = pkgKey === "other" ? "General" : pkgKey;
+        return lines([`##### 📦 ${pkgTitle}`, ...pkgChanges.map(this.change)]);
+      }),
+    ]);
+  };
+
   public changes = (tag: Version, changes: Change[]) => {
     const groups = groupBy(({ type }) => type, changes);
+    const sectionTitles = {
+      ...this.api.config.changeTypes,
+      ...(this.api.config.changelog?.sectionTitles ?? {}),
+    };
+
+    const headerTemplate = this.api.config.changelog?.headerTemplate;
+    const header = headerTemplate
+      ? headerTemplate
+          .replace("{{VERSION}}", tag.toString())
+          .replace("{{DATE}}", getDate())
+      : `## ${tag.toString()} (${getDate()})`;
 
     return lines(
       [
-        `## ${tag.toString()} (${getDate()})`,
-        ...Object.entries(this.api.config.changeTypes).flatMap(
-          ([type, label]) =>
-            isKey(groups, type) ? this.section(label, groups[type]) : "",
+        header,
+        ...Object.entries(sectionTitles).flatMap(([type, label]) =>
+          isKey(groups, type)
+            ? this.api.config.changelog?.groupByPackage
+              ? this.sectionByPackage(label, groups[type])
+              : this.section(label, groups[type])
+            : "",
         ),
       ],
       2,

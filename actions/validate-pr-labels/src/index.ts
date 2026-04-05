@@ -6,7 +6,7 @@ import {
   resolvePrNumber,
   resolveRepo,
 } from "@relasy/actions-common";
-import { Relasy } from "@relasy/core";
+import { checkLabels, loadRelasy } from "@relasy/core";
 
 type Params = {
   token?: string;
@@ -64,7 +64,7 @@ export async function run() {
       return;
     }
 
-    const relasy = await Relasy.load();
+    const iRelasy = await loadRelasy();
 
     const requireChangeType =
       getInput("require_change_type", {
@@ -72,25 +72,13 @@ export async function run() {
       }) === "true";
 
     const labels = await getCurrentPrLabels();
-    const { changeTypes } = relasy.parseLabels(labels);
+    const result = checkLabels(iRelasy, labels, requireChangeType);
 
-    if (requireChangeType && changeTypes.length === 0) {
-      throw new Error(
-        `PR is missing a change type label. Expected one of: ${Object.keys(
-          relasy.config.changeTypes,
-        ).join(", ")}`,
-      );
+    if (!result.ok) {
+      throw new Error(`[${result.code}] ${result.message}`);
     }
 
-    if (changeTypes.length > 1) {
-      throw new Error(
-        `PR has multiple change type labels. Expected only one of: ${Object.keys(
-          relasy.config.changeTypes,
-        ).join(", ")}`,
-      );
-    }
-
-    setOutput("change_type", changeTypes[0]?.changeType ?? "");
+    setOutput("change_type", result.data.changeType);
   } catch (error) {
     setFailed(formatActionFailure("validate-pr-labels", error));
   }

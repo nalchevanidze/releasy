@@ -30,11 +30,9 @@ vi.mock("@octokit/rest", () => ({
 }));
 
 vi.mock("@relasy/core", () => ({
-  Relasy: {
-    load: vi.fn(async () => ({
-      version: () => ({ toString: () => "v1.2.3" }),
-    })),
-  },
+  loadRelasy: vi.fn(async () => ({
+    version: () => ({ toString: () => "v1.2.3" }),
+  })),
   withRetry: async <T>(_label: string, fn: () => Promise<T>) => fn(),
 }));
 

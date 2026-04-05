@@ -30,21 +30,20 @@ vi.mock("@actions/github", () => ({
 }));
 
 vi.mock("@relasy/core", () => ({
-  Relasy: {
-    load: vi.fn(async () => ({
-      config: {
-        changeTypes: {
-          feature: "feature",
-          fix: "fix",
-          chore: "chore",
-          breaking: "breaking",
-        },
+  loadRelasy: vi.fn(async () => ({
+    config: {
+      changeTypes: {
+        feature: "feature",
+        fix: "fix",
+        chore: "chore",
+        breaking: "breaking",
       },
-      parseLabels: vi.fn(() => ({
-        changeTypes: [{ changeType: "feature" }],
-      })),
+    },
+    parseLabels: vi.fn(() => ({
+      changeTypes: [{ changeType: "feature" }],
     })),
-  },
+  })),
+  checkLabels: vi.fn(() => ({ ok: true, data: { changeType: "feature" } })),
 }));
 
 describe("validate-pr-labels action", () => {

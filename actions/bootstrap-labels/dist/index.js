@@ -25319,17 +25319,33 @@ var require_github = __commonJS({
   }
 });
 
+// ../../packages/core/dist/lib/logger.js
+var require_logger = __commonJS({
+  "../../packages/core/dist/lib/logger.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.defaultLogger = void 0;
+    exports2.defaultLogger = {
+      info: (message) => console.log(message),
+      warn: (message) => console.warn(message),
+      error: (message) => console.error(message)
+    };
+  }
+});
+
 // ../../packages/core/dist/lib/changelog/types.js
 var require_types = __commonJS({
   "../../packages/core/dist/lib/changelog/types.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.Api = void 0;
+    var logger_1 = require_logger();
     var Api = class {
-      constructor(config, github, module3) {
+      constructor(config, github, module3, logger = logger_1.defaultLogger) {
         this.config = config;
         this.github = github;
         this.module = module3;
+        this.logger = logger;
       }
     };
     exports2.Api = Api;
@@ -33136,9 +33152,9 @@ var require_zod = __commonJS({
   }
 });
 
-// ../../packages/core/dist/lib/config.js
-var require_config = __commonJS({
-  "../../packages/core/dist/lib/config.js"(exports2) {
+// ../../packages/core/dist/lib/config/schema.js
+var require_schema = __commonJS({
+  "../../packages/core/dist/lib/config/schema.js"(exports2) {
     "use strict";
     var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
@@ -33168,11 +33184,19 @@ var require_config = __commonJS({
       return result;
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadConfig = exports2.ConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = void 0;
-    var promises_1 = require("fs/promises");
+    exports2.ConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = void 0;
     var z = __importStar(require_zod());
-    var git_1 = require_git();
-    var changeTypes = {
+    exports2.ChangelogConfigSchema = z.object({
+      headerTemplate: z.string().optional(),
+      sectionTitles: z.object({
+        breaking: z.string().optional(),
+        feature: z.string().optional(),
+        fix: z.string().optional(),
+        chore: z.string().optional()
+      }).optional(),
+      groupByPackage: z.boolean().optional()
+    }).optional();
+    exports2.changeTypes = {
       breaking: "Breaking change (major bump)",
       feature: "New feature (minor bump)",
       fix: "Bug fix (patch bump)",
@@ -33196,15 +33220,79 @@ var require_config = __commonJS({
     exports2.ManagerSchema = z.union([exports2.NPMManagerSchema, exports2.CustomManagerSchema]);
     exports2.ConfigSchema = z.object({
       pkgs: z.record(z.string(), z.string()),
-      project: exports2.ManagerSchema
+      project: exports2.ManagerSchema,
+      labelPolicy: z.enum(["strict", "permissive"]).optional(),
+      changelog: exports2.ChangelogConfigSchema
     });
+  }
+});
+
+// ../../packages/core/dist/lib/config/defaults.js
+var require_defaults = __commonJS({
+  "../../packages/core/dist/lib/config/defaults.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.defaultChangeTypes = void 0;
+    exports2.defaultChangeTypes = {
+      breaking: "Breaking change (major bump)",
+      feature: "New feature (minor bump)",
+      fix: "Bug fix (patch bump)",
+      chore: "Minor / maintenance change (patch bump)"
+    };
+  }
+});
+
+// ../../packages/core/dist/lib/config/load.js
+var require_load = __commonJS({
+  "../../packages/core/dist/lib/config/load.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.loadConfig = void 0;
+    var promises_1 = require("fs/promises");
+    var git_1 = require_git();
+    var defaults_1 = require_defaults();
+    var schema_1 = require_schema();
     var loadConfig = async () => {
       const data = await (0, promises_1.readFile)("./relasy.json", "utf8").then(JSON.parse);
-      const config = exports2.ConfigSchema.parse(data);
+      const config = schema_1.ConfigSchema.parse(data);
       const gh = (0, git_1.remote)();
-      return { ...config, gh, changeTypes };
+      return {
+        ...config,
+        gh,
+        labelPolicy: config.labelPolicy ?? "strict",
+        changeTypes: defaults_1.defaultChangeTypes
+      };
     };
     exports2.loadConfig = loadConfig;
+  }
+});
+
+// ../../packages/core/dist/lib/config.js
+var require_config = __commonJS({
+  "../../packages/core/dist/lib/config.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
+    var schema_1 = require_schema();
+    Object.defineProperty(exports2, "changeTypes", { enumerable: true, get: function() {
+      return schema_1.changeTypes;
+    } });
+    Object.defineProperty(exports2, "ConfigSchema", { enumerable: true, get: function() {
+      return schema_1.ConfigSchema;
+    } });
+    Object.defineProperty(exports2, "CustomManagerSchema", { enumerable: true, get: function() {
+      return schema_1.CustomManagerSchema;
+    } });
+    Object.defineProperty(exports2, "ManagerSchema", { enumerable: true, get: function() {
+      return schema_1.ManagerSchema;
+    } });
+    Object.defineProperty(exports2, "NPMManagerSchema", { enumerable: true, get: function() {
+      return schema_1.NPMManagerSchema;
+    } });
+    var load_1 = require_load();
+    Object.defineProperty(exports2, "loadConfig", { enumerable: true, get: function() {
+      return load_1.loadConfig;
+    } });
   }
 });
 
@@ -45592,7 +45680,16 @@ var require_labels = __commonJS({
     };
     exports2.genLabels = genLabels;
     var parseLabels = (config, labels) => {
-      const ls = labels.map((label) => (0, parse_1.parseLabel)(config, label));
+      const ls = labels.map((label) => {
+        try {
+          return (0, parse_1.parseLabel)(config, label);
+        } catch (error) {
+          if ((config.labelPolicy ?? "strict") === "permissive") {
+            return void 0;
+          }
+          throw error;
+        }
+      }).filter(Boolean);
       return {
         changeTypes: ls.filter((x) => x?.type === "changeTypes"),
         pkgs: ls.filter((x) => x?.type === "pkgs")
@@ -45697,11 +45794,27 @@ ${space(n)}`));
           return lines([head, stats, details]);
         };
         this.section = (label, changes) => lines([`#### ${label}`, ...changes.map(this.change)]);
+        this.sectionByPackage = (label, changes) => {
+          const byPkg = (0, ramda_1.groupBy)((change) => change.pkgs.join(",") || "other", changes);
+          return lines([
+            `#### ${label}`,
+            ...Object.entries(byPkg).flatMap(([pkgKey, pkgChanges]) => {
+              const pkgTitle = pkgKey === "other" ? "General" : pkgKey;
+              return lines([`##### \u{1F4E6} ${pkgTitle}`, ...pkgChanges.map(this.change)]);
+            })
+          ]);
+        };
         this.changes = (tag, changes) => {
           const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
+          const sectionTitles = {
+            ...this.api.config.changeTypes,
+            ...this.api.config.changelog?.sectionTitles ?? {}
+          };
+          const headerTemplate = this.api.config.changelog?.headerTemplate;
+          const header = headerTemplate ? headerTemplate.replace("{{VERSION}}", tag.toString()).replace("{{DATE}}", (0, git_1.getDate)()) : `## ${tag.toString()} (${(0, git_1.getDate)()})`;
           return lines([
-            `## ${tag.toString()} (${(0, git_1.getDate)()})`,
-            ...Object.entries(this.api.config.changeTypes).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.section(label, groups[type]) : "")
+            header,
+            ...Object.entries(sectionTitles).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.api.config.changelog?.groupByPackage ? this.sectionByPackage(label, groups[type]) : this.section(label, groups[type]) : "")
           ], 2);
         };
       }
@@ -45746,12 +45859,166 @@ var require_changelog = __commonJS({
   }
 });
 
+// ../../packages/core/dist/app/result.js
+var require_result = __commonJS({
+  "../../packages/core/dist/app/result.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.fail = exports2.ok = void 0;
+    var ok = (data) => ({ ok: true, code: "OK", data });
+    exports2.ok = ok;
+    var fail = (code, message) => ({ ok: false, code, message });
+    exports2.fail = fail;
+  }
+});
+
+// ../../packages/core/dist/app/draft-release.js
+var require_draft_release = __commonJS({
+  "../../packages/core/dist/app/draft-release.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.draftRelease = void 0;
+    var result_1 = require_result();
+    var draftRelease = async (iRelasy) => {
+      try {
+        const body = await iRelasy.changelog();
+        await iRelasy.module.postBump();
+        iRelasy.github.setup();
+        const version = iRelasy.module.version();
+        const releaseBranch = `release-${version.toString()}`;
+        const pr = await iRelasy.github.release(version, body);
+        return (0, result_1.ok)({
+          version: version.toString(),
+          releaseBranch,
+          prNumber: pr.data.number,
+          prUrl: pr.data.html_url
+        });
+      } catch (error) {
+        return (0, result_1.fail)("RELEASE_FAILED", error instanceof Error ? error.message : String(error));
+      }
+    };
+    exports2.draftRelease = draftRelease;
+  }
+});
+
+// ../../packages/core/dist/app/labels-check.js
+var require_labels_check = __commonJS({
+  "../../packages/core/dist/app/labels-check.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.checkLabels = void 0;
+    var result_1 = require_result();
+    var checkLabels = (iRelasy, labels, requireChangeType) => {
+      try {
+        const { changeTypes } = iRelasy.parseLabels(labels);
+        if (requireChangeType && changeTypes.length === 0) {
+          return (0, result_1.fail)("LABEL_POLICY_ERROR", `PR is missing a change type label. Expected one of: ${Object.keys(iRelasy.config.changeTypes).join(", ")}`);
+        }
+        if (changeTypes.length > 1) {
+          return (0, result_1.fail)("LABEL_POLICY_ERROR", `PR has multiple change type labels. Expected only one of: ${Object.keys(iRelasy.config.changeTypes).join(", ")}`);
+        }
+        return (0, result_1.ok)({ changeType: changeTypes[0]?.changeType ?? "" });
+      } catch (error) {
+        return (0, result_1.fail)("LABEL_POLICY_ERROR", error instanceof Error ? error.message : String(error));
+      }
+    };
+    exports2.checkLabels = checkLabels;
+  }
+});
+
+// ../../packages/core/dist/app/plan.js
+var require_plan = __commonJS({
+  "../../packages/core/dist/app/plan.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.buildReleasePlan = void 0;
+    var result_1 = require_result();
+    var buildReleasePlan = async (iRelasy) => {
+      try {
+        return (0, result_1.ok)({
+          version: iRelasy.version().toString(),
+          baseBranch: iRelasy.config.project.baseBranch ?? "(auto-detect default branch)",
+          labelPolicy: iRelasy.config.labelPolicy ?? "strict"
+        });
+      } catch (error) {
+        return (0, result_1.fail)("UNKNOWN_ERROR", error instanceof Error ? error.message : String(error));
+      }
+    };
+    exports2.buildReleasePlan = buildReleasePlan;
+  }
+});
+
+// ../../packages/core/dist/app/validate-config.js
+var require_validate_config = __commonJS({
+  "../../packages/core/dist/app/validate-config.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.validateConfig = void 0;
+    var result_1 = require_result();
+    var config_1 = require_config();
+    var validateConfig = (input) => {
+      try {
+        const parsed = config_1.ConfigSchema.parse(input);
+        return (0, result_1.ok)(parsed);
+      } catch (error) {
+        return (0, result_1.fail)("INVALID_CONFIG", error instanceof Error ? error.message : String(error));
+      }
+    };
+    exports2.validateConfig = validateConfig;
+  }
+});
+
+// ../../packages/core/dist/app/index.js
+var require_app = __commonJS({
+  "../../packages/core/dist/app/index.js"(exports2) {
+    "use strict";
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __exportStar = exports2 && exports2.__exportStar || function(m, exports3) {
+      for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m, p);
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    __exportStar(require_draft_release(), exports2);
+    __exportStar(require_labels_check(), exports2);
+    __exportStar(require_plan(), exports2);
+    __exportStar(require_result(), exports2);
+    __exportStar(require_validate_config(), exports2);
+  }
+});
+
 // ../../packages/core/dist/index.js
 var require_dist = __commonJS({
   "../../packages/core/dist/index.js"(exports2) {
     "use strict";
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __exportStar = exports2 && exports2.__exportStar || function(m, exports3) {
+      for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m, p);
+    };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.Relasy = exports2.exit = exports2.withRetry = void 0;
+    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = void 0;
     var types_1 = require_types();
     var gh_1 = require_gh();
     var config_1 = require_config();
@@ -45759,6 +46026,7 @@ var require_dist = __commonJS({
     var project_1 = require_project();
     var changelog_1 = require_changelog();
     var labels_1 = require_labels();
+    __exportStar(require_app(), exports2);
     var retry_1 = require_retry();
     Object.defineProperty(exports2, "withRetry", { enumerable: true, get: function() {
       return retry_1.withRetry;
@@ -45767,7 +46035,7 @@ var require_dist = __commonJS({
     Object.defineProperty(exports2, "exit", { enumerable: true, get: function() {
       return utils_2.exit;
     } });
-    var Relasy2 = class _Relasy extends types_1.Api {
+    var Relasy = class _Relasy extends types_1.Api {
       constructor() {
         super(...arguments);
         this.version = () => this.module.version();
@@ -45787,7 +46055,9 @@ var require_dist = __commonJS({
         return (0, labels_1.parseLabels)(this.config, labels);
       }
     };
-    exports2.Relasy = Relasy2;
+    exports2.Relasy = Relasy;
+    var loadRelasy2 = () => Relasy.load();
+    exports2.loadRelasy = loadRelasy2;
   }
 });
 
@@ -45830,7 +46100,7 @@ var import_core2 = __toESM(require_dist());
 var isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 async function run() {
   try {
-    const relasy = await import_core2.Relasy.load();
+    const iRelasy = await (0, import_core2.loadRelasy)();
     const { owner, repo } = resolveRepo(import_github.context);
     const token = requireGitHubToken();
     const octokit = (0, import_github.getOctokit)(token);
@@ -45843,7 +46113,7 @@ async function run() {
       }
     );
     const existingLabelNames = labels.map((l) => l.name);
-    const desiredLabels = relasy.labels(existingLabelNames);
+    const desiredLabels = iRelasy.labels(existingLabelNames);
     (0, import_core.info)(`[relasy] fetched labels: ${JSON.stringify(existingLabelNames)}`);
     if (isDryRun()) {
       (0, import_core.info)(

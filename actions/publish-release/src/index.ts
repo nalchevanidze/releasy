@@ -6,7 +6,7 @@ import {
   getErrorStatus,
   resolveRepo,
 } from "@relasy/actions-common";
-import { Relasy, withRetry } from "@relasy/core";
+import { loadRelasy, withRetry } from "@relasy/core";
 
 const getBody = (): string => {
   const inputBody = getInput("body", { required: false });
@@ -22,10 +22,10 @@ const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
 export async function run() {
   try {
-    const relasy = await Relasy.load();
+    const iRelasy = await loadRelasy();
     const { owner, repo } = resolveRepo(context);
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-    const version = relasy.version().toString();
+    const version = iRelasy.version().toString();
 
     if (isDryRun()) {
       info(

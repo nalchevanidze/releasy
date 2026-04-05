@@ -5,13 +5,13 @@ import {
   requireGitHubToken,
   resolveRepo,
 } from "@relasy/actions-common";
-import { Relasy } from "@relasy/core";
+import { loadRelasy } from "@relasy/core";
 
 const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
 export async function run() {
   try {
-    const relasy = await Relasy.load();
+    const iRelasy = await loadRelasy();
     const { owner, repo } = resolveRepo(context);
     const token = requireGitHubToken();
     const octokit = getOctokit(token);
@@ -26,7 +26,7 @@ export async function run() {
     );
 
     const existingLabelNames = labels.map((l) => l.name);
-    const desiredLabels = relasy.labels(existingLabelNames);
+    const desiredLabels = iRelasy.labels(existingLabelNames);
 
     info(`[relasy] fetched labels: ${JSON.stringify(existingLabelNames)}`);
 

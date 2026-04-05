@@ -39,7 +39,19 @@ export const parseLabels = (
   config: Config,
   labels: string[],
 ): { changeTypes: ChangeTypeLabel[]; pkgs: PkgLabel[] } => {
-  const ls = labels.map((label) => parseLabel(config, label));
+  const ls = labels
+    .map((label) => {
+      try {
+        return parseLabel(config, label);
+      } catch (error) {
+        if ((config.labelPolicy ?? "strict") === "permissive") {
+          return undefined;
+        }
+
+        throw error;
+      }
+    })
+    .filter(Boolean);
 
   return {
     changeTypes: ls.filter(

@@ -1,61 +1,21 @@
-import { readFile } from "fs/promises";
-import * as z from "zod";
-import { remote } from "./git";
+export {
+  changeTypes,
+  ConfigSchema,
+  CustomManagerSchema,
+  ManagerSchema,
+  NPMManagerSchema,
+} from "./config/schema";
 
-export type LabelType = "pkgs" | "changeTypes";
+export type {
+  ChangelogConfig,
+  ChangeType,
+  CustomManager,
+  LabelPolicy,
+  LabelType,
+  Manager,
+  NPMManager,
+  RawConfig,
+} from "./config/schema";
 
-const changeTypes = {
-  breaking: "Breaking change (major bump)",
-  feature: "New feature (minor bump)",
-  fix: "Bug fix (patch bump)",
-  chore: "Minor / maintenance change (patch bump)",
-};
-
-export type ChangeType = keyof typeof changeTypes;
-
-export const CustomManagerSchema = z.object({
-  type: z.literal("custom"),
-  bump: z.string(),
-  version: z.string(),
-  // Optional fields
-  pkg: z.string().optional(),
-  postBump: z.string().optional(),
-  baseBranch: z.string().optional(),
-});
-
-export const NPMManagerSchema = z.object({
-  type: z.literal("npm"),
-  build: z.string().optional(),
-  postBump: z.string().optional(),
-  baseBranch: z.string().optional(),
-});
-
-export type CustomManager = z.infer<typeof CustomManagerSchema>;
-
-export type NPMManager = z.infer<typeof NPMManagerSchema>;
-
-export const ManagerSchema = z.union([NPMManagerSchema, CustomManagerSchema]);
-
-export type Manager = z.infer<typeof ManagerSchema>;
-
-export const ConfigSchema = z.object({
-  pkgs: z.record(z.string(), z.string()),
-  project: ManagerSchema,
-});
-
-type RawConfig = z.infer<typeof ConfigSchema>;
-
-type ExtraConfig = {
-  gh: string;
-  changeTypes: Record<ChangeType, string>;
-};
-
-export type Config = RawConfig & ExtraConfig;
-
-export const loadConfig = async (): Promise<Config> => {
-  const data = await readFile("./relasy.json", "utf8").then(JSON.parse);
-  const config = ConfigSchema.parse(data);
-  const gh = remote();
-
-  return { ...config, gh, changeTypes };
-};
+export type { Config } from "./config/load";
+export { loadConfig } from "./config/load";

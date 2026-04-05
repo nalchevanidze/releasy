@@ -18,11 +18,9 @@ vi.mock("@actions/github", () => ({
 }));
 
 vi.mock("@relasy/core", () => ({
-  Relasy: {
-    load: vi.fn(async () => ({
-      labels: vi.fn(() => []),
-    })),
-  },
+  loadRelasy: vi.fn(async () => ({
+    labels: vi.fn(() => []),
+  })),
 }));
 
 describe("bootstrap-labels action", () => {

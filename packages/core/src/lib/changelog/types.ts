@@ -1,4 +1,5 @@
 import { ChangeType, Config } from "../config";
+import { Logger, defaultLogger } from "../logger";
 import { Module } from "../project/types";
 import { Version } from "../version";
 
@@ -40,5 +41,6 @@ export class Api {
     public config: Config,
     public github: GitHubClient,
     public module: Module,
+    public logger: Logger = defaultLogger,
   ) {}
 }
