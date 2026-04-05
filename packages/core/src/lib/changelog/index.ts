@@ -34,10 +34,23 @@ export const renderChangelog = async (api: Api) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
-    if (!message.includes("No names found")) {
-      throw new Error(
-        `Unable to continue release. package.json version must match the last git tag. Root cause: ${message}`,
-      );
+    if (message.includes("No names found")) {
+      // first release in repository (no tags yet)
+    } else {
+      const rule = api.config.policies?.rules?.versionTagMismatch ?? "error";
+      const mismatchMessage =
+        `package.json version must match the last git tag. Root cause: ${message}`;
+
+      if (rule === "error") {
+        throw new Error(`Unable to continue release. ${mismatchMessage}`);
+      }
+
+      if (rule === "warn") {
+        api.logger.warn(
+          `[relasy] Continuing despite version/tag mismatch because policies.rules.version-tag-mismatch=warn. ${mismatchMessage}`,
+        );
+      }
+      // skip => continue silently
     }
   }
 

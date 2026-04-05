@@ -15,7 +15,7 @@ import {
   ChangelogConfig,
   ConfigSchema,
   RawConfig,
-  RuleLevel,
+  RulesConfig,
 } from "./schema";
 
 type ExtraConfig = {
@@ -29,12 +29,7 @@ type ExtraConfig = {
     labelMode: "strict" | "permissive";
     autoAddInferredPackages: boolean;
     detectionUse: Array<"labels" | "commits">;
-    rules: {
-      labelConflict: RuleLevel;
-      inferredPackageMissing: RuleLevel;
-      detectionConflict: RuleLevel;
-      nonPrCommit: RuleLevel;
-    };
+    rules: RulesConfig;
   };
 };
 
@@ -121,6 +116,13 @@ const normalizePkgs = (pkgs: RawConfig["pkgs"]) =>
       return [key, { name: value.name, paths: toPathList(value.paths) }];
     }),
   );
+
+const normalizeRules = (
+  rules?: NonNullable<RawConfig["policies"]>["rules"],
+): RulesConfig => ({
+  ...defaultRuleLevels,
+  ...(rules ?? {}),
+});
 
 const normalizeChanges = (changes?: RawConfig["changes"]) => {
   const titles: Record<string, string> = { ...defaultChangeTypes };
@@ -238,19 +240,7 @@ export const normalizeConfig = (config: RawConfig, gh: string): Config => {
       autoAddInferredPackages:
         config.policies?.autoAddInferredPackages ?? false,
       detectionUse: config.policies?.detectionUse ?? defaultDetectionUse,
-      rules: {
-        labelConflict:
-          config.policies?.rules?.labelConflict ??
-          defaultRuleLevels.labelConflict,
-        inferredPackageMissing:
-          config.policies?.rules?.inferredPackageMissing ??
-          defaultRuleLevels.inferredPackageMissing,
-        detectionConflict:
-          config.policies?.rules?.detectionConflict ??
-          defaultRuleLevels.detectionConflict,
-        nonPrCommit:
-          config.policies?.rules?.nonPrCommit ?? defaultRuleLevels.nonPrCommit,
-      },
+      rules: normalizeRules(config.policies?.rules),
     },
     changeTypes: normalizedChanges.titles as Record<ChangeType, string>,
     changeTypeEmojis: normalizedChanges.icons,

@@ -25,6 +25,7 @@ export type RulesConfig = {
   inferredPackageMissing?: RuleLevel;
   detectionConflict?: RuleLevel;
   nonPrCommit?: RuleLevel;
+  versionTagMismatch?: RuleLevel;
 };
 
 export type PoliciesConfig = {
@@ -118,6 +119,7 @@ export const RulesConfigSchema = z
     inferredPackageMissing: z.enum(["skip", "warn", "error"]).optional(),
     detectionConflict: z.enum(["skip", "warn", "error"]).optional(),
     nonPrCommit: z.enum(["skip", "warn", "error"]).optional(),
+    versionTagMismatch: z.enum(["skip", "warn", "error"]).optional(),
   })
   .optional();
 

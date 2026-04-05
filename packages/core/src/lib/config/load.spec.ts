@@ -19,6 +19,7 @@ describe("config normalization", () => {
     expect(out.policies.labelMode).toBe("strict");
     expect(out.policies.detectionUse).toEqual(["labels"]);
     expect(out.policies.rules.nonPrCommit).toBe("skip");
+    expect(out.policies.rules.versionTagMismatch).toBe("error");
   });
 
   test("normalizes kebab-case keys and single-string paths", () => {

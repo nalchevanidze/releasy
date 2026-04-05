@@ -41,6 +41,7 @@ const baseApi = (changelog?: Api["config"]["changelog"]): Api => ({
         inferredPackageMissing: "error",
         detectionConflict: "error",
         nonPrCommit: "skip",
+        versionTagMismatch: "error",
       },
     },
     changelog,

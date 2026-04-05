@@ -104,6 +104,7 @@ export const main = async () => {
           inferredPackageMissing: "error",
           detectionConflict: "error",
           nonPrCommit: "skip",
+          versionTagMismatch: "error",
         },
       },
       changes: {

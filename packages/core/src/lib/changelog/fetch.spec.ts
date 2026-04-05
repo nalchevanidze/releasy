@@ -93,6 +93,7 @@ const buildApi = (options: BuildOptions = {}) => {
           detectionConflict: detectionConflictRule,
           labelConflict: "error",
           inferredPackageMissing: "error",
+          versionTagMismatch: "error",
         },
       },
     },

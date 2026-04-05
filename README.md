@@ -118,6 +118,7 @@ policies:
     inferred-package-missing: error
     detection-conflict: error
     non-pr-commit: warn
+    version-tag-mismatch: error
 
 changes:
   feature:
@@ -214,6 +215,12 @@ Default renderer behavior (when templates are not provided):
 - `warn`: include/report and continue
 - `error`: fail release/validation
 
+`policies.rules.version-tag-mismatch` controls handling of package version vs latest tag mismatch:
+
+- `error` (default): fail release/changelog generation
+- `warn`: continue and log a warning
+- `skip`: continue silently
+
 If `type` is `"custom"`, the following fields are required:
 
 - `version` (string): command to retrieve the current version
@@ -244,6 +251,7 @@ policies:
     inferred-package-missing: error
     detection-conflict: error
     non-pr-commit: warn
+    version-tag-mismatch: error
 changes:
   breaking:
     icon: 💥
@@ -284,6 +292,7 @@ policies:
     inferred-package-missing: error
     detection-conflict: error
     non-pr-commit: warn
+    version-tag-mismatch: error
 changes:
   breaking:
     icon: 💥
@@ -558,7 +567,7 @@ A dedicated workflow scaffold exists at `.github/workflows/e2e-sandbox.yaml`.
 
 ## Troubleshooting
 
-- **Version/tag mismatch**: ensure `package.json` version matches the latest git tag before running `draft-release`.
+- **Version/tag mismatch**: ensure `package.json` version matches the latest git tag before running `draft-release` (or set `policies.rules.version-tag-mismatch` to `warn`/`skip` if your workflow intentionally allows divergence).
 - **No tags in repository**: first release is supported; Relasy falls back to scanning all commits.
 - **Duplicate release PR concern**: Relasy reuses an existing open `release-*` PR instead of creating a duplicate, and refreshes the release branch with the latest generated changes on reruns.
 - **Release already exists**: publish action reuses existing release by tag and returns its outputs.
