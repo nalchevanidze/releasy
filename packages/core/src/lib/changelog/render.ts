@@ -46,7 +46,7 @@ export class RenderAPI {
   private packageStats = (pkgs: string[]) => {
     const pkgLinks = this.packageLinks(pkgs);
 
-    if (!pkgLinks.length) return space(1, "- 📦 General");
+    if (!pkgLinks.length) return "";
     if (pkgLinks.length === 1) return space(1, `- 📦 ${pkgLinks[0]}`);
 
     return space(
@@ -58,7 +58,7 @@ export class RenderAPI {
   private packageInline = (pkgs: string[]) => {
     const pkgLinks = this.packageLinks(pkgs);
 
-    if (!pkgLinks.length) return "📦 General";
+    if (!pkgLinks.length) return "";
     if (pkgLinks.length === 1) return `📦 ${pkgLinks[0]}`;
 
     return `📦 ${pkgLinks.join(", ")}`;
@@ -97,11 +97,11 @@ export class RenderAPI {
 
   private packageGroupKey = (pkgs: string[]) => {
     const normalized = this.normalizedPkgs(pkgs);
-    return normalized.length ? normalized.join(",") : "other";
+    return normalized.length ? normalized.join(",") : "unscoped";
   };
 
   private packageGroupTitle = (pkgKey: string) => {
-    if (pkgKey === "other") return "General";
+    if (pkgKey === "unscoped") return "Unscoped";
     return this.packageLinks(pkgKey.split(",")).join(" · ");
   };
 
@@ -122,19 +122,22 @@ export class RenderAPI {
 
   private change = (change: Change): string => {
     const { title, body, pkgs } = change;
-    const details = this.renderBody(body || "");
+    const template = this.api.config.changelog?.templates?.item;
+    const details = template ? this.renderBody(body || "") : "";
 
     const stats = lines([
       this.packageStats(pkgs),
       space(1, `- 🧑‍💻 ${this.author(change)}`),
     ]);
 
+    const meta = [this.packageInline(pkgs), this.authorInline(change)]
+      .filter(Boolean)
+      .join(" · ");
+
     const defaultItem = lines([
       `* ${this.ref(change)} — **${title?.trim() || "Untitled change"}**`,
-      space(1, `_${this.packageInline(pkgs)} · ${this.authorInline(change)}_`),
-      details,
+      space(1, `_${meta}_`),
     ]);
-    const template = this.api.config.changelog?.templates?.item;
 
     if (!template) return defaultItem;
 
@@ -201,7 +204,10 @@ export class RenderAPI {
       this.sectionHeading(type, label),
       ...Object.entries(byPkg).flatMap(([pkgKey, pkgChanges]) => {
         const pkgTitle = this.packageGroupTitle(pkgKey);
-        return lines([`##### 📦 ${pkgTitle}`, ...pkgChanges.map(this.change)]);
+        const pkgHeading =
+          pkgKey === "unscoped" ? `##### ${pkgTitle}` : `##### 📦 ${pkgTitle}`;
+
+        return lines([pkgHeading, ...pkgChanges.map(this.change)]);
       }),
     ]);
   };
