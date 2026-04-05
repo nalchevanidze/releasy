@@ -134,6 +134,7 @@ For `type: "npm"`, optional fields are supported:
 
 - `build` (optional string): command used after bumping (e.g. `pnpm run build`)
 - `postBump` (optional string): override command executed after bumping; takes precedence over `build`
+- `baseBranch` (optional string): base branch used for release PRs (default: `main`)
 
 If neither `build` nor `postBump` is set, Relasy auto-detects the package manager from lockfiles and runs one of:
 
@@ -147,6 +148,7 @@ If `type` is `"custom"`, the following fields are required:
 - `bump` (string): command to compute and apply the next version (e.g., `hconf next {{BUMP}}` where `{{BUMP}}` is replaced with `major`, `minor`, or `patch`)
 - `pkg` (optional string): a package reference or URL template (can include `{{PKG}}`)
 - `postBump` (optional string): optional command to execute after version bumping, such as updating lockfiles, regenerating build artifacts, or running post-version scripts
+- `baseBranch` (optional string): base branch used for release PRs (default: `main`)
 
 ---
 

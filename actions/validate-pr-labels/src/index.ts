@@ -105,7 +105,7 @@ async function run() {
       );
     }
 
-    setOutput("change_type", changeTypes[0] || "");
+    setOutput("change_type", changeTypes[0]?.changeType ?? "");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     setFailed(`validate-pr-labels failed: ${message}`);

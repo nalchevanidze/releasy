@@ -64,7 +64,7 @@ export class RenderAPI {
 
     return lines(
       [
-        `## ${tag.toString() || "Unreleased"} (${getDate()})`,
+        `## ${tag.toString()} (${getDate()})`,
         ...Object.entries(this.api.config.changeTypes).flatMap(
           ([type, label]) =>
             isKey(groups, type) ? this.section(label, groups[type]) : "",

@@ -8,6 +8,10 @@ inputs:
     required: false
     default: "true"
 
+outputs:
+  change_type:
+    description: Resolved change type key (breaking|feature|fix|chore)
+
 runs:
   using: "node20"
   main: "dist/index.js"

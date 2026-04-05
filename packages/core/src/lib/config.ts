@@ -20,12 +20,14 @@ export const CustomManagerSchema = z.object({
   // Optional fields
   pkg: z.string().optional(),
   postBump: z.string().optional(),
+  baseBranch: z.string().optional(),
 });
 
 export const NPMManagerSchema = z.object({
   type: z.literal("npm"),
   build: z.string().optional(),
   postBump: z.string().optional(),
+  baseBranch: z.string().optional(),
 });
 
 export type CustomManager = z.infer<typeof CustomManagerSchema>;

@@ -14,7 +14,7 @@ export class Relasy extends Api {
 
     return new Relasy(
       config,
-      new Github(config.gh),
+      new Github(config.gh, undefined, config.project.baseBranch),
       setupToolchain(config.project),
     );
   }

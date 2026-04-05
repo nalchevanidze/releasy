@@ -28756,8 +28756,8 @@ var require_git = __commonJS({
     exports2.getDate = getDate;
     var lastTag = () => git("describe", "--abbrev=0", "--tags");
     exports2.lastTag = lastTag;
-    var commitsAfter = (tag) => git("rev-list", "--reverse", `${tag}..`).split("\n");
-    var commitsAll = () => git("rev-list", "--reverse", "HEAD").split("\n");
+    var commitsAfter = (tag) => git("rev-list", "--reverse", `${tag}..`).split("\n").filter(Boolean);
+    var commitsAll = () => git("rev-list", "--reverse", "HEAD").split("\n").filter(Boolean);
     var isUserSet = () => {
       try {
         const user = `${git("config", "user.name")}${git("config", "user.email")}`.trim();
@@ -28829,7 +28829,7 @@ var require_gh = __commonJS({
       email: "41898282+github-actions[bot]@users.noreply.github.com"
     };
     var Github = class {
-      constructor(path, user = defaultUser) {
+      constructor(path, user = defaultUser, baseBranch = "main") {
         this.setup = () => {
           if ((0, git_1.isUserSet)())
             return;
@@ -28867,7 +28867,7 @@ var require_gh = __commonJS({
               repo: this.repo,
               state: "open",
               head: `${this.org}:${name}`,
-              base: "main",
+              base: this.baseBranch,
               per_page: 1
             });
             return data[0];
@@ -28888,14 +28888,19 @@ var require_gh = __commonJS({
           } catch {
             console.log("No new changes to commit before drafting release PR.");
           }
-          (0, git_1.git)("push", `https://${token()}@${this.path}.git`, `HEAD:${name}`);
+          try {
+            (0, git_1.git)("push", "origin", `HEAD:${name}`);
+          } catch {
+            const encoded = Buffer.from(`x-access-token:${token()}`).toString("base64");
+            (0, git_1.git)("-c", `"http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}"`, "push", `https://${this.path}.git`, `HEAD:${name}`);
+          }
           return withRetry2("Create release PR", async () => {
             const pr = await this.octokit.rest.pulls.create({
               owner: this.org,
               repo: this.repo,
               head: name,
               draft: true,
-              base: "main",
+              base: this.baseBranch,
               title: `Publish Release ${version.toString()}`,
               body
             });
@@ -28911,6 +28916,7 @@ var require_gh = __commonJS({
         this.org = org;
         this.repo = repo;
         this.user = user;
+        this.baseBranch = baseBranch;
       }
       get path() {
         return `github.com/${this.org}/${this.repo}`;
@@ -33143,12 +33149,14 @@ var require_config = __commonJS({
       version: z.string(),
       // Optional fields
       pkg: z.string().optional(),
-      postBump: z.string().optional()
+      postBump: z.string().optional(),
+      baseBranch: z.string().optional()
     });
     exports2.NPMManagerSchema = z.object({
       type: z.literal("npm"),
       build: z.string().optional(),
-      postBump: z.string().optional()
+      postBump: z.string().optional(),
+      baseBranch: z.string().optional()
     });
     exports2.ManagerSchema = z.union([exports2.NPMManagerSchema, exports2.CustomManagerSchema]);
     exports2.ConfigSchema = z.object({
@@ -45657,7 +45665,7 @@ ${space(n)}`));
         this.changes = (tag, changes) => {
           const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
           return lines([
-            `## ${tag.toString() || "Unreleased"} (${(0, git_1.getDate)()})`,
+            `## ${tag.toString()} (${(0, git_1.getDate)()})`,
             ...Object.entries(this.api.config.changeTypes).flatMap(([type, label]) => (0, utils_1.isKey)(groups, type) ? this.section(label, groups[type]) : "")
           ], 2);
         };
@@ -45728,7 +45736,7 @@ var require_dist = __commonJS({
       static async load() {
         (0, utils_1.setupEnv)();
         const config = await (0, config_1.loadConfig)();
-        return new _Relasy(config, new gh_1.Github(config.gh), (0, project_1.setupToolchain)(config.project));
+        return new _Relasy(config, new gh_1.Github(config.gh, void 0, config.project.baseBranch), (0, project_1.setupToolchain)(config.project));
       }
       changelog() {
         return (0, changelog_1.renderChangelog)(this);

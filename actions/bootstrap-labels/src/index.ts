@@ -21,7 +21,13 @@ async function run() {
   try {
     const relasy = await Relasy.load();
     const { owner, repo } = resolveRepo();
-    const octokit = getOctokit(process.env.GITHUB_TOKEN || "");
+    const token = process.env.GITHUB_TOKEN;
+
+    if (!token) {
+      throw new Error("Missing GITHUB_TOKEN.");
+    }
+
+    const octokit = getOctokit(token);
 
     const labels = await octokit.paginate(
       octokit.rest.issues.listLabelsForRepo,

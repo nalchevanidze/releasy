@@ -63,15 +63,18 @@ export class Github {
   private org: string;
   private repo: string;
   private user: { name: string; email: string };
+  private baseBranch: string;
 
   constructor(
     path: string,
     user: { name: string; email: string } = defaultUser,
+    baseBranch: string = "main",
   ) {
     const [org, repo] = path.split("/");
     this.org = org;
     this.repo = repo;
     this.user = user;
+    this.baseBranch = baseBranch;
   }
 
   private get path() {
@@ -143,7 +146,7 @@ export class Github {
         repo: this.repo,
         state: "open",
         head: `${this.org}:${name}`,
-        base: "main",
+        base: this.baseBranch,
         per_page: 1,
       });
 
@@ -170,7 +173,22 @@ export class Github {
       console.log("No new changes to commit before drafting release PR.");
     }
 
-    git("push", `https://${token()}@${this.path}.git`, `HEAD:${name}`);
+    try {
+      git("push", "origin", `HEAD:${name}`);
+    } catch {
+      // fallback for environments without preconfigured git credentials
+      const encoded = Buffer.from(`x-access-token:${token()}`).toString(
+        "base64",
+      );
+
+      git(
+        "-c",
+        `"http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}"`,
+        "push",
+        `https://${this.path}.git`,
+        `HEAD:${name}`,
+      );
+    }
 
     return withRetry("Create release PR", async () => {
       const pr = await this.octokit.rest.pulls.create({
@@ -178,7 +196,7 @@ export class Github {
         repo: this.repo,
         head: name,
         draft: true,
-        base: "main",
+        base: this.baseBranch,
         title: `Publish Release ${version.toString()}`,
         body,
       });
