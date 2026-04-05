@@ -116,6 +116,51 @@ describe("FetchApi non-PR commit rule", () => {
     expect(changes[0].number).toBe(10);
   });
 
+  test("derives change type from Conventional Commit format when labels are absent", async () => {
+    const changes = await new FetchApi(buildApi("skip", ["commits"]))
+      .changes(Version.parse("1.0.0"));
+
+    expect(changes[0].type).toBe("feature"); // title: feat: From PR
+  });
+
+  test("derives breaking change from Conventional Commit ! marker", async () => {
+    const api = buildApi("skip", ["commits"]);
+    const originalBatch = api.github.batch;
+
+    api.github.batch =
+      <O>(queryBuilder: (_: string | number) => string) =>
+      async (items: Array<string | number>) => {
+        const first = queryBuilder(items[0]);
+        if (first.includes("... on Commit")) {
+          return [
+            {
+              oid: "abc1234",
+              message: "feat!: from pr (#10)",
+              author: { name: "Dev", user: { login: "dev", url: "https://u/dev" } },
+              associatedPullRequests: {
+                nodes: [{ number: 10, repository: { nameWithOwner: "acme/demo" } }],
+              },
+            },
+          ] as O[];
+        }
+
+        return [
+          {
+            number: 10,
+            title: "feat!: Breaking API change",
+            body: "",
+            author: { login: "dev", url: "https://u/dev" },
+            labels: { nodes: [] },
+          },
+        ] as O[];
+      };
+
+    const changes = await new FetchApi(api).changes(Version.parse("1.0.0"));
+    expect(changes[0].type).toBe("breaking");
+
+    api.github.batch = originalBatch;
+  });
+
   test("warn includes synthetic changes for non-PR commits", async () => {
     const changes = await new FetchApi(buildApi("warn")).changes(Version.parse("1.0.0"));
     expect(changes).toHaveLength(2);
