@@ -39,28 +39,44 @@
 
 ## Next implementation topics
 
-- [ ] Schema cleanup: unify scattered policies/rules into a minimal grouped model
-  - [ ] Remove `configVersion` (beta schema phase).
-  - [ ] Introduce top-level `policies` grouping.
-  - [ ] Move label behavior under `policies.labels`.
-  - [ ] Move non-PR commit behavior under `policies.commits.nonPr`.
-  - [ ] Keep enforceable constraints under `policies.rules`.
+- [ ] Beta schema refresh (minimal + explicit)
+  - [ ] Remove `configVersion` while schema is in beta.
+  - [ ] Adopt kebab-case as canonical YAML key style.
+  - [ ] Canonical policy shape:
+    - [ ] `policies.label-mode`
+    - [ ] `policies.auto-add-inferred-packages`
+    - [ ] `policies.detection-use: [labels, commits]` (ordered priority)
+    - [ ] `policies.rules.<rule>: skip | warn | error`
   - [ ] Keep `changes.<type> = { icon, title, bump, paths }` as canonical change model.
   - [ ] Move changelog rendering to `changelog.templates.{header,section,item}`.
   - [ ] Replace `groupByPackage` with `changelog.grouping: package | scope | none`.
+  - [ ] Explicitly remove legacy schema fields from canonical docs/validation (`labelPolicy`, `nonPrCommitsPolicy`, top-level `rules`, `groupByPackage`, template legacy keys).
+  - [ ] Add hard-fail validation for mixed legacy+new keys in the same config.
+
+- [ ] Rules severity unification
+  - [ ] Add `policies.rules.label-conflict`.
+  - [ ] Add `policies.rules.inferred-package-missing`.
+  - [ ] Add `policies.rules.detection-conflict`.
+  - [ ] Add `policies.rules.non-pr-commit`.
+  - [ ] Define common semantics: `skip` = ignore, `warn` = report+continue, `error` = fail.
 
 - [ ] Hybrid change detection (PR labels + commitlint/conventional commits)
-  - [ ] Use `policies.detection.use: [labels, commits]` where order defines priority.
-  - [ ] Add `policies.detection.consensus: true|false` for mismatch handling.
-  - [ ] Implement commit parser adapter (Conventional Commits compatible).
-  - [ ] Normalize all inputs into one internal change model before bump/changelog.
-  - [ ] Add validator diagnostics for detection conflicts with actionable messages.
+  - [ ] Implement Conventional Commits parser adapter.
+  - [ ] Normalize labels/commits into one internal change model before bump/changelog.
+  - [ ] Apply `policies.detection-use` priority when multiple inputs are enabled.
+  - [ ] Use `policies.rules.detection-conflict` for mismatch behavior.
+  - [ ] Add validator diagnostics for source mismatch with actionable messages.
   - [ ] Add tests for labels-only, commits-only, hybrid-agree, hybrid-conflict scenarios.
 
-- [ ] Config naming/style normalization
-  - [ ] Adopt kebab-case as canonical YAML key style.
+- [ ] Action/workflow migration to new schema naming
+  - [ ] Update validate/bootstrap/draft/publish actions to read new canonical config keys.
+  - [ ] Update action input/output docs/examples to reference new policy/rule terms.
+  - [ ] Update workflow examples in README to avoid legacy field names.
+
+- [ ] Config naming/style normalization implementation
   - [ ] Add recursive key normalizer (kebab-case -> camelCase) at config load time.
   - [ ] Reject duplicate semantic keys after normalization (e.g. `auto-add` + `autoAdd`).
   - [ ] Validate only canonical normalized object.
+  - [ ] Ensure CLI (`plan`, `validate-config`, `migrate-config`) emits only canonical new-key terminology.
   - [ ] Document naming conventions and examples in README.
 

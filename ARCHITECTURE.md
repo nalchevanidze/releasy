@@ -12,7 +12,7 @@
 ### 1) Core domain (`@relasy/core`)
 Responsible for:
 - loading/validating config
-- detecting version bump from labels
+- detecting version bump from configured signals (labels, commits, or both)
 - generating changelog
 - orchestrating release PR creation
 
@@ -39,9 +39,25 @@ Action code should remain thin and delegate logic to `core`/`actions-common`.
 - `GITHUB_TOKEN` must be available for mutating operations.
 - Release PRs are idempotent: existing open release PR is reused when possible.
 - Base branch:
-  - explicit from `project.baseBranch`, otherwise
+  - explicit from `project.base-branch`, otherwise
   - auto-detected from repository default branch, fallback `main`.
-- Labels are validated against `relasy.json` contract.
+- Labels/commits are validated against the normalized `relasy.yaml` contract.
+
+## Configuration architecture (beta target)
+
+Relasy configuration is organized by concern:
+
+- `pkgs`: package map + optional path ownership globs
+- `project`: manager/runtime commands (`npm` or `custom`)
+- `policies`: behavior + enforcement
+  - scalar behavior keys (`label-mode`, `auto-add-inferred-packages`, `detection-use`)
+  - `rules` severity map (`skip | warn | error`)
+- `changes`: canonical change semantics per type (`icon`, `title`, `bump`, `paths`)
+- `changelog`: rendering templates + grouping strategy
+
+Schema style decision:
+- YAML keys are canonical **kebab-case** for readability.
+- Loader normalizes keys to camelCase internally before validation.
 
 ## Testing strategy
 

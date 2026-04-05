@@ -1,20 +1,19 @@
-# Config Versioning Strategy
+# Config Schema Status
 
-Relasy supports an explicit `configVersion` field in `relasy.json`.
+Relasy config is currently in **beta schema mode**.
 
-## Current version
+## Current policy
 
-- `configVersion: 1`
+- `configVersion` is not required and not used as a routing key.
+- Canonical config shape is defined by the latest `relasy.yaml` schema and loader normalization.
+- YAML keys are canonical **kebab-case** and normalized to camelCase internally.
 
-## Backward compatibility
+## Migration behavior
 
-- If `configVersion` is omitted, Relasy treats the config as version `1`.
-- Default values are applied for newly introduced optional fields (for example `labelPolicy`, `nonPrCommitsPolicy`).
+- `relasy migrate-config` rewrites older config styles into the current canonical shape.
+- Legacy aliases are normalized by the loader where possible.
+- Ambiguous/duplicate semantic keys after normalization are treated as configuration errors.
 
-## Forward policy
+## Future versioning
 
-When a future config schema requires breaking changes:
-
-1. introduce `configVersion: 2`
-2. keep a migration/compatibility path for older versions where feasible
-3. document breaking changes and migration steps in release notes
+When schema stabilizes, explicit versioning can be introduced again with a formal migration contract.
