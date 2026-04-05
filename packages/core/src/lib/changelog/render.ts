@@ -28,6 +28,21 @@ const applyTemplate = (template: string, values: Record<string, string>) =>
     template,
   );
 
+const formatDateLong = (date: string) => {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return date;
+
+  return parsed.toLocaleDateString("en-US", {
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};
+
+const normalizeVersionLabel = (version: string) =>
+  version.startsWith("v") ? version : `v${version}`;
+
 export class RenderAPI {
   constructor(private api: Api) {}
 
@@ -55,16 +70,12 @@ export class RenderAPI {
     );
   };
 
-  private packageInline = (pkgs: string[]) => {
-    const pkgLinks = this.packageLinks(pkgs);
+  private scopeInline = (pkgs: string[]) => {
+    const normalized = this.normalizedPkgs(pkgs);
+    if (normalized.length === 0) return "general";
 
-    if (!pkgLinks.length) return "";
-    if (pkgLinks.length === 1) return `📦 ${pkgLinks[0]}`;
-
-    return `📦 ${pkgLinks.join(", ")}`;
+    return normalized.map((pkg) => `\`${pkg}\``).join(" • ");
   };
-
-  private authorInline = (change: Change) => `🧑‍💻 ${this.author(change)}`;
 
   private quoteBlock = (text: string) =>
     text
@@ -117,6 +128,12 @@ export class RenderAPI {
     return "unknown";
   };
 
+  private refLabel = ({ number, sourceCommit }: Change) => {
+    if (number > 0) return `#${number}`;
+    if (sourceCommit) return `commit ${sourceCommit.slice(0, 7)}`;
+    return "unknown";
+  };
+
   private author = ({ author }: Change) =>
     author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
 
@@ -130,13 +147,11 @@ export class RenderAPI {
       space(1, `- 🧑‍💻 ${this.author(change)}`),
     ]);
 
-    const meta = [this.packageInline(pkgs), this.authorInline(change)]
-      .filter(Boolean)
-      .join(" · ");
-
     const defaultItem = lines([
-      `* ${this.ref(change)} — **${title?.trim() || "Untitled change"}**`,
-      space(1, `_${meta}_`),
+      `* **${this.refLabel(change)}** — ${title?.trim() || "Untitled change"}`,
+      space(1, `&nbsp; &nbsp; 📦 **Scope:** ${this.scopeInline(pkgs)}`),
+      space(1, `&nbsp; &nbsp; ✍️ **By:** ${this.author(change)}`),
+      body?.trim() ? space(1, `&nbsp; &nbsp; 📝 ${body.trim()}`) : "",
     ]);
 
     if (!template) return defaultItem;
@@ -157,23 +172,52 @@ export class RenderAPI {
 
   private sectionHeading = (type: string, label: string) => {
     const icon = this.iconForType(type);
-    return icon ? `#### ${icon} ${label}` : `#### ${label}`;
+    const headerLabel = label.toUpperCase();
+    return icon ? `### ${icon} ${headerLabel}` : `### ${headerLabel}`;
   };
+
+  private detectBump = (changes: Change[]) => {
+    const rank = { patch: 0, minor: 1, major: 2 } as const;
+
+    return changes.reduce<"major" | "minor" | "patch">((current, change) => {
+      const bump =
+        this.api.config.changeTypeBumps?.[change.type] ??
+        (change.type === "breaking"
+          ? "major"
+          : change.type === "feature"
+            ? "minor"
+            : "patch");
+
+      return rank[bump] > rank[current] ? bump : current;
+    }, "patch");
+  };
+
+  private badge = (label: string, value: string, color: string) =>
+    `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
 
   private summary = (changes: Change[]) => {
     const packageCount = new Set(changes.flatMap((change) => change.pkgs)).size;
-    const byType = groupBy(({ type }) => type, changes);
+    const bump = this.detectBump(changes).toUpperCase();
+    const bumpColor = bump === "MAJOR" ? "red" : bump === "MINOR" ? "yellow" : "green";
 
-    const typeSummary = Object.entries(this.api.config.changeTypes).flatMap(
-      ([type]) => {
-        if (!isKey(byType, type)) return [];
+    return [
+      this.badge("BUMP", bump, bumpColor),
+      this.badge("CHANGES", String(changes.length), "blue"),
+      this.badge("PACKAGES", String(packageCount || 0), "orange"),
+    ].join(" ");
+  };
 
-        const icon = this.iconForType(type) || "•";
-        return `${icon} ${byType[type].length}`;
-      },
-    );
+  private defaultHeader = (tag: Version, previousTag?: string) => {
+    const date = formatDateLong(getDate());
+    const current = normalizeVersionLabel(tag.toString());
 
-    return `> ${typeSummary.join(" · ")} · 📦 ${packageCount || 0} packages · 🔢 ${changes.length} changes`;
+    if (previousTag) {
+      const previous = normalizeVersionLabel(previousTag);
+      const compareUrl = `https://github.com/${this.api.config.gh}/compare/${previous}...${current}`;
+      return `# 🚀 ${link(current, compareUrl)} &nbsp; • &nbsp; ${date}`;
+    }
+
+    return `# 🚀 ${current} &nbsp; • &nbsp; ${date}`;
   };
 
   private section = (type: string, label: string, changes: Change[]) => {
@@ -181,7 +225,7 @@ export class RenderAPI {
     const template = this.api.config.changelog?.templates?.section;
 
     if (!template) {
-      return lines([this.sectionHeading(type, label), renderedChanges]);
+      return lines([this.sectionHeading(type, label), renderedChanges, "<br>"]);
     }
 
     return applyTemplate(template, {
@@ -206,10 +250,11 @@ export class RenderAPI {
         const pkgTitle = this.packageGroupTitle(pkgKey);
         return lines([`##### 📦 ${pkgTitle}`, ...pkgChanges.map(this.change)]);
       }),
+      "<br>",
     ]);
   };
 
-  public changes = (tag: Version, changes: Change[]) => {
+  public changes = (tag: Version, changes: Change[], previousTag?: string) => {
     const groups = groupBy(({ type }) => type, changes);
     const sectionTitles = {
       ...this.api.config.changeTypes,
@@ -221,7 +266,7 @@ export class RenderAPI {
           VERSION: tag.toString(),
           DATE: getDate(),
         })
-      : `## ${tag.toString()} (${getDate()})`;
+      : this.defaultHeader(tag, previousTag);
 
     const grouping = this.api.config.changelog?.grouping ?? "none";
 
@@ -244,11 +289,12 @@ export class RenderAPI {
 
     const hasCustomLayout = Boolean(
       this.api.config.changelog?.templates?.item ||
-      this.api.config.changelog?.templates?.section,
+        this.api.config.changelog?.templates?.section,
     );
 
     const summary = hasCustomLayout ? "" : this.summary(changes);
+    const divider = hasCustomLayout ? "" : "---";
 
-    return lines([header, summary, ...sections], 2);
+    return lines([header, summary, divider, ...sections], 2);
   };
 }

@@ -27,10 +27,10 @@ const detectChangeType = (
 };
 
 export const renderChangelog = async (api: Api) => {
-  const version = api.module.version();
+  const previousVersion = api.module.version();
 
   try {
-    version.isEqual(lastTag());
+    previousVersion.isEqual(lastTag());
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
@@ -41,7 +41,7 @@ export const renderChangelog = async (api: Api) => {
     }
   }
 
-  const changes = await new FetchApi(api).changes(version);
+  const changes = await new FetchApi(api).changes(previousVersion);
 
   await api.module.bump(
     detectChangeType(
@@ -53,5 +53,9 @@ export const renderChangelog = async (api: Api) => {
     ),
   );
 
-  return new RenderAPI(api).changes(api.module.version(), changes);
+  return new RenderAPI(api).changes(
+    api.module.version(),
+    changes,
+    previousVersion.toString(),
+  );
 };
