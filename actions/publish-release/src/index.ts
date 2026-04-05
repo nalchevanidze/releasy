@@ -1,20 +1,14 @@
 import { setFailed, getInput, setOutput, info } from "@actions/core";
 import { Octokit } from "@octokit/rest";
 import { context } from "@actions/github";
-import { Relasy } from "@relasy/core";
-
-const resolveRepo = () => {
-  const owner = context.repo.owner || process.env.RELASY_OWNER;
-  const repo = context.repo.repo || process.env.RELASY_REPO;
-
-  if (!owner || !repo) {
-    throw new Error(
-      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs.",
-    );
-  }
-
-  return { owner, repo };
-};
+import {
+  assertRepoAccess,
+  formatActionFailure,
+  getErrorStatus,
+  logActionEvent,
+  resolveRepo,
+} from "@relasy/actions-common";
+import { loadRelasy, withRetry } from "@relasy/core";
 
 const getBody = (): string => {
   const inputBody = getInput("body", { required: false });
@@ -28,43 +22,17 @@ const getBody = (): string => {
 
 const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const withRetry = async <T>(
-  label: string,
-  fn: () => Promise<T>,
-): Promise<T> => {
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      return await fn();
-    } catch (error: any) {
-      const status = error?.status as number | undefined;
-      const retryable =
-        status === 429 || (status !== undefined && status >= 500);
-
-      if (!retryable || attempt === 3) {
-        throw new Error(
-          `${label} failed after ${attempt} attempt(s): ${error?.message ?? String(error)}`,
-        );
-      }
-
-      await sleep(300 * attempt);
-    }
-  }
-
-  throw new Error(`${label} failed: exhausted retries`);
-};
-
-async function run() {
+export async function run() {
   try {
-    const relasy = await Relasy.load();
-    const { owner, repo } = resolveRepo();
+    const iRelasy = await loadRelasy();
+    const { owner, repo } = resolveRepo(context);
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-    const version = relasy.version().toString();
+    await assertRepoAccess(octokit, owner, repo);
+    const version = iRelasy.version().toString();
 
     if (isDryRun()) {
       info(
-        `[dry-run] Would create or reuse release ${version} in ${owner}/${repo}`,
+        `[relasy][dry-run] Would create or reuse release ${version} in ${owner}/${repo}`,
       );
       setOutput("id", "0");
       setOutput(
@@ -83,8 +51,8 @@ async function run() {
         });
 
         return data;
-      } catch (error: any) {
-        if (error?.status === 404) {
+      } catch (error: unknown) {
+        if (getErrorStatus(error) === 404) {
           return undefined;
         }
 
@@ -93,9 +61,14 @@ async function run() {
     });
 
     if (existing) {
-      info(`Release ${version} already exists: ${existing.html_url}`);
+      info(`[relasy] Release ${version} already exists: ${existing.html_url}`);
       setOutput("id", String(existing.id));
       setOutput("upload_url", existing.upload_url);
+      logActionEvent("publish-release", "release-reused", {
+        owner,
+        repo,
+        id: existing.id,
+      });
       return;
     }
 
@@ -111,17 +84,26 @@ async function run() {
 
     setOutput("id", data.id);
     setOutput("upload_url", data.upload_url);
+    logActionEvent("publish-release", "release-created", {
+      owner,
+      repo,
+      id: data.id,
+    });
   } catch (error) {
     const { owner, repo } = (() => {
       try {
-        return resolveRepo();
+        return resolveRepo(context);
       } catch {
         return { owner: "<unknown>", repo: "<unknown>" };
       }
     })();
 
-    const message = error instanceof Error ? error.message : String(error);
-    setFailed(`publish-release failed for ${owner}/${repo}: ${message}`);
+    setFailed(
+      formatActionFailure(
+        "publish-release",
+        `failed for ${owner}/${repo}: ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
   }
 }
 

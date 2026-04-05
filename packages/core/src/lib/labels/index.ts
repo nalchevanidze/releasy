@@ -19,14 +19,20 @@ export const genLabels = (config: Config, ls: string[]) => {
   });
 
   Object.entries(config.changeTypes).forEach(([name, longName]) => {
-    const l = createLabel("changeTypes", name, longName) as ChangeTypeLabel;
+    const l = createLabel(
+      "changeTypes",
+      name,
+      longName,
+      undefined,
+      config.changeTypeEmojis,
+    ) as ChangeTypeLabel;
     if (!changeTypes.has(l.name)) {
       changeTypes.set(l.name, l);
     }
   });
 
-  Object.entries(config.pkgs).forEach(([name, longName]) => {
-    const l = createLabel("pkgs", name, longName) as PkgLabel;
+  Object.entries(config.pkgs).forEach(([name, pkg]) => {
+    const l = createLabel("pkgs", name, pkg.name) as PkgLabel;
     if (!pkgs.has(l.name)) {
       pkgs.set(l.name, l);
     }
@@ -39,7 +45,19 @@ export const parseLabels = (
   config: Config,
   labels: string[],
 ): { changeTypes: ChangeTypeLabel[]; pkgs: PkgLabel[] } => {
-  const ls = labels.map((label) => parseLabel(config, label));
+  const ls = labels
+    .map((label) => {
+      try {
+        return parseLabel(config, label);
+      } catch (error) {
+        if ((config.policies?.labelMode ?? "strict") === "permissive") {
+          return undefined;
+        }
+
+        throw error;
+      }
+    })
+    .filter(Boolean);
 
   return {
     changeTypes: ls.filter(

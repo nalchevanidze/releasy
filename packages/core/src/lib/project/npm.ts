@@ -2,7 +2,7 @@ import fs from "node:fs";
 import fg from "fast-glob";
 import { NPMManager } from "../config";
 import { Module } from "./types";
-import { exec } from "../utils";
+import { exec, execFile } from "../utils";
 import { Version } from "../version";
 
 function readJson(p: string) {
@@ -89,7 +89,7 @@ export class NpmModule implements Module {
       patch: "patch",
     };
 
-    await exec(`npm version ${args[option]} --no-git-tag-version`);
+    await execFile("npm", ["version", args[option], "--no-git-tag-version"]);
   };
 
   async postBump() {

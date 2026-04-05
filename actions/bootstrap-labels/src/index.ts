@@ -1,27 +1,32 @@
 import { setFailed, info } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import { Relasy } from "@relasy/core";
-
-const resolveRepo = () => {
-  const owner = context.repo.owner || process.env.RELASY_OWNER;
-  const repo = context.repo.repo || process.env.RELASY_REPO;
-
-  if (!owner || !repo) {
-    throw new Error(
-      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs.",
-    );
-  }
-
-  return { owner, repo };
-};
+import {
+  assertRepoAccess,
+  formatActionFailure,
+  requireGitHubToken,
+  resolveRepo,
+} from "@relasy/actions-common";
+import { loadRelasy } from "@relasy/core";
 
 const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
-async function run() {
+export async function run() {
   try {
-    const relasy = await Relasy.load();
-    const { owner, repo } = resolveRepo();
-    const octokit = getOctokit(process.env.GITHUB_TOKEN || "");
+    const iRelasy = await loadRelasy();
+    const { owner, repo } = resolveRepo(context);
+    const token = requireGitHubToken();
+    const octokit = getOctokit(token);
+    await assertRepoAccess(
+      octokit as {
+        rest: {
+          repos: {
+            get: (args: { owner: string; repo: string }) => Promise<unknown>;
+          };
+        };
+      },
+      owner,
+      repo,
+    );
 
     const labels = await octokit.paginate(
       octokit.rest.issues.listLabelsForRepo,
@@ -33,13 +38,13 @@ async function run() {
     );
 
     const existingLabelNames = labels.map((l) => l.name);
-    const desiredLabels = relasy.labels(existingLabelNames);
+    const desiredLabels = iRelasy.labels(existingLabelNames);
 
-    info(`fetched labels: ${JSON.stringify(existingLabelNames)}`);
+    info(`[relasy] fetched labels: ${JSON.stringify(existingLabelNames)}`);
 
     if (isDryRun()) {
       info(
-        `[dry-run] Would reconcile ${desiredLabels.length} labels in ${owner}/${repo}`,
+        `[relasy][dry-run] Would reconcile ${desiredLabels.length} labels in ${owner}/${repo}`,
       );
       return;
     }
@@ -75,11 +80,10 @@ async function run() {
     );
 
     info(
-      `Label reconciliation finished. created=${created}, updated=${updated}`,
+      `[relasy] Label reconciliation finished. created=${created}, updated=${updated}`,
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    setFailed(`bootstrap-labels failed: ${message}`);
+    setFailed(formatActionFailure("bootstrap-labels", error));
   }
 }
 

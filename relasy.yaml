@@ -1,0 +1,51 @@
+project:
+  type: npm
+
+pkgs:
+  core:
+    name: "@relasy/core"
+    paths: packages/core/**
+  cli:
+    name: "@relasy/cli"
+    paths: packages/cli/**
+  actions-common:
+    name: "@relasy/actions-common"
+    paths: packages/actions-common/**
+  draft:
+    name: "@relasy/draft-release-action"
+    paths: actions/draft-release/**
+  publish:
+    name: "@relasy/publish-release-action"
+    paths: actions/publish-release/**
+  labels:
+    name: "@relasy/validate-pr-labels-action"
+    paths: actions/validate-pr-labels/**
+  bootstrap:
+    name: "@relasy/bootstrap-labels-action"
+    paths: actions/bootstrap-labels/**
+
+policies:
+  label-mode: strict
+  auto-add-inferred-packages: true
+  detection-use: [labels, commits]
+  rules:
+    label-conflict: error
+    inferred-package-missing: error
+    detection-conflict: error
+    non-pr-commit: warn
+
+changes:
+  docs:
+    icon: 📚
+    title: Documentation
+    bump: patch
+    paths:
+      - packages/docs/**/*.md
+      - "**/*.md"
+  test:
+    icon: ✅
+    title: Testing
+    bump: patch
+    paths:
+      - "**/*.spec.ts"
+      - "**/*.test.ts"

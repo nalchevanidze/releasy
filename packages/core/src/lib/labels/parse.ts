@@ -1,5 +1,11 @@
-import { ChangeType, Config, LabelType } from "../config";
+import { ChangeType, LabelType } from "../config";
 import { Label } from "./label";
+
+type ParseConfig = {
+  changeTypes: Record<string, string>;
+  changeTypeEmojis?: Record<string, string>;
+  pkgs: Record<string, string | { name: string }>;
+};
 
 const emojies: Record<string, string> = {
   package: "📦",
@@ -7,6 +13,8 @@ const emojies: Record<string, string> = {
   feature: "✨",
   fix: "🐛",
   chore: "🧹",
+  docs: "📚",
+  test: "✅",
   major: "🚨",
 };
 
@@ -19,13 +27,19 @@ const parseNameMap: Record<string, LabelType> = {
   "✨": "changeTypes",
   "🐛": "changeTypes",
   "🧹": "changeTypes",
+  "📚": "changeTypes",
+  "✅": "changeTypes",
   "🚨": "changeTypes",
   "🏷️": "changeTypes",
 };
 
-const printName = (type: LabelType, key: string) => {
+const printName = (
+  type: LabelType,
+  key: string,
+  changeTypeEmojis?: Record<string, string>,
+) => {
   if (type === "changeTypes") {
-    return `${emojies[key] ?? "🏷️"} ${key}`;
+    return `${changeTypeEmojis?.[key] ?? emojies[key] ?? "🏷️"} ${key}`;
   }
 
   return `📦 ${key}`;
@@ -34,11 +48,13 @@ const printName = (type: LabelType, key: string) => {
 const colors: Record<string, string> = {
   breaking: "B60205", // orange
   feature: "0E8A16", // green
+  docs: "1D76DB", // blue
+  test: "5319E7", // purple
   pkg: "FFFFFF",
 };
 
 export const parseLabel = (
-  config: Config,
+  config: ParseConfig,
   original: string,
 ): Label | undefined => {
   const [prefix, sub, ...rest] = original
@@ -57,19 +73,46 @@ export const parseLabel = (
     const name = prefix as ChangeType;
     const longName = config.changeTypes[name];
 
-    if (longName) return createLabel("changeTypes", name, longName, original);
+    if (longName)
+      return createLabel(
+        "changeTypes",
+        name,
+        longName,
+        original,
+        config.changeTypeEmojis,
+      );
 
     return undefined;
   }
 
-  const type = parseNameMap[prefix];
+  const dynamicTypePrefix = Object.values(
+    config.changeTypeEmojis ?? {},
+  ).includes(prefix)
+    ? "changeTypes"
+    : undefined;
+
+  const type = parseNameMap[prefix] ?? dynamicTypePrefix;
 
   if (!type) return;
 
-  const longNames: Record<string, string> = config[type];
+  const longNames: Record<string, string> =
+    type === "pkgs"
+      ? Object.fromEntries(
+          Object.entries(config.pkgs).map(([k, v]) => [
+            k,
+            typeof v === "string" ? v : v.name,
+          ]),
+        )
+      : config[type];
 
   if (longNames[sub]) {
-    return createLabel(type, sub, longNames[sub], original);
+    return createLabel(
+      type,
+      sub,
+      longNames[sub],
+      original,
+      config.changeTypeEmojis,
+    );
   }
 
   const fields = Object.keys(longNames).join(", ");
@@ -84,6 +127,7 @@ export const createLabel = <T extends LabelType>(
   key: string,
   longName: string,
   existing?: string,
+  changeTypeEmojis?: Record<string, string>,
 ): Label => {
   switch (type) {
     case "changeTypes":
@@ -92,7 +136,7 @@ export const createLabel = <T extends LabelType>(
         changeType: key as ChangeType,
         color: colors[key] || colors.pkg,
         description: `Label for versioning: ${longName}`,
-        name: printName(type, key),
+        name: printName(type, key, changeTypeEmojis),
         existing,
       };
 

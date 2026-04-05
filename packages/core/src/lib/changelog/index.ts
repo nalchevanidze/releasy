@@ -3,16 +3,27 @@ import { FetchApi } from "./fetch";
 import { RenderAPI } from "./render";
 import { Api, Change } from "./types";
 
-const detectChangeType = (changes: Change[]) => {
-  if (changes.find((c) => c.type === "breaking")) {
-    return "major";
-  }
+const detectChangeType = (
+  changes: Change[],
+  changeTypeBumps: Record<string, "major" | "minor" | "patch">,
+) => {
+  const rank = { patch: 0, minor: 1, major: 2 } as const;
 
-  if (changes.find((c) => c.type === "feature")) {
-    return "minor";
-  }
+  const highest = changes.reduce<"major" | "minor" | "patch">(
+    (current, change) => {
+      const bump =
+        changeTypeBumps[change.type] ??
+        (change.type === "breaking"
+          ? "major"
+          : change.type === "feature"
+            ? "minor"
+            : "patch");
+      return rank[bump] > rank[current] ? bump : current;
+    },
+    "patch",
+  );
 
-  return "patch";
+  return highest;
 };
 
 export const renderChangelog = async (api: Api) => {
@@ -32,7 +43,15 @@ export const renderChangelog = async (api: Api) => {
 
   const changes = await new FetchApi(api).changes(version);
 
-  await api.module.bump(detectChangeType(changes));
+  await api.module.bump(
+    detectChangeType(
+      changes,
+      (api.config?.changeTypeBumps ?? {}) as Record<
+        string,
+        "major" | "minor" | "patch"
+      >,
+    ),
+  );
 
   return new RenderAPI(api).changes(api.module.version(), changes);
 };

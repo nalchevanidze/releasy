@@ -1,6 +1,6 @@
 name: "Create a Release"
 description: "Create a release for a tag in your repository"
-author: "GitHub"
+author: "relasy"
 inputs:
   body:
     description: "Text describing the contents of the tag."

@@ -1,64 +1,55 @@
 import { setFailed, getInput, setOutput, info } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import { Relasy } from "@relasy/core";
+import {
+  formatActionFailure,
+  requireGitHubToken,
+  resolvePrNumber,
+  resolveRepo,
+} from "@relasy/actions-common";
+import {
+  checkLabels,
+  evaluatePackageScopeRules,
+  loadRelasy,
+} from "@relasy/core";
 
 type Params = {
   token?: string;
   refetch?: boolean;
 };
 
-const resolveRepo = () => {
-  const owner = context.repo.owner || process.env.RELASY_OWNER;
-  const repo = context.repo.repo || process.env.RELASY_REPO;
+type LabelLike = string | { name?: string } | null | undefined;
 
-  if (!owner || !repo) {
-    throw new Error(
-      "Could not resolve owner/repo. Set RELASY_OWNER and RELASY_REPO for local runs.",
-    );
+const toLabelName = (label: LabelLike): string | undefined => {
+  if (typeof label === "string") {
+    return label;
   }
 
-  return { owner, repo };
-};
-
-const resolvePrNumber = () => {
-  const payloadPr = context.payload.pull_request?.number;
-  const issuePr = context.issue.number;
-  const envPr = process.env.RELASY_PR_NUMBER
-    ? Number(process.env.RELASY_PR_NUMBER)
-    : undefined;
-
-  const number = payloadPr ?? issuePr ?? envPr;
-
-  if (!number || Number.isNaN(number)) {
-    throw new Error(
-      "Could not determine PR number. Ensure PR event context exists or set RELASY_PR_NUMBER for local runs.",
-    );
+  if (label && typeof label.name === "string") {
+    return label.name;
   }
 
-  return number;
+  return undefined;
 };
 
 export async function getCurrentPrLabels(
   params: Params = {},
 ): Promise<string[]> {
-  const prFromPayload = context.payload.pull_request as any | undefined;
-  const toName = (l: any) => (typeof l === "string" ? l : l?.name);
+  const prFromPayload = context.payload.pull_request as
+    | { labels?: LabelLike[] }
+    | undefined;
 
   // 1) Fast path: use event payload (no API call)
   if (prFromPayload && !params.refetch) {
-    return (prFromPayload.labels ?? []).map(toName).filter(Boolean);
+    return (prFromPayload.labels ?? [])
+      .map(toLabelName)
+      .filter(Boolean) as string[];
   }
 
   // 2) Fetch from API (latest state)
-  const token = params.token ?? process.env.GITHUB_TOKEN;
-  if (!token) {
-    throw new Error(
-      "No GitHub token provided. Pass `token` or set env GITHUB_TOKEN.",
-    );
-  }
+  const token = params.token ?? requireGitHubToken();
 
-  const { owner, repo } = resolveRepo();
-  const prNumber = resolvePrNumber();
+  const { owner, repo } = resolveRepo(context);
+  const prNumber = resolvePrNumber(context);
   const octokit = getOctokit(token);
 
   const { data: pr } = await octokit.rest.pulls.get({
@@ -67,48 +58,140 @@ export async function getCurrentPrLabels(
     pull_number: prNumber,
   });
 
-  return (pr.labels ?? []).map(toName).filter(Boolean);
+  return (pr.labels ?? []).map(toLabelName).filter(Boolean) as string[];
 }
 
-async function run() {
+export async function getCurrentPrFiles(
+  params: Params = {},
+): Promise<string[]> {
+  const token = params.token ?? requireGitHubToken();
+  const { owner, repo } = resolveRepo(context);
+  const prNumber = resolvePrNumber(context);
+  const octokit = getOctokit(token);
+
+  const files = await octokit.paginate(octokit.rest.pulls.listFiles, {
+    owner,
+    repo,
+    pull_number: prNumber,
+    per_page: 100,
+  });
+
+  return files.map((f) => f.filename);
+}
+
+const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
+
+const addPackageLabels = async (labelsToAdd: string[]) => {
+  if (labelsToAdd.length === 0) return;
+
+  if (isDryRun()) {
+    info(
+      `[relasy][dry-run] Would add inferred package labels: ${labelsToAdd.join(", ")}`,
+    );
+    return;
+  }
+
+  const token = requireGitHubToken();
+  const { owner, repo } = resolveRepo(context);
+  const prNumber = resolvePrNumber(context);
+  const octokit = getOctokit(token);
+
+  await octokit.rest.issues.addLabels({
+    owner,
+    repo,
+    issue_number: prNumber,
+    labels: labelsToAdd,
+  });
+};
+
+export async function run() {
   try {
     const headRef = context.payload.pull_request?.head?.ref;
 
     if (headRef?.startsWith("release-")) {
-      info("Skipping label validation for release branch PR");
+      info("[relasy] Skipping label validation for release branch PR");
       return;
     }
 
-    const relasy = await Relasy.load();
+    const iRelasy = await loadRelasy();
 
     const requireChangeType =
       getInput("require_change_type", {
         required: false,
       }) === "true";
 
-    const labels = await getCurrentPrLabels();
-    const { changeTypes } = relasy.parseLabels(labels);
+    const autoAddInput = getInput("auto_add_package_labels", {
+      required: false,
+    })
+      .trim()
+      .toLowerCase();
 
-    if (requireChangeType && changeTypes.length === 0) {
-      throw new Error(
-        `PR is missing a change type label. Expected one of: ${Object.keys(
-          relasy.config.changeTypes,
-        ).join(", ")}`,
-      );
+    const autoAddPackageLabels =
+      autoAddInput === ""
+        ? (iRelasy.config.policies?.autoAddInferredPackages ?? false)
+        : autoAddInput === "true";
+
+    let labels = await getCurrentPrLabels();
+    const changedFiles = await getCurrentPrFiles();
+
+    const labelResult = checkLabels(
+      iRelasy,
+      labels,
+      requireChangeType,
+      changedFiles,
+    );
+    if (!labelResult.ok) {
+      throw new Error(`[${labelResult.code}] ${labelResult.message}`);
+    }
+    const scopeResult = evaluatePackageScopeRules(
+      iRelasy,
+      labels,
+      changedFiles,
+    );
+
+    if (!scopeResult.ok) {
+      const message = `[${scopeResult.code}] ${scopeResult.message}`;
+
+      if (
+        autoAddPackageLabels &&
+        message.includes("Missing inferred package labels")
+      ) {
+        const labelsToAdd = scopeResult.message
+          .replace("Missing inferred package labels: ", "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        info(
+          `[relasy] Auto-adding inferred package labels: ${labelsToAdd.join(", ")}`,
+        );
+        await addPackageLabels(labelsToAdd);
+        labels = await getCurrentPrLabels({ refetch: true });
+      } else {
+        throw new Error(message);
+      }
     }
 
-    if (changeTypes.length > 1) {
-      throw new Error(
-        `PR has multiple change type labels. Expected only one of: ${Object.keys(
-          relasy.config.changeTypes,
-        ).join(", ")}`,
-      );
+    const finalScopeResult = evaluatePackageScopeRules(
+      iRelasy,
+      labels,
+      changedFiles,
+    );
+    if (!finalScopeResult.ok) {
+      throw new Error(`[${finalScopeResult.code}] ${finalScopeResult.message}`);
     }
 
-    setOutput("change_type", changeTypes[0] || "");
+    setOutput("change_type", labelResult.data.changeType);
+    setOutput(
+      "inferred_package_labels",
+      finalScopeResult.data.inferredScopes.join(","),
+    );
+    setOutput(
+      "missing_package_labels",
+      finalScopeResult.data.missingScopes.join(","),
+    );
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    setFailed(`validate-pr-labels failed: ${message}`);
+    setFailed(formatActionFailure("validate-pr-labels", error));
   }
 }
 

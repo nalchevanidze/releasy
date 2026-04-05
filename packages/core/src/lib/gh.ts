@@ -1,5 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { git, isUserSet } from "./git";
+import { withRetry } from "./retry";
 import { Version } from "./version";
 
 export const chunks = <T>(xs: T[]): T[][] => {
@@ -25,35 +26,6 @@ const token = () => {
 
 const isDryRun = () => process.env.RELASY_DRY_RUN === "true";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const withRetry = async <T>(
-  label: string,
-  fn: () => Promise<T>,
-): Promise<T> => {
-  const attempts = 3;
-
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      return await fn();
-    } catch (error: any) {
-      const status = error?.status as number | undefined;
-      const retryable =
-        status === 429 || (status !== undefined && status >= 500);
-
-      if (!retryable || attempt === attempts) {
-        throw new Error(
-          `${label} failed after ${attempt} attempt(s): ${error?.message ?? String(error)}`,
-        );
-      }
-
-      await sleep(300 * attempt);
-    }
-  }
-
-  throw new Error(`${label} failed: exhausted retries`);
-};
-
 const defaultUser = {
   name: "github-actions[bot]",
   email: "41898282+github-actions[bot]@users.noreply.github.com",
@@ -63,15 +35,19 @@ export class Github {
   private org: string;
   private repo: string;
   private user: { name: string; email: string };
+  private configuredBaseBranch?: string;
+  private resolvedBaseBranch?: string;
 
   constructor(
     path: string,
     user: { name: string; email: string } = defaultUser,
+    baseBranch?: string,
   ) {
     const [org, repo] = path.split("/");
     this.org = org;
     this.repo = repo;
     this.user = user;
+    this.configuredBaseBranch = baseBranch;
   }
 
   private get path() {
@@ -82,11 +58,23 @@ export class Github {
     return new Octokit({ auth: token() });
   }
 
+  private resolveBaseBranch = async (): Promise<string> => {
+    if (this.configuredBaseBranch) return this.configuredBaseBranch;
+    if (this.resolvedBaseBranch) return this.resolvedBaseBranch;
+
+    const { data } = await withRetry("Resolve repository default branch", () =>
+      this.octokit.rest.repos.get({ owner: this.org, repo: this.repo }),
+    );
+
+    this.resolvedBaseBranch = data.default_branch || "main";
+    return this.resolvedBaseBranch;
+  };
+
   public setup = () => {
     if (isUserSet()) return;
 
-    git("config", "user.name", `"${this.user.name}"`);
-    git("config", "user.email", `"${this.user.email}"`);
+    git("config", "user.name", this.user.name);
+    git("config", "user.email", this.user.email);
   };
 
   public isOwner = ({ nameWithOwner }: { nameWithOwner: string }) =>
@@ -123,10 +111,11 @@ export class Github {
     body: string,
   ): Promise<{ data: { number: number; html_url: string } }> => {
     const name = `release-${version.toString()}`;
+    const baseBranch = this.configuredBaseBranch || "main";
 
     if (isDryRun()) {
       console.log(
-        `[dry-run] Would create or reuse release PR for branch ${name} in ${this.org}/${this.repo}`,
+        `[relasy][dry-run] Would create or reuse release PR for branch ${name} (base=${baseBranch}) in ${this.org}/${this.repo}`,
       );
 
       return {
@@ -137,13 +126,15 @@ export class Github {
       };
     }
 
+    const resolvedBaseBranch = await this.resolveBaseBranch();
+
     const existing = await withRetry("Check existing release PR", async () => {
       const { data } = await this.octokit.rest.pulls.list({
         owner: this.org,
         repo: this.repo,
         state: "open",
         head: `${this.org}:${name}`,
-        base: "main",
+        base: resolvedBaseBranch,
         per_page: 1,
       });
 
@@ -151,7 +142,7 @@ export class Github {
     });
 
     if (existing) {
-      console.log(`Reusing existing release PR: ${existing.html_url}`);
+      console.log(`[relasy] Reusing existing release PR: ${existing.html_url}`);
 
       return {
         data: {
@@ -165,12 +156,29 @@ export class Github {
     git("status");
 
     try {
-      git("commit", "-m", `"${name}"`);
+      git("commit", "-m", name);
     } catch {
-      console.log("No new changes to commit before drafting release PR.");
+      console.log(
+        "[relasy] No new changes to commit before drafting release PR.",
+      );
     }
 
-    git("push", `https://${token()}@${this.path}.git`, `HEAD:${name}`);
+    try {
+      git("push", "origin", `HEAD:${name}`);
+    } catch {
+      // fallback for environments without preconfigured git credentials
+      const encoded = Buffer.from(`x-access-token:${token()}`).toString(
+        "base64",
+      );
+
+      git(
+        "-c",
+        `http.https://github.com/.extraheader=AUTHORIZATION: basic ${encoded}`,
+        "push",
+        `https://${this.path}.git`,
+        `HEAD:${name}`,
+      );
+    }
 
     return withRetry("Create release PR", async () => {
       const pr = await this.octokit.rest.pulls.create({
@@ -178,7 +186,7 @@ export class Github {
         repo: this.repo,
         head: name,
         draft: true,
-        base: "main",
+        base: resolvedBaseBranch,
         title: `Publish Release ${version.toString()}`,
         body,
       });

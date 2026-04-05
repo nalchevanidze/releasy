@@ -1,0 +1,66 @@
+name: E2E Sandbox
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_live:
+        description: "Run live sandbox checks (requires RELASY_E2E_TOKEN + sandbox repo vars)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox_harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run high-fidelity sandbox harness tests
+        run: npm -w @relasy/core run test -- --run src/integration/sandbox-flow.integration.spec.ts
+
+  sandbox_live:
+    if: ${{ inputs.run_live == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.RELASY_E2E_TOKEN }}
+      RELASY_OWNER: ${{ vars.RELASY_E2E_OWNER }}
+      RELASY_REPO: ${{ vars.RELASY_E2E_REPO }}
+      RELASY_DRY_RUN: "true"
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Live dry-run smoke (sandbox target)
+        run: |
+          npm -w @relasy/bootstrap-labels-action run build
+          npm -w @relasy/validate-pr-labels-action run build
+          npm -w @relasy/draft-release-action run build
+          npm -w @relasy/publish-release-action run build
+          echo "[relasy] Live sandbox dry-run smoke completed."

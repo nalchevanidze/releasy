@@ -1,4 +1,4 @@
-import { isNil, map, pluck, reject, uniq } from "ramda";
+import { pluck } from "ramda";
 import { Change, Api, Commit, PR } from "./types";
 import { parseLabels } from "../labels";
 import { Version } from "../version";
@@ -25,15 +25,110 @@ export const parsePRNumberFromCommitMessage = (
   return undefined;
 };
 
+type CommitResolution =
+  | { kind: "pr"; prNumber: number; commit: Commit }
+  | { kind: "non-pr"; commit: Commit };
+
+const parseConventionalType = (
+  text: string,
+  availableChangeTypes: string[],
+): string | undefined => {
+  const normalized = text.trim();
+  if (!normalized) return undefined;
+
+  const breakingByFooter = /(^|\n)BREAKING CHANGE:/m.test(normalized);
+  const match = normalized.match(
+    /^(?<type>[a-zA-Z]+)(\([^)]+\))?(?<breaking>!)?:/m,
+  );
+
+  if (breakingByFooter || match?.groups?.breaking) {
+    return availableChangeTypes.includes("breaking") ? "breaking" : undefined;
+  }
+
+  const commitType = (match?.groups?.type || "").toLowerCase();
+  const map: Record<string, string> = {
+    feat: "feature",
+    feature: "feature",
+    fix: "fix",
+    docs: "docs",
+    test: "test",
+    chore: "chore",
+    refactor: "chore",
+    perf: "chore",
+    ci: "chore",
+    build: "chore",
+  };
+
+  const mapped = map[commitType];
+  return mapped && availableChangeTypes.includes(mapped) ? mapped : undefined;
+};
+
+const resolveDetectedType = (
+  api: Api,
+  labelsType?: string,
+  commitsType?: string,
+): string => {
+  const detectionUse = api.config.policies?.detectionUse ?? ["labels"];
+  const conflictRule = api.config.policies?.rules?.detectionConflict ?? "error";
+
+  if (labelsType && commitsType && labelsType !== commitsType) {
+    const message = `Detection conflict: labels resolved "${labelsType}" but commits resolved "${commitsType}".`;
+
+    if (conflictRule === "error") {
+      throw new Error(message);
+    }
+
+    if (conflictRule === "warn") {
+      api.logger.warn(`[relasy] ${message}`);
+    }
+  }
+
+  for (const source of detectionUse) {
+    if (source === "labels" && labelsType) return labelsType;
+    if (source === "commits" && commitsType) return commitsType;
+  }
+
+  return labelsType || commitsType || "chore";
+};
+
+const toSyntheticChange = (api: Api, commit: Commit): Change => {
+  const [title, ...bodyLines] = commit.message.split("\n");
+  const body = bodyLines.join("\n").trim();
+  const authorLogin =
+    commit.author?.user?.login || commit.author?.name || "unknown";
+  const authorUrl = commit.author?.user?.url || "";
+  const commitDetected = parseConventionalType(
+    commit.message,
+    Object.keys(api.config.changeTypes),
+  );
+
+  return {
+    number: 0,
+    title: title.trim() || `Commit ${commit.oid.slice(0, 7)}`,
+    body,
+    author: { login: authorLogin, url: authorUrl },
+    labels: { nodes: [] },
+    type: (commitDetected || "chore") as Change["type"],
+    pkgs: [],
+    sourceCommit: commit.oid,
+  };
+};
+
 export class FetchApi {
   constructor(private api: Api) {}
 
-  private commits = this.api.github.batch<Commit>(
-    (i) =>
-      `object(oid: "${i}") {
+  private commits = (items: Array<string | number>) =>
+    this.api.github.batch<Commit>(
+      (i) =>
+        `object(oid: "${i}") {
       ... on Commit {
+        oid
         message
-        associatedPullRequests(first: 10) { 
+        author {
+          name
+          user { login url }
+        }
+        associatedPullRequests(first: 10) {
           nodes {
             number
             repository { nameWithOwner }
@@ -41,40 +136,111 @@ export class FetchApi {
         }
       }
     }`,
-  );
+    )(items);
 
-  private pullRequests = this.api.github.batch<PR>(
-    (i) =>
-      `pullRequest(number: ${i}) {
+  private pullRequests = (items: Array<string | number>) =>
+    this.api.github.batch<PR>(
+      (i) =>
+        `pullRequest(number: ${i}) {
       number
       title
       body
       author { login url }
       labels(first: 10) { nodes { name } }
     }`,
-  );
+    )(items);
 
-  private toPRNumber = (c: Commit): number | undefined =>
-    c.associatedPullRequests.nodes.find(({ repository }) =>
-      this.api.github.isOwner(repository),
-    )?.number ?? parsePRNumberFromCommitMessage(c.message);
+  private toResolution = (c: Commit): CommitResolution => {
+    const prNumber =
+      c.associatedPullRequests.nodes.find(({ repository }) =>
+        this.api.github.isOwner(repository),
+      )?.number ?? parsePRNumberFromCommitMessage(c.message);
 
-  public changes = (version: Version) =>
-    this.commits(commitsAfterVersion(version))
-      .then((c) => uniq(reject(isNil, c.map(this.toPRNumber))))
-      .then(this.pullRequests)
-      .then(
-        map((pr): Change => {
-          const { changeTypes, pkgs } = parseLabels(
-            this.api.config,
-            pluck("name", pr.labels.nodes),
-          );
+    if (prNumber) {
+      return { kind: "pr", prNumber, commit: c };
+    }
 
-          return {
-            ...pr,
-            type: changeTypes.find(Boolean)?.changeType ?? "chore",
-            pkgs: pkgs.map(({ pkg }) => pkg),
-          };
-        }),
+    return { kind: "non-pr", commit: c };
+  };
+
+  private toChange = (pr: PR): Change => {
+    const { changeTypes, pkgs } = parseLabels(
+      this.api.config,
+      pluck("name", pr.labels.nodes),
+    );
+
+    const fromLabels = changeTypes.find(Boolean)?.changeType;
+    const fromCommits = parseConventionalType(
+      `${pr.title}\n${pr.body || ""}`,
+      Object.keys(this.api.config.changeTypes),
+    );
+
+    return {
+      ...pr,
+      type: resolveDetectedType(
+        this.api,
+        fromLabels,
+        fromCommits,
+      ) as Change["type"],
+      pkgs: pkgs.map(({ pkg }) => pkg),
+    };
+  };
+
+  public changes = async (version: Version): Promise<Change[]> => {
+    const commits = await this.commits(commitsAfterVersion(version));
+    const resolutions = commits.map(this.toResolution);
+    const prNumbers = [
+      ...new Set(
+        resolutions
+          .filter(
+            (r): r is Extract<CommitResolution, { kind: "pr" }> =>
+              r.kind === "pr",
+          )
+          .map((r) => r.prNumber),
+      ),
+    ];
+
+    const nonPrCommits = resolutions
+      .filter(
+        (r): r is Extract<CommitResolution, { kind: "non-pr" }> =>
+          r.kind === "non-pr",
+      )
+      .map((r) => r.commit);
+
+    const prChanges = (await this.pullRequests(prNumbers)).map(this.toChange);
+
+    const commitsEnabled = (
+      this.api.config.policies?.detectionUse ?? ["labels"]
+    ).includes("commits");
+
+    if (!commitsEnabled || nonPrCommits.length === 0) {
+      return prChanges;
+    }
+
+    const rule = this.api.config.policies?.rules?.nonPrCommit ?? "skip";
+
+    if (rule === "error") {
+      const examples = nonPrCommits
+        .slice(0, 3)
+        .map((c) => c.oid.slice(0, 7))
+        .join(", ");
+
+      throw new Error(
+        `Found ${nonPrCommits.length} commits without associated PRs (examples: ${examples}). Adjust policies.rules.non-pr-commit to warn or skip to continue.`,
       );
+    }
+
+    if (rule === "skip") {
+      return prChanges;
+    }
+
+    this.api.logger.warn(
+      `[relasy] Including ${nonPrCommits.length} commits without PR linkage due to policies.rules.non-pr-commit=warn`,
+    );
+
+    const syntheticChanges = nonPrCommits.map((c) =>
+      toSyntheticChange(this.api, c),
+    );
+    return [...prChanges, ...syntheticChanges];
+  };
 }

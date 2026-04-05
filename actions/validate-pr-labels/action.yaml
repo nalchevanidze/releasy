@@ -1,5 +1,5 @@
 name: Validate PR Labels
-description: Validate pull request labels against relasy.json (changeTypes + pkgs)
+description: Validate pull request labels against relasy.yaml (changeTypes + pkgs paths/rules)
 author: relasy
 
 inputs:
@@ -7,6 +7,18 @@ inputs:
     description: Require at least one changeType label on the PR
     required: false
     default: "true"
+  auto_add_package_labels:
+    description: Automatically add inferred package labels based on changed files and pkgs.*.paths. If omitted, uses relasy.yaml policies.auto-add-inferred-packages
+    required: false
+    default: ""
+
+outputs:
+  change_type:
+    description: Resolved change type key (breaking|feature|fix|chore)
+  inferred_package_labels:
+    description: Comma-separated inferred package scope keys
+  missing_package_labels:
+    description: Comma-separated missing inferred package scope keys
 
 runs:
   using: "node20"

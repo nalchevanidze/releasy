@@ -1,0 +1,96 @@
+// Vitest Snapshot v1
+
+exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no author url) 1`] = `
+"## v4.1.0 (2026-04-05)
+
+* commit abcdef1: Standalone commit
+  - 👤 @ci-bot
+  - <details>
+      raw commit body
+    </details>"
+`;
+
+exports[`RenderAPI snapshots > custom section/item templates 1`] = `
+"## v4.0.0 (2026-04-05)
+
+### Features
+- [#40](https://github.com/acme/demo/issues/40) | Template driven entry | [@author](https://example.com/author) | [core](https://npmjs.com/package/@acme/core)"
+`;
+
+exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
+"## v2.0.0 (2026-04-05)
+
+#### Features
+* [#10](https://github.com/acme/demo/issues/10): Ship onboarding
+  - 📦 [web](https://npmjs.com/package/@acme/web)
+[core](https://npmjs.com/package/@acme/core)
+  - 👤 [@author](https://example.com/author)
+
+#### Fixes
+* [#11](https://github.com/acme/demo/issues/11): Fix race condition
+  - 📦 [core](https://npmjs.com/package/@acme/core)
+  - 👤 [@author](https://example.com/author)"
+`;
+
+exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
+"## v3.4.0 (2026-04-05)
+
+#### Breaking
+##### 📦 core
+* [#20](https://github.com/acme/demo/issues/20): Drop legacy auth
+  - 📦 [core](https://npmjs.com/package/@acme/core)
+  - 👤 [@author](https://example.com/author)
+
+#### Features
+##### 📦 core
+* [#21](https://github.com/acme/demo/issues/21): Add cache layer
+  - 📦 [core](https://npmjs.com/package/@acme/core)
+  - 👤 [@author](https://example.com/author)
+##### 📦 web
+* [#22](https://github.com/acme/demo/issues/22): Add dashboard
+  - 📦 [web](https://npmjs.com/package/@acme/web)
+  - 👤 [@author](https://example.com/author)
+
+#### Fixes
+##### 📦 web
+* [#23](https://github.com/acme/demo/issues/23): Fix pagination
+  - 📦 [web](https://npmjs.com/package/@acme/web)
+  - 👤 [@author](https://example.com/author)
+##### 📦 General
+* [#24](https://github.com/acme/demo/issues/24): Fix typo
+  - 👤 [@author](https://example.com/author)
+
+#### Chores
+##### 📦 cli
+* [#25](https://github.com/acme/demo/issues/25): Bump deps
+  - 📦 [cli](https://npmjs.com/package/@acme/cli)
+  - 👤 [@author](https://example.com/author)
+##### 📦 General
+* [#26](https://github.com/acme/demo/issues/26): Refactor scripts
+  - 👤 [@author](https://example.com/author)"
+`;
+
+exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] = `
+"## Release v1.2.3 on 2026-04-05
+
+#### Features
+##### 📦 core
+* [#1](https://github.com/acme/demo/issues/1): Add dark mode
+  - 📦 [core](https://npmjs.com/package/@acme/core)
+  - 👤 [@alice](https://example.com/alice)
+  - <details>
+      Detailed note
+      Second line
+    </details>
+
+#### Fixes
+##### 📦 cli
+* [#2](https://github.com/acme/demo/issues/2): Fix login
+  - 📦 [cli](https://npmjs.com/package/@acme/cli)
+  - 👤 [@bob](https://example.com/bob)
+
+#### Chores
+##### 📦 General
+* [#3](https://github.com/acme/demo/issues/3): Minor cleanup
+  - 👤 [@chris](https://example.com/chris)"
+`;

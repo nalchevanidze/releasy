@@ -1,26 +1,31 @@
 import { info, setFailed, setOutput } from "@actions/core";
-import { Relasy } from "@relasy/core";
+import { formatActionFailure } from "@relasy/actions-common";
+import { buildReleasePlan, draftRelease, loadRelasy } from "@relasy/core";
 
-async function run() {
+export async function run() {
   try {
-    const relasy = await Relasy.load();
-    const body = await relasy.changelog();
+    const iRelasy = await loadRelasy();
+    const plan = await buildReleasePlan(iRelasy);
+    if (plan.ok) {
+      info(
+        `[relasy] plan: version=${plan.data.version}, baseBranch=${plan.data.baseBranch}, labelMode=${plan.data.labelMode}, detectionUse=${plan.data.detectionUse.join("+")}`,
+      );
+    }
 
-    await relasy.module.postBump();
-    relasy.github.setup();
+    const result = await draftRelease(iRelasy);
 
-    const version = relasy.module.version();
-    const branch = `release-${version.toString()}`;
-    const pr = await relasy.github.release(version, body);
+    if (!result.ok) {
+      throw new Error(`[${result.code}] ${result.message}`);
+    }
 
-    setOutput("version", version.toString());
-    setOutput("release_branch", branch);
-    setOutput("pr_number", String(pr.data.number));
-    setOutput("pr_url", pr.data.html_url);
+    setOutput("version", result.data.version);
+    setOutput("release_branch", result.data.releaseBranch);
+    setOutput("pr_number", String(result.data.prNumber));
+    setOutput("pr_url", result.data.prUrl);
 
-    info(`Draft release finished: ${pr.data.html_url}`);
-  } catch (e: any) {
-    setFailed(e?.message ?? String(e));
+    info(`[relasy] Draft release finished: ${result.data.prUrl}`);
+  } catch (error: unknown) {
+    setFailed(formatActionFailure("draft-release", error));
   }
 }
 
