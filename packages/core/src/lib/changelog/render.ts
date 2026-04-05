@@ -97,11 +97,11 @@ export class RenderAPI {
 
   private packageGroupKey = (pkgs: string[]) => {
     const normalized = this.normalizedPkgs(pkgs);
-    return normalized.length ? normalized.join(",") : "unscoped";
+    return normalized.length ? normalized.join(",") : "general";
   };
 
   private packageGroupTitle = (pkgKey: string) => {
-    if (pkgKey === "unscoped") return "Unscoped";
+    if (pkgKey === "general") return "General";
     return this.packageLinks(pkgKey.split(",")).join(" · ");
   };
 
@@ -204,10 +204,7 @@ export class RenderAPI {
       this.sectionHeading(type, label),
       ...Object.entries(byPkg).flatMap(([pkgKey, pkgChanges]) => {
         const pkgTitle = this.packageGroupTitle(pkgKey);
-        const pkgHeading =
-          pkgKey === "unscoped" ? `##### ${pkgTitle}` : `##### 📦 ${pkgTitle}`;
-
-        return lines([pkgHeading, ...pkgChanges.map(this.change)]);
+        return lines([`##### 📦 ${pkgTitle}`, ...pkgChanges.map(this.change)]);
       }),
     ]);
   };

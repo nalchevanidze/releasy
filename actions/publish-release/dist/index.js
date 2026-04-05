@@ -43711,7 +43711,7 @@ ${space(n)}`));
         this.packageStats = (pkgs) => {
           const pkgLinks = this.packageLinks(pkgs);
           if (!pkgLinks.length)
-            return space(1, "- \u{1F4E6} General");
+            return "";
           if (pkgLinks.length === 1)
             return space(1, `- \u{1F4E6} ${pkgLinks[0]}`);
           return space(1, `- \u{1F4E6} Packages (${pkgLinks.length}): ${pkgLinks.join(", ")}`);
@@ -43719,7 +43719,7 @@ ${space(n)}`));
         this.packageInline = (pkgs) => {
           const pkgLinks = this.packageLinks(pkgs);
           if (!pkgLinks.length)
-            return "\u{1F4E6} General";
+            return "";
           if (pkgLinks.length === 1)
             return `\u{1F4E6} ${pkgLinks[0]}`;
           return `\u{1F4E6} ${pkgLinks.join(", ")}`;
@@ -43745,10 +43745,10 @@ ${space(n)}`));
         };
         this.packageGroupKey = (pkgs) => {
           const normalized = this.normalizedPkgs(pkgs);
-          return normalized.length ? normalized.join(",") : "other";
+          return normalized.length ? normalized.join(",") : "general";
         };
         this.packageGroupTitle = (pkgKey) => {
-          if (pkgKey === "other")
+          if (pkgKey === "general")
             return "General";
           return this.packageLinks(pkgKey.split(",")).join(" \xB7 ");
         };
@@ -43764,17 +43764,17 @@ ${space(n)}`));
         this.author = ({ author }) => author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
         this.change = (change) => {
           const { title, body, pkgs } = change;
-          const details = this.renderBody(body || "");
+          const template = this.api.config.changelog?.templates?.item;
+          const details = template ? this.renderBody(body || "") : "";
           const stats = lines([
             this.packageStats(pkgs),
             space(1, `- \u{1F9D1}\u200D\u{1F4BB} ${this.author(change)}`)
           ]);
+          const meta = [this.packageInline(pkgs), this.authorInline(change)].filter(Boolean).join(" \xB7 ");
           const defaultItem = lines([
             `* ${this.ref(change)} \u2014 **${title?.trim() || "Untitled change"}**`,
-            space(1, `_${this.packageInline(pkgs)} \xB7 ${this.authorInline(change)}_`),
-            details
+            space(1, `_${meta}_`)
           ]);
-          const template = this.api.config.changelog?.templates?.item;
           if (!template)
             return defaultItem;
           return applyTemplate(template, {

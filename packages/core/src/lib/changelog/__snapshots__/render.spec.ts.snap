@@ -6,8 +6,7 @@ exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no 
 > 🧹 1 · 📦 0 packages · 🔢 1 changes
 
 * commit abcdef1 — **Standalone commit**
-  _📦 General · 🧑‍💻 @ci-bot_
-  📝 raw commit body"
+  _🧑‍💻 @ci-bot_"
 `;
 
 exports[`RenderAPI snapshots > custom item template skips default visual summary 1`] = `
@@ -110,7 +109,7 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
   _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
 ##### 📦 General
 * [#24](https://github.com/acme/demo/issues/24) — **Fix typo**
-  _📦 General · 🧑‍💻 [@author](https://example.com/author)_
+  _🧑‍💻 [@author](https://example.com/author)_
 
 #### 🧹 Chores
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
@@ -118,7 +117,7 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
   _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@author](https://example.com/author)_
 ##### 📦 General
 * [#26](https://github.com/acme/demo/issues/26) — **Refactor scripts**
-  _📦 General · 🧑‍💻 [@author](https://example.com/author)_"
+  _🧑‍💻 [@author](https://example.com/author)_"
 `;
 
 exports[`RenderAPI snapshots > package grouping normalizes multi-package keys 1`] = `
@@ -177,11 +176,6 @@ exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] 
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
 * [#1](https://github.com/acme/demo/issues/1) — **Add dark mode**
   _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@alice](https://example.com/alice)_
-  <details>
-    <summary>📝 PR details</summary>
-  > Detailed note
-  > Second line
-  </details>
 
 #### 🐛 Fixes
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
@@ -191,7 +185,7 @@ exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] 
 #### 🧹 Chores
 ##### 📦 General
 * [#3](https://github.com/acme/demo/issues/3) — **Minor cleanup**
-  _📦 General · 🧑‍💻 [@chris](https://example.com/chris)_"
+  _🧑‍💻 [@chris](https://example.com/chris)_"
 `;
 
 exports[`RenderAPI snapshots > unknown package labels fall back to raw names with links when available 1`] = `
