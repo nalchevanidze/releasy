@@ -122,7 +122,9 @@ export async function run() {
 
     const autoAddInput = getInput("auto_add_package_labels", {
       required: false,
-    });
+    })
+      .trim()
+      .toLowerCase();
 
     const autoAddPackageLabels =
       autoAddInput === ""

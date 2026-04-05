@@ -75,6 +75,9 @@ vi.mock("@relasy/core", () => ({
       pkgs: {
         core: { name: "@acme/core", paths: ["packages/core/**"] },
       },
+      policies: {
+        autoAddInferredPackages: true,
+      },
       rules: {
         requireInferredPackageLabels: true,
       },

@@ -8,9 +8,9 @@ inputs:
     required: false
     default: "true"
   auto_add_package_labels:
-    description: Automatically add inferred package labels based on changed files and pkgs.*.paths
+    description: Automatically add inferred package labels based on changed files and pkgs.*.paths. If omitted, uses relasy.yaml policies.auto-add-inferred-packages
     required: false
-    default: "false"
+    default: ""
 
 outputs:
   change_type:

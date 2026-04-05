@@ -23,5 +23,11 @@
     "eslint": "^8.57.1",
     "prettier": "^3.8.1",
     "vitest": "^0.24.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "undici": "^6.24.0",
+      "picomatch": "^2.3.2"
+    }
   }
 }
