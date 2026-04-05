@@ -43597,12 +43597,17 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
         }
       }
       for (const source of detectionUse) {
-        if (source === "labels" && labelsType)
-          return labelsType;
-        if (source === "commits" && commitsType)
-          return commitsType;
+        if (source === "labels" && labelsType) {
+          return { type: labelsType, isRefinement: false };
+        }
+        if (source === "commits" && commitsType) {
+          return { type: commitsType, isRefinement: false };
+        }
       }
-      return labelsType || commitsType || "chore";
+      if (labelsType || commitsType) {
+        return { type: labelsType || commitsType || "chore", isRefinement: false };
+      }
+      return { type: "chore", isRefinement: true };
     };
     var toSyntheticChange = (api, commit) => {
       const [title, ...bodyLines] = commit.message.split("\n");
@@ -43618,7 +43623,8 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
         labels: { nodes: [] },
         type: commitDetected || "chore",
         pkgs: [],
-        sourceCommit: commit.oid
+        sourceCommit: commit.oid,
+        isRefinement: !commitDetected
       };
     };
     var FetchApi = class {
@@ -43666,9 +43672,11 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
           const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           const fromLabels = changeTypes.find(Boolean)?.changeType;
           const fromCommits = detectTypeFromPRCommits(this.api, pr);
+          const detected = resolveDetectedType(this.api, fromLabels, fromCommits);
           return {
             ...pr,
-            type: resolveDetectedType(this.api, fromLabels, fromCommits),
+            type: detected.type,
+            isRefinement: detected.isRefinement,
             pkgs: pkgs.map(({ pkg }) => pkg)
           };
         };
@@ -43790,9 +43798,9 @@ var require_render = __commonJS({
             space(1, `- \u{1F9D1}\u200D\u{1F4BB} ${this.author(change)}`)
           ]);
           const defaultItem = lines([
-            `* **${this.refLabel(change)}** \u2014 ${title?.trim() || "Untitled change"}`,
-            space(1, `&nbsp; &nbsp; \u{1F4E6} **Scope:** ${this.scopeInline(pkgs)}`),
-            space(1, `&nbsp; &nbsp; \u270D\uFE0F **By:** ${this.author(change)}`)
+            `* **${this.refLabel(change)}** \u2014 ${title?.trim() || "Untitled change"}  `,
+            `&nbsp; &nbsp; \u{1F4E6} **Scope:** ${this.scopeInline(pkgs)}  `,
+            `&nbsp; &nbsp; \u270D\uFE0F **By:** ${this.author(change)}`
           ]);
           if (!template)
             return defaultItem;
@@ -43862,8 +43870,30 @@ var require_render = __commonJS({
             "<br>"
           ]);
         };
+        this.refinementLink = (change) => {
+          if (change.sourceCommit) {
+            return `https://github.com/${this.api.config.gh}/commit/${change.sourceCommit}`;
+          }
+          if (change.number > 0) {
+            return this.api.github.issue(change.number);
+          }
+          return `https://github.com/${this.api.config.gh}`;
+        };
+        this.refinementItem = (change) => `&nbsp; &nbsp; [\u{1F517}](${this.refinementLink(change)}) &nbsp; ${change.title?.trim() || "Untitled change"}  `;
+        this.refinementsSection = (changes) => {
+          if (changes.length === 0)
+            return "";
+          return lines([
+            "---",
+            "### \u{1F6E0}\uFE0F OTHER REFINEMENTS",
+            "",
+            ...changes.map(this.refinementItem)
+          ]);
+        };
         this.changes = (tag, changes, previousTag, releaseDate) => {
-          const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
+          const primaryChanges = changes.filter((x) => !x.isRefinement);
+          const refinements = changes.filter((x) => x.isRefinement);
+          const groups = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
           const sectionTitles = {
             ...this.api.config.changeTypes
           };
@@ -43873,10 +43903,10 @@ var require_render = __commonJS({
             DATE: (0, git_1.getDate)()
           }) : this.defaultHeader(tag, previousTag, releaseDate);
           const grouping = this.api.config.changelog?.grouping ?? "none";
-          if (changes.length === 0) {
+          if (primaryChanges.length === 0 && refinements.length === 0) {
             return lines([header, "_No user-facing changes since the last tag._"], 2);
           }
-          const sections = grouping === "none" ? [lines(changes.map(this.change))] : Object.entries(sectionTitles).flatMap(([type, label]) => {
+          const sections = grouping === "none" ? [lines(primaryChanges.map(this.change))] : Object.entries(sectionTitles).flatMap(([type, label]) => {
             if (!(0, utils_1.isKey)(groups, type))
               return "";
             if (grouping === "package") {
@@ -43885,9 +43915,10 @@ var require_render = __commonJS({
             return this.section(type, label, groups[type]);
           });
           const hasCustomLayout = Boolean(this.api.config.changelog?.templates?.item || this.api.config.changelog?.templates?.section);
-          const summary2 = hasCustomLayout ? "" : this.summary(changes);
+          const summary2 = hasCustomLayout ? "" : this.summary(primaryChanges);
           const divider = hasCustomLayout ? "" : "---";
-          return lines([header, summary2, divider, ...sections], 2);
+          const refinementsSection = this.refinementsSection(refinements);
+          return lines([header, summary2, divider, ...sections, refinementsSection], 2);
         };
       }
     };

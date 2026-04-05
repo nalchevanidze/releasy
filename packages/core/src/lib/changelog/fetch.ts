@@ -114,7 +114,7 @@ const resolveDetectedType = (
   api: Api,
   labelsType?: string,
   commitsType?: string,
-): string => {
+): { type: string; isRefinement: boolean } => {
   const detectionUse = api.config.policies?.detectionUse ?? ["labels"];
   const conflictRule = api.config.policies?.rules?.detectionConflict ?? "error";
 
@@ -131,11 +131,20 @@ const resolveDetectedType = (
   }
 
   for (const source of detectionUse) {
-    if (source === "labels" && labelsType) return labelsType;
-    if (source === "commits" && commitsType) return commitsType;
+    if (source === "labels" && labelsType) {
+      return { type: labelsType, isRefinement: false };
+    }
+
+    if (source === "commits" && commitsType) {
+      return { type: commitsType, isRefinement: false };
+    }
   }
 
-  return labelsType || commitsType || "chore";
+  if (labelsType || commitsType) {
+    return { type: labelsType || commitsType || "chore", isRefinement: false };
+  }
+
+  return { type: "chore", isRefinement: true };
 };
 
 const toSyntheticChange = (api: Api, commit: Commit): Change => {
@@ -158,6 +167,7 @@ const toSyntheticChange = (api: Api, commit: Commit): Change => {
     type: (commitDetected || "chore") as Change["type"],
     pkgs: [],
     sourceCommit: commit.oid,
+    isRefinement: !commitDetected,
   };
 };
 
@@ -226,14 +236,12 @@ export class FetchApi {
 
     const fromLabels = changeTypes.find(Boolean)?.changeType;
     const fromCommits = detectTypeFromPRCommits(this.api, pr);
+    const detected = resolveDetectedType(this.api, fromLabels, fromCommits);
 
     return {
       ...pr,
-      type: resolveDetectedType(
-        this.api,
-        fromLabels,
-        fromCommits,
-      ) as Change["type"],
+      type: detected.type as Change["type"],
+      isRefinement: detected.isRefinement,
       pkgs: pkgs.map(({ pkg }) => pkg),
     };
   };
