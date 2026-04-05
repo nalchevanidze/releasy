@@ -14,9 +14,10 @@ export type {
   LabelPolicy,
   LabelType,
   Manager,
+  ChangeTypeScope,
   NPMManager,
   NonPrCommitPolicy,
-  PackageScope,
+  PkgConfig,
   RawConfig,
   RulesConfig,
 } from "./config/schema";

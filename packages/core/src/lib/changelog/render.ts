@@ -39,7 +39,8 @@ export class RenderAPI {
   constructor(private api: Api) {}
 
   private pkg = (labelName: string) => {
-    const longName = this.api.config.pkgs[labelName];
+    const pkg = this.api.config.pkgs[labelName];
+    const longName = pkg?.name || labelName;
     const url = this.api.module.pkg(longName);
     return url ? link(labelName, url) : longName;
   };

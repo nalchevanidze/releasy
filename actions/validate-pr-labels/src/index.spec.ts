@@ -69,8 +69,8 @@ vi.mock("@relasy/core", () => ({
         chore: "chore",
         breaking: "breaking",
       },
-      packageScopes: {
-        core: { paths: ["packages/core/**"] },
+      pkgs: {
+        core: { name: "@acme/core", paths: ["packages/core/**"] },
       },
       rules: {
         requireInferredPackageLabels: true,

@@ -33184,25 +33184,22 @@ var require_schema = __commonJS({
       return result;
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.ConfigSchema = exports2.RulesConfigSchema = exports2.PackageScopeSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = void 0;
+    exports2.ConfigSchema = exports2.RulesConfigSchema = exports2.ChangeTypeScopeSchema = exports2.PkgConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = void 0;
     var z = __importStar(require_zod());
     exports2.ChangelogConfigSchema = z.object({
       headerTemplate: z.string().optional(),
       sectionTemplate: z.string().optional(),
       itemTemplate: z.string().optional(),
-      sectionTitles: z.object({
-        breaking: z.string().optional(),
-        feature: z.string().optional(),
-        fix: z.string().optional(),
-        chore: z.string().optional()
-      }).optional(),
+      sectionTitles: z.record(z.string(), z.string()).optional(),
       groupByPackage: z.boolean().optional()
     }).optional();
     exports2.changeTypes = {
       breaking: "Breaking change (major bump)",
       feature: "New feature (minor bump)",
       fix: "Bug fix (patch bump)",
-      chore: "Minor / maintenance change (patch bump)"
+      chore: "Minor / maintenance change (patch bump)",
+      docs: "Documentation change (patch bump)",
+      test: "Testing change (patch bump)"
     };
     exports2.CustomManagerSchema = z.object({
       type: z.literal("custom"),
@@ -33220,8 +33217,14 @@ var require_schema = __commonJS({
       baseBranch: z.string().optional()
     });
     exports2.ManagerSchema = z.union([exports2.NPMManagerSchema, exports2.CustomManagerSchema]);
-    exports2.PackageScopeSchema = z.object({
-      pkg: z.string().optional(),
+    exports2.PkgConfigSchema = z.union([
+      z.string(),
+      z.object({
+        name: z.string(),
+        paths: z.array(z.string()).min(1).optional()
+      })
+    ]);
+    exports2.ChangeTypeScopeSchema = z.object({
       paths: z.array(z.string()).min(1)
     });
     exports2.RulesConfigSchema = z.object({
@@ -33230,11 +33233,11 @@ var require_schema = __commonJS({
     }).optional();
     exports2.ConfigSchema = z.object({
       configVersion: z.literal(1).optional(),
-      pkgs: z.record(z.string(), z.string()),
+      pkgs: z.record(z.string(), exports2.PkgConfigSchema),
       project: exports2.ManagerSchema,
       labelPolicy: z.enum(["strict", "permissive"]).optional(),
       nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
-      packageScopes: z.record(z.string(), exports2.PackageScopeSchema).optional(),
+      changeTypeScopes: z.record(z.string(), exports2.ChangeTypeScopeSchema).optional(),
       rules: exports2.RulesConfigSchema,
       changelog: exports2.ChangelogConfigSchema
     });
@@ -36046,7 +36049,9 @@ var require_defaults = __commonJS({
       breaking: "Breaking change (major bump)",
       feature: "New feature (minor bump)",
       fix: "Bug fix (patch bump)",
-      chore: "Minor / maintenance change (patch bump)"
+      chore: "Minor / maintenance change (patch bump)",
+      docs: "Documentation change (patch bump)",
+      test: "Testing change (patch bump)"
     };
   }
 });
@@ -36099,10 +36104,17 @@ var require_load = __commonJS({
       }
     };
     exports2.validateChangelogTemplates = validateChangelogTemplates;
+    var normalizePkgs = (pkgs) => Object.fromEntries(Object.entries(pkgs).map(([key, value]) => {
+      if (typeof value === "string") {
+        return [key, { name: value }];
+      }
+      return [key, { name: value.name, paths: value.paths }];
+    }));
     var normalizeConfig = (config, gh) => {
       (0, exports2.validateChangelogTemplates)(config.changelog);
       return {
         ...config,
+        pkgs: normalizePkgs(config.pkgs),
         gh,
         configVersion: config.configVersion ?? 1,
         labelPolicy: config.labelPolicy ?? "strict",
@@ -48451,6 +48463,8 @@ var require_parse4 = __commonJS({
       feature: "\u2728",
       fix: "\u{1F41B}",
       chore: "\u{1F9F9}",
+      docs: "\u{1F4DA}",
+      test: "\u2705",
       major: "\u{1F6A8}"
     };
     var parseNameMap = {
@@ -48462,6 +48476,8 @@ var require_parse4 = __commonJS({
       "\u2728": "changeTypes",
       "\u{1F41B}": "changeTypes",
       "\u{1F9F9}": "changeTypes",
+      "\u{1F4DA}": "changeTypes",
+      "\u2705": "changeTypes",
       "\u{1F6A8}": "changeTypes",
       "\u{1F3F7}\uFE0F": "changeTypes"
     };
@@ -48474,6 +48490,8 @@ var require_parse4 = __commonJS({
     var colors = {
       breaking: "B60205",
       feature: "0E8A16",
+      docs: "1D76DB",
+      test: "5319E7",
       pkg: "FFFFFF"
     };
     var parseLabel = (config, original) => {
@@ -48491,7 +48509,7 @@ var require_parse4 = __commonJS({
       const type = parseNameMap[prefix];
       if (!type)
         return;
-      const longNames = config[type];
+      const longNames = type === "pkgs" ? Object.fromEntries(Object.entries(config.pkgs).map(([k, v]) => [k, typeof v === "string" ? v : v.name])) : config[type];
       if (longNames[sub]) {
         return (0, exports2.createLabel)(type, sub, longNames[sub], original);
       }
@@ -48554,8 +48572,8 @@ var require_labels = __commonJS({
           changeTypes.set(l.name, l);
         }
       });
-      Object.entries(config.pkgs).forEach(([name, longName]) => {
-        const l = (0, parse_1.createLabel)("pkgs", name, longName);
+      Object.entries(config.pkgs).forEach(([name, pkg]) => {
+        const l = (0, parse_1.createLabel)("pkgs", name, pkg.name);
         if (!pkgs.has(l.name)) {
           pkgs.set(l.name, l);
         }
@@ -48709,7 +48727,8 @@ ${space(n)}`));
       constructor(api) {
         this.api = api;
         this.pkg = (labelName) => {
-          const longName = this.api.config.pkgs[labelName];
+          const pkg = this.api.config.pkgs[labelName];
+          const longName = pkg?.name || labelName;
           const url = this.api.module.pkg(longName);
           return url ? link(labelName, url) : longName;
         };
@@ -48872,16 +48891,33 @@ var require_labels_check = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.checkLabels = void 0;
     var result_1 = require_result();
-    var checkLabels2 = (iRelasy, labels, requireChangeType) => {
+    var escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var globToRegExp = (glob) => {
+      const normalized = glob.replace(/\\/g, "/");
+      const pattern = normalized.split("**").map((part) => part.split("*").map(escapeRegex).join("[^/]*")).join(".*");
+      return new RegExp(`^${pattern}$`);
+    };
+    var inferChangeTypeFromFiles = (changedFiles, scopes) => {
+      for (const [changeType, scope] of Object.entries(scopes)) {
+        const matched = changedFiles.some((file) => scope.paths.some((pattern) => globToRegExp(pattern).test(file.replace(/\\/g, "/"))));
+        if (matched)
+          return changeType;
+      }
+      return void 0;
+    };
+    var checkLabels2 = (iRelasy, labels, requireChangeType, changedFiles = []) => {
       try {
         const { changeTypes } = iRelasy.parseLabels(labels);
-        if (requireChangeType && changeTypes.length === 0) {
-          return (0, result_1.fail)("LABEL_POLICY_ERROR", `PR is missing a change type label. Expected one of: ${Object.keys(iRelasy.config.changeTypes).join(", ")}`);
-        }
         if (changeTypes.length > 1) {
           return (0, result_1.fail)("LABEL_POLICY_ERROR", `PR has multiple change type labels. Expected only one of: ${Object.keys(iRelasy.config.changeTypes).join(", ")}`);
         }
-        return (0, result_1.ok)({ changeType: changeTypes[0]?.changeType ?? "" });
+        const explicit = changeTypes[0]?.changeType;
+        const inferred = iRelasy.config.changeTypeScopes ? inferChangeTypeFromFiles(changedFiles, iRelasy.config.changeTypeScopes) : void 0;
+        const resolved = explicit || inferred || "";
+        if (requireChangeType && !resolved) {
+          return (0, result_1.fail)("LABEL_POLICY_ERROR", `PR is missing a change type label. Expected one of: ${Object.keys(iRelasy.config.changeTypes).join(", ")}`);
+        }
+        return (0, result_1.ok)({ changeType: resolved });
       } catch (error) {
         return (0, result_1.fail)("LABEL_POLICY_ERROR", error instanceof Error ? error.message : String(error));
       }
@@ -48908,8 +48944,7 @@ var require_package_scopes = __commonJS({
       return patterns.some((pattern) => globToRegExp(pattern).test(normalized));
     };
     var inferPackageScopes = (iRelasy, labels, changedFiles) => {
-      const packageScopes = iRelasy.config.packageScopes ?? {};
-      const inferredScopes = Object.entries(packageScopes).filter(([_, scope]) => matchesAnyInFiles(changedFiles, scope.paths)).map(([scope]) => scope).sort();
+      const inferredScopes = Object.entries(iRelasy.config.pkgs).filter(([_, pkg]) => (pkg.paths ?? []).length > 0).filter(([_, pkg]) => matchesAnyInFiles(changedFiles, pkg.paths ?? [])).map(([scope]) => scope).sort();
       const existingScopes = iRelasy.parseLabels(labels).pkgs.map((p) => p.pkg).sort();
       const missingScopes = inferredScopes.filter((s) => !existingScopes.includes(s));
       const conflictingScopes = existingScopes.filter((s) => !inferredScopes.includes(s));
@@ -48918,8 +48953,8 @@ var require_package_scopes = __commonJS({
     exports2.inferPackageScopes = inferPackageScopes;
     var matchesAnyInFiles = (changedFiles, patterns) => changedFiles.some((f) => matchesAny(f, patterns));
     var evaluatePackageScopeRules2 = (iRelasy, labels, changedFiles) => {
-      const packageScopes = iRelasy.config.packageScopes ?? {};
-      if (Object.keys(packageScopes).length === 0) {
+      const hasPkgPathConfig = Object.values(iRelasy.config.pkgs).some((pkg) => (pkg.paths ?? []).length > 0);
+      if (!hasPkgPathConfig) {
         return (0, result_1.ok)({
           inferredScopes: [],
           existingScopes: [],
@@ -49213,11 +49248,16 @@ async function run() {
       required: false
     }) === "true";
     let labels = await getCurrentPrLabels();
-    const labelResult = (0, import_core2.checkLabels)(iRelasy, labels, requireChangeType);
+    const changedFiles = await getCurrentPrFiles();
+    const labelResult = (0, import_core2.checkLabels)(
+      iRelasy,
+      labels,
+      requireChangeType,
+      changedFiles
+    );
     if (!labelResult.ok) {
       throw new Error(`[${labelResult.code}] ${labelResult.message}`);
     }
-    const changedFiles = await getCurrentPrFiles();
     const scopeResult = (0, import_core2.evaluatePackageScopeRules)(iRelasy, labels, changedFiles);
     if (!scopeResult.ok) {
       const message = `[${scopeResult.code}] ${scopeResult.message}`;

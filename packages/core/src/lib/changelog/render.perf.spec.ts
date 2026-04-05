@@ -11,13 +11,15 @@ const api: Api = {
   config: {
     configVersion: 1,
     gh: "acme/demo",
-    pkgs: { core: "@acme/core" },
+    pkgs: { core: { name: "@acme/core" } },
     project: { type: "npm" },
     changeTypes: {
       breaking: "Breaking",
       feature: "Features",
       fix: "Fixes",
       chore: "Chores",
+      docs: "Documentation",
+      test: "Testing",
     },
     labelPolicy: "strict",
     changelog: { groupByPackage: true },

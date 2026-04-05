@@ -10,13 +10,19 @@ vi.mock("../git", () => ({
 const baseApi = (changelog?: Api["config"]["changelog"]): Api => ({
   config: {
     gh: "acme/demo",
-    pkgs: { core: "@acme/core", cli: "@acme/cli", web: "@acme/web" },
+    pkgs: {
+      core: { name: "@acme/core" },
+      cli: { name: "@acme/cli" },
+      web: { name: "@acme/web" },
+    },
     project: { type: "npm" },
     changeTypes: {
       breaking: "Breaking",
       feature: "Features",
       fix: "Fixes",
       chore: "Chores",
+      docs: "Documentation",
+      test: "Testing",
     },
     labelPolicy: "strict",
     changelog,

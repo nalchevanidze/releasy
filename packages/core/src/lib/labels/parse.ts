@@ -1,5 +1,10 @@
-import { ChangeType, Config, LabelType } from "../config";
+import { ChangeType, LabelType } from "../config";
 import { Label } from "./label";
+
+type ParseConfig = {
+  changeTypes: Record<string, string>;
+  pkgs: Record<string, string | { name: string }>;
+};
 
 const emojies: Record<string, string> = {
   package: "📦",
@@ -7,6 +12,8 @@ const emojies: Record<string, string> = {
   feature: "✨",
   fix: "🐛",
   chore: "🧹",
+  docs: "📚",
+  test: "✅",
   major: "🚨",
 };
 
@@ -19,6 +26,8 @@ const parseNameMap: Record<string, LabelType> = {
   "✨": "changeTypes",
   "🐛": "changeTypes",
   "🧹": "changeTypes",
+  "📚": "changeTypes",
+  "✅": "changeTypes",
   "🚨": "changeTypes",
   "🏷️": "changeTypes",
 };
@@ -34,11 +43,13 @@ const printName = (type: LabelType, key: string) => {
 const colors: Record<string, string> = {
   breaking: "B60205", // orange
   feature: "0E8A16", // green
+  docs: "1D76DB", // blue
+  test: "5319E7", // purple
   pkg: "FFFFFF",
 };
 
 export const parseLabel = (
-  config: Config,
+  config: ParseConfig,
   original: string,
 ): Label | undefined => {
   const [prefix, sub, ...rest] = original
@@ -66,7 +77,12 @@ export const parseLabel = (
 
   if (!type) return;
 
-  const longNames: Record<string, string> = config[type];
+  const longNames: Record<string, string> =
+    type === "pkgs"
+      ? Object.fromEntries(
+          Object.entries(config.pkgs).map(([k, v]) => [k, typeof v === "string" ? v : v.name]),
+        )
+      : config[type];
 
   if (longNames[sub]) {
     return createLabel(type, sub, longNames[sub], original);

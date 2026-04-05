@@ -25,8 +25,8 @@ export const genLabels = (config: Config, ls: string[]) => {
     }
   });
 
-  Object.entries(config.pkgs).forEach(([name, longName]) => {
-    const l = createLabel("pkgs", name, longName) as PkgLabel;
+  Object.entries(config.pkgs).forEach(([name, pkg]) => {
+    const l = createLabel("pkgs", name, pkg.name) as PkgLabel;
     if (!pkgs.has(l.name)) {
       pkgs.set(l.name, l);
     }

@@ -3,9 +3,9 @@ import { evaluatePackageScopeRules } from "./package-scopes";
 
 const iRelasy = {
   config: {
-    packageScopes: {
-      core: { paths: ["packages/core/**"] },
-      cli: { paths: ["packages/cli/**"] },
+    pkgs: {
+      core: { name: "@acme/core", paths: ["packages/core/**"] },
+      cli: { name: "@acme/cli", paths: ["packages/cli/**"] },
     },
     rules: {
       requireInferredPackageLabels: true,

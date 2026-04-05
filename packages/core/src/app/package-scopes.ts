@@ -31,10 +31,9 @@ export const inferPackageScopes = (
   labels: string[],
   changedFiles: string[],
 ): ScopeInference => {
-  const packageScopes = iRelasy.config.packageScopes ?? {};
-
-  const inferredScopes = Object.entries(packageScopes)
-    .filter(([_, scope]) => matchesAnyInFiles(changedFiles, scope.paths))
+  const inferredScopes = Object.entries(iRelasy.config.pkgs)
+    .filter(([_, pkg]) => (pkg.paths ?? []).length > 0)
+    .filter(([_, pkg]) => matchesAnyInFiles(changedFiles, pkg.paths ?? []))
     .map(([scope]) => scope)
     .sort();
 
@@ -57,8 +56,11 @@ export const evaluatePackageScopeRules = (
   labels: string[],
   changedFiles: string[],
 ): Result<ScopeInference> => {
-  const packageScopes = iRelasy.config.packageScopes ?? {};
-  if (Object.keys(packageScopes).length === 0) {
+  const hasPkgPathConfig = Object.values(iRelasy.config.pkgs).some(
+    (pkg) => (pkg.paths ?? []).length > 0,
+  );
+
+  if (!hasPkgPathConfig) {
     return ok({
       inferredScopes: [],
       existingScopes: [],

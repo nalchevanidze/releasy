@@ -1,5 +1,5 @@
 name: Validate PR Labels
-description: Validate pull request labels against relasy.yaml (changeTypes + pkgs + packageScopes)
+description: Validate pull request labels against relasy.yaml (changeTypes + pkgs paths/rules)
 author: relasy
 
 inputs:
@@ -8,7 +8,7 @@ inputs:
     required: false
     default: "true"
   auto_add_package_labels:
-    description: Automatically add inferred package labels based on changed files and packageScopes
+    description: Automatically add inferred package labels based on changed files and pkgs.*.paths
     required: false
     default: "false"
 

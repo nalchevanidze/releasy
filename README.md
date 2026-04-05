@@ -98,24 +98,21 @@ At a high level, `relasy.yaml` describes:
 - label parsing behavior (`labelPolicy`)
 - changelog rendering preferences (`changelog`)
 - non-PR commit handling policy (`nonPrCommitsPolicy`)
-- path-aware package scope inference (`packageScopes`) and rule controls (`rules`)
+- path-aware package scope inference (via `pkgs.<key>.paths`) and rule controls (`rules`)
 
 ### Schema overview
 
 ```yaml
 configVersion: 1
 pkgs:
-  shortName: long-package-identifier
+  shortName:
+    name: long-package-identifier
+    paths:
+      - "packages/shortName/**"
 project:
   type: npm
 labelPolicy: strict
 nonPrCommitsPolicy: skip
-packageScopes:
-  core:
-    pkg: "@scope/core"
-    paths:
-      - "packages/core/**"
-      - "libs/shared/**"
 rules:
   requireInferredPackageLabels: true
   blockOnLabelConflict: false

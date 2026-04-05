@@ -7,7 +7,7 @@ export type ChangelogConfig = {
   headerTemplate?: string;
   sectionTemplate?: string;
   itemTemplate?: string;
-  sectionTitles?: Partial<Record<ChangeType, string>>;
+  sectionTitles?: Record<string, string>;
   groupByPackage?: boolean;
 };
 
@@ -15,8 +15,12 @@ export type ConfigVersion = 1;
 
 export type NonPrCommitPolicy = "include" | "skip" | "strict-fail";
 
-export type PackageScope = {
-  pkg?: string;
+export type PkgConfig = {
+  name: string;
+  paths?: string[];
+};
+
+export type ChangeTypeScope = {
   paths: string[];
 };
 
@@ -30,14 +34,7 @@ export const ChangelogConfigSchema = z
     headerTemplate: z.string().optional(),
     sectionTemplate: z.string().optional(),
     itemTemplate: z.string().optional(),
-    sectionTitles: z
-      .object({
-        breaking: z.string().optional(),
-        feature: z.string().optional(),
-        fix: z.string().optional(),
-        chore: z.string().optional(),
-      })
-      .optional(),
+    sectionTitles: z.record(z.string(), z.string()).optional(),
     groupByPackage: z.boolean().optional(),
   })
   .optional();
@@ -47,6 +44,8 @@ export const changeTypes = {
   feature: "New feature (minor bump)",
   fix: "Bug fix (patch bump)",
   chore: "Minor / maintenance change (patch bump)",
+  docs: "Documentation change (patch bump)",
+  test: "Testing change (patch bump)",
 };
 
 export type ChangeType = keyof typeof changeTypes;
@@ -74,8 +73,15 @@ export type NPMManager = z.infer<typeof NPMManagerSchema>;
 export const ManagerSchema = z.union([NPMManagerSchema, CustomManagerSchema]);
 export type Manager = z.infer<typeof ManagerSchema>;
 
-export const PackageScopeSchema = z.object({
-  pkg: z.string().optional(),
+export const PkgConfigSchema = z.union([
+  z.string(),
+  z.object({
+    name: z.string(),
+    paths: z.array(z.string()).min(1).optional(),
+  }),
+]);
+
+export const ChangeTypeScopeSchema = z.object({
   paths: z.array(z.string()).min(1),
 });
 
@@ -88,11 +94,11 @@ export const RulesConfigSchema = z
 
 export const ConfigSchema = z.object({
   configVersion: z.literal(1).optional(),
-  pkgs: z.record(z.string(), z.string()),
+  pkgs: z.record(z.string(), PkgConfigSchema),
   project: ManagerSchema,
   labelPolicy: z.enum(["strict", "permissive"]).optional(),
   nonPrCommitsPolicy: z.enum(["include", "skip", "strict-fail"]).optional(),
-  packageScopes: z.record(z.string(), PackageScopeSchema).optional(),
+  changeTypeScopes: z.record(z.string(), ChangeTypeScopeSchema).optional(),
   rules: RulesConfigSchema,
   changelog: ChangelogConfigSchema,
 });

@@ -15,7 +15,7 @@ import dotenv from "dotenv";
 
 type RawRelasyConfig = {
   configVersion?: number;
-  pkgs: Record<string, string>;
+  pkgs: Record<string, string | { name: string; paths?: string[] }>;
   project: Record<string, unknown>;
   changelog?: {
     headerTemplate?: string;
@@ -76,16 +76,15 @@ export const main = async () => {
 
     const skeleton = {
       configVersion: 1,
-      pkgs: { core: "@scope/core" },
-      project: { type: "npm" },
-      labelPolicy: "strict",
-      nonPrCommitsPolicy: "skip",
-      packageScopes: {
+      pkgs: {
         core: {
-          pkg: "@scope/core",
+          name: "@scope/core",
           paths: ["packages/core/**"],
         },
       },
+      project: { type: "npm" },
+      labelPolicy: "strict",
+      nonPrCommitsPolicy: "skip",
       rules: {
         requireInferredPackageLabels: true,
         blockOnLabelConflict: false,

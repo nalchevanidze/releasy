@@ -118,13 +118,17 @@ export async function run() {
       }) === "true";
 
     let labels = await getCurrentPrLabels();
+    const changedFiles = await getCurrentPrFiles();
 
-    const labelResult = checkLabels(iRelasy, labels, requireChangeType);
+    const labelResult = checkLabels(
+      iRelasy,
+      labels,
+      requireChangeType,
+      changedFiles,
+    );
     if (!labelResult.ok) {
       throw new Error(`[${labelResult.code}] ${labelResult.message}`);
     }
-
-    const changedFiles = await getCurrentPrFiles();
     const scopeResult = evaluatePackageScopeRules(iRelasy, labels, changedFiles);
 
     if (!scopeResult.ok) {

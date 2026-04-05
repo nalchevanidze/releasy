@@ -64,7 +64,7 @@ describe("FetchApi non-PR commit policy", () => {
     return {
       config: {
         gh: "acme/demo",
-        pkgs: { core: "@acme/core" },
+        pkgs: { core: { name: "@acme/core" } },
         project: { type: "npm" },
         changeTypes: {
           breaking: "Breaking",

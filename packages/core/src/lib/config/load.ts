@@ -15,9 +15,10 @@ type ExtraConfig = {
   changeTypes: Record<ChangeType, string>;
   labelPolicy?: "strict" | "permissive";
   nonPrCommitsPolicy?: "include" | "skip" | "strict-fail";
+  pkgs: Record<string, { name: string; paths?: string[] }>;
 };
 
-export type Config = RawConfig & ExtraConfig;
+export type Config = Omit<RawConfig, "pkgs"> & ExtraConfig;
 
 const readPlaceholders = (template: string): string[] => {
   const out: string[] = [];
@@ -85,11 +86,23 @@ export const validateChangelogTemplates = (changelog?: ChangelogConfig) => {
   }
 };
 
+const normalizePkgs = (pkgs: RawConfig["pkgs"]) =>
+  Object.fromEntries(
+    Object.entries(pkgs).map(([key, value]) => {
+      if (typeof value === "string") {
+        return [key, { name: value }];
+      }
+
+      return [key, { name: value.name, paths: value.paths }];
+    }),
+  );
+
 export const normalizeConfig = (config: RawConfig, gh: string): Config => {
   validateChangelogTemplates(config.changelog);
 
   return {
     ...config,
+    pkgs: normalizePkgs(config.pkgs),
     gh,
     configVersion: config.configVersion ?? 1,
     labelPolicy: config.labelPolicy ?? "strict",
