@@ -38,7 +38,21 @@ export const exit = (error: Error) => {
 
 export const setupEnv = () => {
   const token = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN;
-  if (!token) throw new Error("Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).");
+
+  if (!token || token.trim().length === 0) {
+    const cwd = process.cwd();
+
+    throw new Error(
+      [
+        "Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).",
+        `cwd: ${cwd}`,
+        "Hints:",
+        "- export GITHUB_TOKEN=... before running relasy",
+        "- if you rely on .env, run the command from repo root (where .env lives)",
+        "- or pass an explicit env file path in the CLI",
+      ].join("\n"),
+    );
+  }
 
   // provide both names for compatibility
   process.env.GITHUB_TOKEN = process.env.GITHUB_TOKEN || token;

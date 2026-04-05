@@ -22510,8 +22510,17 @@ var require_utils2 = __commonJS({
     exports2.exit = exit;
     var setupEnv = () => {
       const token = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN;
-      if (!token)
-        throw new Error("Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).");
+      if (!token || token.trim().length === 0) {
+        const cwd2 = process.cwd();
+        throw new Error([
+          "Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).",
+          `cwd: ${cwd2}`,
+          "Hints:",
+          "- export GITHUB_TOKEN=... before running relasy",
+          "- if you rely on .env, run the command from repo root (where .env lives)",
+          "- or pass an explicit env file path in the CLI"
+        ].join("\n"));
+      }
       process.env.GITHUB_TOKEN = process.env.GITHUB_TOKEN || token;
       process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
       const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
