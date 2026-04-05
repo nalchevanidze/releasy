@@ -75,18 +75,31 @@ describe("config normalization", () => {
 });
 
 describe("config file loading", () => {
-  test("loader implementation no longer references relasy.json", () => {
-    const source = loadRawConfig.toString();
+  test("loads relasy.yaml successfully via injected filesystem deps", async () => {
+    const cfg = await loadRawConfig({
+      exists: async (path) => path === "./relasy.yaml",
+      readTextFile: async () =>
+        [
+          "pkgs:",
+          "  core:",
+          "    name: '@acme/core'",
+          "project:",
+          "  type: npm",
+        ].join("\n"),
+    });
 
-    expect(source).toContain("relasy.yaml");
-    expect(source).toContain("relasy.yml");
-    expect(source).not.toContain("relasy.json");
+    expect(cfg.project.type).toBe("npm");
+    expect((cfg.pkgs as any).core.name ?? (cfg.pkgs as any).core).toBe(
+      "@acme/core",
+    );
   });
 
-  test("missing config error mentions yaml-only paths", () => {
-    const source = loadRawConfig.toString();
-
-    expect(source).toContain(
+  test("rejects relasy.json-only behavior by requiring YAML paths", async () => {
+    await expect(
+      loadRawConfig({
+        exists: async () => false,
+      }),
+    ).rejects.toThrow(
       "Missing configuration file. Expected relasy.yaml or relasy.yml.",
     );
   });

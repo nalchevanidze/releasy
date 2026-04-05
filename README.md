@@ -181,7 +181,7 @@ If neither `build` nor `post-bump` is set, Relasy auto-detects the package manag
 - `detection-use`: ordered detection inputs (`labels`, `commits`)
 - `rules.<rule>`: severity-based enforcement (`skip | warn | error`)
 
-> Current `commits` detection resolves change type from Conventional Commit signals in PR metadata (title/body) and from standalone non-PR commit messages when enabled.
+> Current `commits` detection resolves change type from Conventional Commit signals in PR commit history (when available) and from standalone non-PR commit messages when enabled.
 
 `changes` configures each change type (for labels, bumping, and inference):
 
@@ -409,15 +409,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Publish to Registry
-        run: echo "[relasy] Add your registry publish commands here"
-
       - name: Publish GitHub Release (from merged release PR)
         uses: nalchevanidze/relasy/actions/publish-release@v1.1.0
         id: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+> Add your registry publish step(s) before `publish-release` if you publish artifacts to npm or another package registry.
 
 ---
 

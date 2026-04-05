@@ -271,15 +271,30 @@ const exists = async (path: string) => {
   }
 };
 
-export const loadRawConfig = async (): Promise<RawConfig> => {
-  const yamlPath = (await exists("./relasy.yaml"))
-    ? "./relasy.yaml"
-    : (await exists("./relasy.yml"))
-      ? "./relasy.yml"
-      : undefined;
+type LoadRawConfigDeps = {
+  exists?: (path: string) => Promise<boolean>;
+  readTextFile?: (path: string) => Promise<string>;
+};
+
+export const resolveRawConfigPath = async (
+  existsFn: (path: string) => Promise<boolean> = exists,
+): Promise<string | undefined> => {
+  if (await existsFn("./relasy.yaml")) return "./relasy.yaml";
+  if (await existsFn("./relasy.yml")) return "./relasy.yml";
+  return undefined;
+};
+
+export const loadRawConfig = async (
+  deps: LoadRawConfigDeps = {},
+): Promise<RawConfig> => {
+  const existsFn = deps.exists ?? exists;
+  const readTextFile =
+    deps.readTextFile ?? ((path: string) => readFile(path, "utf8"));
+
+  const yamlPath = await resolveRawConfigPath(existsFn);
 
   if (yamlPath) {
-    const content = await readFile(yamlPath, "utf8");
+    const content = await readTextFile(yamlPath);
     return parseConfigInput(yaml.load(content) ?? {});
   }
 

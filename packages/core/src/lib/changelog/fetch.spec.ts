@@ -17,6 +17,7 @@ type BuildOptions = {
   prBody?: string;
   prLabels?: string[];
   commits?: any[];
+  prCommits?: Array<{ messageHeadline?: string; messageBody?: string }>;
 };
 
 const buildApi = (options: BuildOptions = {}) => {
@@ -28,6 +29,7 @@ const buildApi = (options: BuildOptions = {}) => {
     prBody = "",
     prLabels = [],
     commits,
+    prCommits,
   } = options;
 
   const commitData = commits ?? [
@@ -54,6 +56,16 @@ const buildApi = (options: BuildOptions = {}) => {
       body: prBody,
       author: { login: "dev", url: "https://u/dev" },
       labels: { nodes: prLabels.map((name) => ({ name })) },
+      commits: {
+        nodes: (prCommits ?? [{ messageHeadline: prTitle, messageBody: prBody }]).map(
+          ({ messageHeadline, messageBody }) => ({
+            commit: {
+              messageHeadline,
+              messageBody,
+            },
+          }),
+        ),
+      },
     },
   ];
 
@@ -205,6 +217,22 @@ describe("FetchApi detection interactions (labels + commits)", () => {
     ).changes(Version.parse("1.0.0"));
 
     expect(changes[0].type).toBe("breaking");
+  });
+
+  test("derives type from PR commit history (not only PR title/body)", async () => {
+    const changes = await new FetchApi(
+      buildApi({
+        detectionUse: ["commits"],
+        nonPrRule: "skip",
+        prTitle: "chore: update release notes",
+        prCommits: [
+          { messageHeadline: "fix: patch one" },
+          { messageHeadline: "feat: add real capability" },
+        ],
+      }),
+    ).changes(Version.parse("1.0.0"));
+
+    expect(changes[0].type).toBe("feature");
   });
 
   test("detection conflict throws when rule is error", async () => {

@@ -15,9 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
-      - name: Publish to Registry
-        run: echo "[relasy] Add your registry publish commands here"
-
       - name: Publish Release
         uses: ./actions/publish-release
         id: publish
