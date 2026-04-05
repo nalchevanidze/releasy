@@ -283,17 +283,8 @@ export const loadRawConfig = async (): Promise<RawConfig> => {
     return parseConfigInput(yaml.load(content) ?? {});
   }
 
-  if (await exists("./relasy.json")) {
-    console.warn(
-      "[relasy][deprecation] relasy.json is deprecated. Please migrate to relasy.yaml.",
-    );
-
-    const content = await readFile("./relasy.json", "utf8");
-    return parseConfigInput(JSON.parse(content));
-  }
-
   throw new Error(
-    "Missing configuration file. Expected relasy.yaml (preferred), relasy.yml, or relasy.json.",
+    "Missing configuration file. Expected relasy.yaml or relasy.yml.",
   );
 };
 

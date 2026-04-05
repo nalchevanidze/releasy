@@ -93,7 +93,7 @@ describe("Github release flow", () => {
 
     expect(out.data.number).toBe(99);
     expect(pullsCreateMock).not.toHaveBeenCalled();
-    expect(gitMock).not.toHaveBeenCalledWith(
+    expect(gitMock).toHaveBeenCalledWith(
       "push",
       "origin",
       "HEAD:release-v1.2.3",

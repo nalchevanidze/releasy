@@ -17,7 +17,7 @@ const matchesAny = (path: string, patterns: string[]) => {
   return patterns.some((pattern) => globToRegExp(pattern).test(normalized));
 };
 
-type IRelasyScopes = Pick<IRelasy, "config" | "parseLabels">;
+type IRelasyScopes = Pick<IRelasy, "config" | "parseLabels" | "logger">;
 
 export type ScopeInference = {
   inferredScopes: string[];
@@ -55,6 +55,10 @@ export const inferPackageScopes = (
 const matchesAnyInFiles = (changedFiles: string[], patterns: string[]) =>
   changedFiles.some((f) => matchesAny(f, patterns));
 
+const emitWarn = (iRelasy: IRelasyScopes, message: string) => {
+  iRelasy.logger?.warn?.(`[relasy] ${message}`);
+};
+
 export const evaluatePackageScopeRules = (
   iRelasy: IRelasyScopes,
   labels: string[],
@@ -80,20 +84,32 @@ export const evaluatePackageScopeRules = (
     iRelasy.config.policies?.rules?.inferredPackageMissing ?? "error";
   const conflictRule = iRelasy.config.policies?.rules?.labelConflict ?? "error";
 
-  if (missingRule === "error" && missingScopes.length > 0) {
-    return fail(
-      "LABEL_POLICY_ERROR",
-      `Missing inferred package labels: ${missingScopes.map((s) => `📦 ${s}`).join(", ")}`,
-    );
+  if (missingScopes.length > 0) {
+    const message = `Missing inferred package labels: ${missingScopes
+      .map((s) => `📦 ${s}`)
+      .join(", ")}`;
+
+    if (missingRule === "error") {
+      return fail("LABEL_POLICY_ERROR", message);
+    }
+
+    if (missingRule === "warn") {
+      emitWarn(iRelasy, message);
+    }
   }
 
-  if (conflictRule === "error" && conflictingScopes.length > 0) {
-    return fail(
-      "LABEL_POLICY_ERROR",
-      `Package label conflict detected. Labels not inferred from changed files: ${conflictingScopes
-        .map((s) => `📦 ${s}`)
-        .join(", ")}`,
-    );
+  if (conflictingScopes.length > 0) {
+    const message = `Package label conflict detected. Labels not inferred from changed files: ${conflictingScopes
+      .map((s) => `📦 ${s}`)
+      .join(", ")}`;
+
+    if (conflictRule === "error") {
+      return fail("LABEL_POLICY_ERROR", message);
+    }
+
+    if (conflictRule === "warn") {
+      emitWarn(iRelasy, message);
+    }
   }
 
   return ok({

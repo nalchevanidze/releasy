@@ -128,30 +128,6 @@ export class Github {
 
     const resolvedBaseBranch = await this.resolveBaseBranch();
 
-    const existing = await withRetry("Check existing release PR", async () => {
-      const { data } = await this.octokit.rest.pulls.list({
-        owner: this.org,
-        repo: this.repo,
-        state: "open",
-        head: `${this.org}:${name}`,
-        base: resolvedBaseBranch,
-        per_page: 1,
-      });
-
-      return data[0];
-    });
-
-    if (existing) {
-      console.log(`[relasy] Reusing existing release PR: ${existing.html_url}`);
-
-      return {
-        data: {
-          number: existing.number,
-          html_url: existing.html_url,
-        },
-      };
-    }
-
     git("add", ".");
     git("status");
 
@@ -178,6 +154,30 @@ export class Github {
         `https://${this.path}.git`,
         `HEAD:${name}`,
       );
+    }
+
+    const existing = await withRetry("Check existing release PR", async () => {
+      const { data } = await this.octokit.rest.pulls.list({
+        owner: this.org,
+        repo: this.repo,
+        state: "open",
+        head: `${this.org}:${name}`,
+        base: resolvedBaseBranch,
+        per_page: 1,
+      });
+
+      return data[0];
+    });
+
+    if (existing) {
+      console.log(`[relasy] Reusing existing release PR: ${existing.html_url}`);
+
+      return {
+        data: {
+          number: existing.number,
+          html_url: existing.html_url,
+        },
+      };
     }
 
     return withRetry("Create release PR", async () => {

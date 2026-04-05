@@ -26,17 +26,12 @@ const exists = async (path: string) => {
 const resolveConfigPath = async (): Promise<string> => {
   if (await exists("./relasy.yaml")) return "./relasy.yaml";
   if (await exists("./relasy.yml")) return "./relasy.yml";
-  if (await exists("./relasy.json")) return "./relasy.json";
   return "./relasy.yaml";
 };
 
 const readRelasyConfig = async (): Promise<unknown> => {
   const path = await resolveConfigPath();
   const content = await readFile(path, "utf8");
-
-  if (path.endsWith(".json")) {
-    return JSON.parse(content);
-  }
 
   return yaml.load(content) ?? {};
 };
