@@ -163,6 +163,47 @@ describe("validate-pr-labels action", () => {
     expect(setFailed).not.toHaveBeenCalled();
   });
 
+  test("uses relasy config autoAddInferredPackages when input is omitted", async () => {
+    let calls = 0;
+    evaluatePackageScopeRules.mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) {
+        return {
+          ok: false,
+          code: "LABEL_POLICY_ERROR",
+          message: "Missing inferred package labels: 📦 core",
+        };
+      }
+
+      return {
+        ok: true,
+        data: {
+          inferredScopes: ["core"],
+          existingScopes: ["core"],
+          missingScopes: [],
+          conflictingScopes: [],
+        },
+      };
+    });
+
+    getInput.mockImplementation((name: string) => {
+      if (name === "require_change_type") return "true";
+      if (name === "auto_add_package_labels") return "";
+      return "";
+    });
+
+    const { run } = await import("./index");
+    await run();
+
+    expect(issuesAddLabels).toHaveBeenCalledWith({
+      owner: "acme",
+      repo: "demo",
+      issue_number: 10,
+      labels: ["📦 core"],
+    });
+    expect(setFailed).not.toHaveBeenCalled();
+  });
+
   test("getCurrentPrFiles fetches changed files via GitHub API", async () => {
     const { getCurrentPrFiles } = await import("./index");
 
