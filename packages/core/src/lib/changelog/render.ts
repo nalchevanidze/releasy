@@ -161,12 +161,14 @@ export class RenderAPI {
     const packageCount = new Set(changes.flatMap((change) => change.pkgs)).size;
     const byType = groupBy(({ type }) => type, changes);
 
-    const typeSummary = Object.entries(this.api.config.changeTypes)
-      .filter(([type]) => isKey(byType, type))
-      .map(([type]) => {
+    const typeSummary = Object.entries(this.api.config.changeTypes).flatMap(
+      ([type]) => {
+        if (!isKey(byType, type)) return [];
+
         const icon = this.iconForType(type) || "•";
         return `${icon} ${byType[type].length}`;
-      });
+      },
+    );
 
     return `> ${typeSummary.join(" · ")} · 📦 ${packageCount || 0} packages · 🔢 ${changes.length} changes`;
   };
