@@ -9,8 +9,7 @@ exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no 
 
 * **commit abcdef1** — Standalone commit
   &nbsp; &nbsp; 📦 **Scope:** general
-  &nbsp; &nbsp; ✍️ **By:** @ci-bot
-  &nbsp; &nbsp; 📝 raw commit body"
+  &nbsp; &nbsp; ✍️ **By:** @ci-bot"
 `;
 
 exports[`RenderAPI snapshots > custom item template skips default visual summary 1`] = `
@@ -100,11 +99,7 @@ exports[`RenderAPI snapshots > item template can consume DETAILS and STATS place
   source=[#55](https://github.com/acme/demo/issues/55)
   stats=  - 📦 Packages (2): [cli](https://npmjs.com/package/@acme/cli), [core](https://npmjs.com/package/@acme/core)
   - 🧑‍💻 [@author](https://example.com/author)
-  details=  <details>
-    <summary>📝 PR details</summary>
-  > Step 1
-  > Step 2
-  </details>
+  details=
 <br>"
 `;
 
@@ -232,8 +227,6 @@ exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] 
 * **#1** — Add dark mode
   &nbsp; &nbsp; 📦 **Scope:** \`core\`
   &nbsp; &nbsp; ✍️ **By:** [@alice](https://example.com/alice)
-  &nbsp; &nbsp; 📝 Detailed note
-Second line
 <br>
 
 ### 🐛 FIXES

@@ -19,9 +19,6 @@ const space = (n: number, txt: string = "") =>
     .map(() => " ")
     .join("")}${txt}`;
 
-const indent = (txt: string, n: number = 1) =>
-  space(n, txt.replace(/\n/g, `\n${space(n)}`));
-
 const applyTemplate = (template: string, values: Record<string, string>) =>
   Object.entries(values).reduce(
     (acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value),
@@ -77,35 +74,6 @@ export class RenderAPI {
     return normalized.map((pkg) => `\`${pkg}\``).join(" • ");
   };
 
-  private quoteBlock = (text: string) =>
-    text
-      .split("\n")
-      .map((line) => `> ${line}`)
-      .join("\n");
-
-  private renderBody = (body: string) => {
-    const cleaned = body.trim();
-    if (!cleaned) return "";
-
-    const isSingleLine = !cleaned.includes("\n");
-    const isShort = cleaned.length <= 140;
-
-    if (isSingleLine && isShort) {
-      return space(1, `📝 ${cleaned}`);
-    }
-
-    return indent(
-      lines([
-        "<details>",
-        "  <summary>📝 PR details</summary>",
-        "",
-        this.quoteBlock(cleaned),
-        "</details>",
-      ]),
-      1,
-    );
-  };
-
   private packageGroupKey = (pkgs: string[]) => {
     const normalized = this.normalizedPkgs(pkgs);
     return normalized.length ? normalized.join(",") : "general";
@@ -138,9 +106,8 @@ export class RenderAPI {
     author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
 
   private change = (change: Change): string => {
-    const { title, body, pkgs } = change;
+    const { title, pkgs } = change;
     const template = this.api.config.changelog?.templates?.item;
-    const details = template ? this.renderBody(body || "") : "";
 
     const stats = lines([
       this.packageStats(pkgs),
@@ -151,7 +118,6 @@ export class RenderAPI {
       `* **${this.refLabel(change)}** — ${title?.trim() || "Untitled change"}`,
       space(1, `&nbsp; &nbsp; 📦 **Scope:** ${this.scopeInline(pkgs)}`),
       space(1, `&nbsp; &nbsp; ✍️ **By:** ${this.author(change)}`),
-      body?.trim() ? space(1, `&nbsp; &nbsp; 📝 ${body.trim()}`) : "",
     ]);
 
     if (!template) return defaultItem;
@@ -161,8 +127,8 @@ export class RenderAPI {
       TITLE: title?.trim() || "",
       AUTHOR: this.author(change),
       PACKAGES: lines(this.packageLinks(pkgs)),
-      BODY: body || "",
-      DETAILS: details,
+      BODY: "",
+      DETAILS: "",
       STATS: stats,
     });
   };
