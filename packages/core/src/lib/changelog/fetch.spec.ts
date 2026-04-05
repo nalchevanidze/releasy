@@ -57,14 +57,14 @@ const buildApi = (options: BuildOptions = {}) => {
       author: { login: "dev", url: "https://u/dev" },
       labels: { nodes: prLabels.map((name) => ({ name })) },
       commits: {
-        nodes: (prCommits ?? [{ messageHeadline: prTitle, messageBody: prBody }]).map(
-          ({ messageHeadline, messageBody }) => ({
-            commit: {
-              messageHeadline,
-              messageBody,
-            },
-          }),
-        ),
+        nodes: (
+          prCommits ?? [{ messageHeadline: prTitle, messageBody: prBody }]
+        ).map(({ messageHeadline, messageBody }) => ({
+          commit: {
+            messageHeadline,
+            messageBody,
+          },
+        })),
       },
     },
   ];

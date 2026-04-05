@@ -61,7 +61,11 @@ describe("package scope rules", () => {
 
   test("no-match paths produce no inferred scopes", () => {
     const { iRelasy } = buildIRelasy();
-    const out = evaluatePackageScopeRules(iRelasy as any, [], ["docs/readme.md"]);
+    const out = evaluatePackageScopeRules(
+      iRelasy as any,
+      [],
+      ["docs/readme.md"],
+    );
 
     expect(out.ok).toBe(true);
     if (out.ok) {

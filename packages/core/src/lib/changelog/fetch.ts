@@ -66,7 +66,10 @@ const parseConventionalType = (
 const bumpRank = (bump: "major" | "minor" | "patch") =>
   bump === "major" ? 2 : bump === "minor" ? 1 : 0;
 
-const bumpForChangeType = (api: Api, changeType: string): "major" | "minor" | "patch" =>
+const bumpForChangeType = (
+  api: Api,
+  changeType: string,
+): "major" | "minor" | "patch" =>
   api.config.changeTypeBumps?.[changeType] ??
   (changeType === "breaking"
     ? "major"
@@ -78,7 +81,8 @@ const highestDetectedType = (api: Api, types: string[]): string | undefined => {
   if (types.length === 0) return undefined;
 
   return [...new Set(types)].reduce((current, next) =>
-    bumpRank(bumpForChangeType(api, next)) > bumpRank(bumpForChangeType(api, current))
+    bumpRank(bumpForChangeType(api, next)) >
+    bumpRank(bumpForChangeType(api, current))
       ? next
       : current,
   );
