@@ -33317,7 +33317,7 @@ var require_config = __commonJS({
   "../../packages/core/dist/lib/config.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
+    exports2.validateChangelogTemplates = exports2.normalizeConfig = exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
     var schema_1 = require_schema();
     Object.defineProperty(exports2, "changeTypes", { enumerable: true, get: function() {
       return schema_1.changeTypes;
@@ -33337,6 +33337,12 @@ var require_config = __commonJS({
     var load_1 = require_load();
     Object.defineProperty(exports2, "loadConfig", { enumerable: true, get: function() {
       return load_1.loadConfig;
+    } });
+    Object.defineProperty(exports2, "normalizeConfig", { enumerable: true, get: function() {
+      return load_1.normalizeConfig;
+    } });
+    Object.defineProperty(exports2, "validateChangelogTemplates", { enumerable: true, get: function() {
+      return load_1.validateChangelogTemplates;
     } });
   }
 });
@@ -46143,10 +46149,17 @@ var require_dist = __commonJS({
       for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m, p);
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = void 0;
+    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = exports2.validateChangelogTemplates = exports2.normalizeConfig = void 0;
     var types_1 = require_types();
     var gh_1 = require_gh();
     var config_1 = require_config();
+    var config_2 = require_config();
+    Object.defineProperty(exports2, "normalizeConfig", { enumerable: true, get: function() {
+      return config_2.normalizeConfig;
+    } });
+    Object.defineProperty(exports2, "validateChangelogTemplates", { enumerable: true, get: function() {
+      return config_2.validateChangelogTemplates;
+    } });
     var utils_1 = require_utils6();
     var project_1 = require_project();
     var changelog_1 = require_changelog();
@@ -46201,6 +46214,15 @@ var getErrorStatus = (error) => typeof error === "object" && error !== null && "
 var getErrorMessage = (error) => error instanceof Error ? error.message : String(error);
 
 // ../../packages/actions-common/src/action.ts
+var logActionEvent = (action, event, fields) => {
+  const payload = {
+    scope: "relasy",
+    action,
+    event,
+    ...fields
+  };
+  console.log(`[relasy][event] ${JSON.stringify(payload)}`);
+};
 var formatActionFailure = (action, error) => `[${action}] ${getErrorMessage(error)}`;
 
 // ../../packages/actions-common/src/github.ts
@@ -46213,6 +46235,16 @@ var resolveRepo = (context2, env = process.env) => {
     );
   }
   return { owner, repo };
+};
+var assertRepoAccess = async (octokit, owner, repo) => {
+  try {
+    await octokit.rest.repos.get({ owner, repo });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Token preflight failed for ${owner}/${repo}. Ensure workflow permissions and token scopes allow repository access. Root cause: ${message}`
+    );
+  }
 };
 
 // src/index.ts
@@ -46230,6 +46262,7 @@ async function run() {
     const iRelasy = await (0, import_core2.loadRelasy)();
     const { owner, repo } = resolveRepo(import_github.context);
     const octokit = new import_rest.Octokit({ auth: process.env.GITHUB_TOKEN });
+    await assertRepoAccess(octokit, owner, repo);
     const version = iRelasy.version().toString();
     if (isDryRun()) {
       (0, import_core.info)(
@@ -46261,6 +46294,11 @@ async function run() {
       (0, import_core.info)(`[relasy] Release ${version} already exists: ${existing.html_url}`);
       (0, import_core.setOutput)("id", String(existing.id));
       (0, import_core.setOutput)("upload_url", existing.upload_url);
+      logActionEvent("publish-release", "release-reused", {
+        owner,
+        repo,
+        id: existing.id
+      });
       return;
     }
     const { data } = await (0, import_core2.withRetry)(
@@ -46275,6 +46313,11 @@ async function run() {
     );
     (0, import_core.setOutput)("id", data.id);
     (0, import_core.setOutput)("upload_url", data.upload_url);
+    logActionEvent("publish-release", "release-created", {
+      owner,
+      repo,
+      id: data.id
+    });
   } catch (error) {
     const { owner, repo } = (() => {
       try {

@@ -442,8 +442,12 @@ jobs:
 
 Relasy CLI now supports:
 
+- `relasy init` — create a starter `relasy.json` if missing
 - `relasy changelog` — generate `./changelog.md`
 - `relasy validate-config` — validate `relasy.json`
+- `relasy migrate-config` — normalize config to latest compatible shape (`configVersion: 1` defaults)
+- `relasy template-lint` — validate changelog template placeholders
+- `relasy template-preview` — render a local preview for configured templates
 - `relasy labels --check --labels "✨ feature,📦 core"` — validate label set and print resolved change type
 - `relasy plan` — print a release plan summary (version/base branch/label policy)
 
@@ -464,6 +468,13 @@ Optional:
 - `RELASY_BASE_BRANCH` repository variable (recommended) — use this in workflow conditions/checkout refs to keep workflows aligned with `project.baseBranch`.
 
 ---
+
+## E2E sandbox workflow
+
+A dedicated workflow scaffold exists at `.github/workflows/e2e-sandbox.yaml`.
+
+- `sandbox_harness` job runs high-fidelity local integration flow tests.
+- `sandbox_live` job is optional (`workflow_dispatch` input `run_live=true`) and performs a live sandbox dry-run smoke setup when repository variables/secrets are provided.
 
 ## Troubleshooting
 

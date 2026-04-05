@@ -1,5 +1,10 @@
-import { describe, expect, test } from "vitest";
-import { requireGitHubToken, resolvePrNumber, resolveRepo } from "./github";
+import { describe, expect, test, vi } from "vitest";
+import {
+  assertRepoAccess,
+  requireGitHubToken,
+  resolvePrNumber,
+  resolveRepo,
+} from "./github";
 
 describe("actions-common github helpers", () => {
   test("resolveRepo prefers context repo values", () => {
@@ -65,6 +70,34 @@ describe("actions-common github helpers", () => {
   test("requireGitHubToken throws when missing", () => {
     expect(() => requireGitHubToken({} as NodeJS.ProcessEnv)).toThrow(
       "Missing GITHUB_TOKEN",
+    );
+  });
+
+  test("assertRepoAccess succeeds when repo is accessible", async () => {
+    const octokit = {
+      rest: {
+        repos: {
+          get: vi.fn(async () => ({})),
+        },
+      },
+    };
+
+    await expect(assertRepoAccess(octokit, "acme", "demo")).resolves.toBeUndefined();
+  });
+
+  test("assertRepoAccess throws actionable message when repo access fails", async () => {
+    const octokit = {
+      rest: {
+        repos: {
+          get: vi.fn(async () => {
+            throw new Error("Resource not accessible by integration");
+          }),
+        },
+      },
+    };
+
+    await expect(assertRepoAccess(octokit, "acme", "demo")).rejects.toThrow(
+      "Token preflight failed",
     );
   });
 });

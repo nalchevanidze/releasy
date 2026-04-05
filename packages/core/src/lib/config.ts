@@ -20,4 +20,4 @@ export type {
 } from "./config/schema";
 
 export type { Config } from "./config/load";
-export { loadConfig } from "./config/load";
+export { loadConfig, normalizeConfig, validateChangelogTemplates } from "./config/load";

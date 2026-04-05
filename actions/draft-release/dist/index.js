@@ -31096,7 +31096,7 @@ var require_config = __commonJS({
   "../../packages/core/dist/lib/config.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
+    exports2.validateChangelogTemplates = exports2.normalizeConfig = exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
     var schema_1 = require_schema();
     Object.defineProperty(exports2, "changeTypes", { enumerable: true, get: function() {
       return schema_1.changeTypes;
@@ -31116,6 +31116,12 @@ var require_config = __commonJS({
     var load_1 = require_load();
     Object.defineProperty(exports2, "loadConfig", { enumerable: true, get: function() {
       return load_1.loadConfig;
+    } });
+    Object.defineProperty(exports2, "normalizeConfig", { enumerable: true, get: function() {
+      return load_1.normalizeConfig;
+    } });
+    Object.defineProperty(exports2, "validateChangelogTemplates", { enumerable: true, get: function() {
+      return load_1.validateChangelogTemplates;
     } });
   }
 });
@@ -43922,10 +43928,17 @@ var require_dist = __commonJS({
       for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m, p);
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = void 0;
+    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = exports2.validateChangelogTemplates = exports2.normalizeConfig = void 0;
     var types_1 = require_types();
     var gh_1 = require_gh();
     var config_1 = require_config();
+    var config_2 = require_config();
+    Object.defineProperty(exports2, "normalizeConfig", { enumerable: true, get: function() {
+      return config_2.normalizeConfig;
+    } });
+    Object.defineProperty(exports2, "validateChangelogTemplates", { enumerable: true, get: function() {
+      return config_2.validateChangelogTemplates;
+    } });
     var utils_1 = require_utils4();
     var project_1 = require_project();
     var changelog_1 = require_changelog();

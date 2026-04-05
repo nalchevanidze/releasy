@@ -29,6 +29,17 @@ vi.mock("@octokit/rest", () => ({
   })),
 }));
 
+vi.mock("@relasy/actions-common", () => ({
+  resolveRepo: () => ({ owner: "acme", repo: "demo" }),
+  getErrorStatus: (error: unknown) =>
+    typeof error === "object" && error !== null && "status" in error
+      ? (error as { status?: number }).status
+      : undefined,
+  assertRepoAccess: vi.fn(async () => undefined),
+  formatActionFailure: (_action: string, error: unknown) => String(error),
+  logActionEvent: vi.fn(),
+}));
+
 vi.mock("@relasy/core", () => ({
   loadRelasy: vi.fn(async () => ({
     version: () => ({ toString: () => "v1.2.3" }),

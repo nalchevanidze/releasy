@@ -1,6 +1,7 @@
 import { setFailed, info } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import {
+  assertRepoAccess,
   formatActionFailure,
   requireGitHubToken,
   resolveRepo,
@@ -15,6 +16,13 @@ export async function run() {
     const { owner, repo } = resolveRepo(context);
     const token = requireGitHubToken();
     const octokit = getOctokit(token);
+    await assertRepoAccess(
+      octokit as {
+        rest: { repos: { get: (args: { owner: string; repo: string }) => Promise<unknown> } };
+      },
+      owner,
+      repo,
+    );
 
     const labels = await octokit.paginate(
       octokit.rest.issues.listLabelsForRepo,

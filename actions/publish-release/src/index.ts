@@ -2,8 +2,10 @@ import { setFailed, getInput, setOutput, info } from "@actions/core";
 import { Octokit } from "@octokit/rest";
 import { context } from "@actions/github";
 import {
+  assertRepoAccess,
   formatActionFailure,
   getErrorStatus,
+  logActionEvent,
   resolveRepo,
 } from "@relasy/actions-common";
 import { loadRelasy, withRetry } from "@relasy/core";
@@ -25,6 +27,7 @@ export async function run() {
     const iRelasy = await loadRelasy();
     const { owner, repo } = resolveRepo(context);
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+    await assertRepoAccess(octokit, owner, repo);
     const version = iRelasy.version().toString();
 
     if (isDryRun()) {
@@ -61,6 +64,11 @@ export async function run() {
       info(`[relasy] Release ${version} already exists: ${existing.html_url}`);
       setOutput("id", String(existing.id));
       setOutput("upload_url", existing.upload_url);
+      logActionEvent("publish-release", "release-reused", {
+        owner,
+        repo,
+        id: existing.id,
+      });
       return;
     }
 
@@ -76,6 +84,11 @@ export async function run() {
 
     setOutput("id", data.id);
     setOutput("upload_url", data.upload_url);
+    logActionEvent("publish-release", "release-created", {
+      owner,
+      repo,
+      id: data.id,
+    });
   } catch (error) {
     const { owner, repo } = (() => {
       try {

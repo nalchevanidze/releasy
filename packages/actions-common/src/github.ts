@@ -50,3 +50,22 @@ export const requireGitHubToken = (
 
   return token;
 };
+
+export const assertRepoAccess = async (
+  octokit: {
+    rest: {
+      repos: { get: (args: { owner: string; repo: string }) => Promise<unknown> };
+    };
+  },
+  owner: string,
+  repo: string,
+) => {
+  try {
+    await octokit.rest.repos.get({ owner, repo });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Token preflight failed for ${owner}/${repo}. Ensure workflow permissions and token scopes allow repository access. Root cause: ${message}`,
+    );
+  }
+};
