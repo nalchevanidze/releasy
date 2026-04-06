@@ -104,6 +104,7 @@ export const main = async () => {
           inferredPackageMissing: "error",
           detectionConflict: "error",
           nonPrCommit: "skip",
+          versionTagMismatch: "error",
         },
       },
       changes: {
@@ -130,10 +131,44 @@ export const main = async () => {
     console.log("[relasy] Initialized relasy.yaml");
   });
 
-  cli.command("changelog").action(async () => {
-    const iRelasy = await loadRelasy();
-    await writeFile(`./changelog.md`, await iRelasy.changelog(), "utf8");
-  });
+  cli
+    .command("changelog")
+    .option("--since-tag <tag>", "generate changelog since a specific tag")
+    .option(
+      "--since-commit <sha>",
+      "generate changelog since a specific commit",
+    )
+    .option("--all", "generate full changelog across all tagged versions")
+    .action(
+      async (opts: {
+        sinceTag?: string;
+        sinceCommit?: string;
+        all?: boolean;
+      }) => {
+        if (opts.all && (opts.sinceTag || opts.sinceCommit)) {
+          throw new Error(
+            "--all cannot be combined with --since-tag or --since-commit",
+          );
+        }
+
+        if (opts.sinceTag && opts.sinceCommit) {
+          throw new Error(
+            "Use only one of --since-tag or --since-commit, not both.",
+          );
+        }
+
+        const iRelasy = await loadRelasy();
+        await writeFile(
+          `./changelog.md`,
+          await iRelasy.changelog({
+            sinceTag: opts.sinceTag,
+            sinceCommit: opts.sinceCommit,
+            all: opts.all,
+          }),
+          "utf8",
+        );
+      },
+    );
 
   cli.command("validate-config").action(async () => {
     const raw = await readRelasyConfig();

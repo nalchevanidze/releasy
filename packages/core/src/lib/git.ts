@@ -3,6 +3,8 @@ import { Version } from "./version";
 
 const git = (...cmd: string[]) => execFile("git", cmd);
 
+const splitLines = (txt: string) => txt.split("\n").filter(Boolean);
+
 export const remote = () => {
   const url = git("remote", "get-url", "origin").trim();
   const path = url
@@ -15,13 +17,28 @@ export const remote = () => {
 };
 
 const getDate = () => git("log", "-1", "--format=%cd", "--date=short");
+export const dateAtRef = (ref: string) =>
+  git("log", "-1", "--format=%cd", "--date=short", ref);
+
+export const listTags = () =>
+  splitLines(git("tag", "--sort=creatordate")).filter(Boolean);
+
 export const lastTag = () => git("describe", "--abbrev=0", "--tags");
 
-const commitsAfter = (tag: string) =>
-  git("rev-list", "--reverse", `${tag}..`).split("\n").filter(Boolean);
+const commitsAfter = (ref: string) =>
+  splitLines(git("rev-list", "--reverse", `${ref}..`));
 
-const commitsAll = () =>
-  git("rev-list", "--reverse", "HEAD").split("\n").filter(Boolean);
+const commitsAll = () => splitLines(git("rev-list", "--reverse", "HEAD"));
+
+export const commitsAfterRef = (ref: string) => commitsAfter(ref);
+
+export const commitsBetweenRefs = (
+  fromExclusive: string | undefined,
+  to: string,
+) =>
+  fromExclusive
+    ? splitLines(git("rev-list", "--reverse", `${fromExclusive}..${to}`))
+    : splitLines(git("rev-list", "--reverse", to));
 
 const isUserSet = () => {
   try {

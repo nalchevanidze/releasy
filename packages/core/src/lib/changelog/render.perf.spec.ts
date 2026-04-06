@@ -29,6 +29,7 @@ const api: Api = {
         inferredPackageMissing: "error",
         detectionConflict: "error",
         nonPrCommit: "skip",
+        versionTagMismatch: "error",
       },
     },
     changelog: { grouping: "package" },

@@ -22510,8 +22510,17 @@ var require_utils2 = __commonJS({
     exports2.exit = exit;
     var setupEnv = () => {
       const token = process.env.GITHUB_TOKEN || process.env.GITHUB_API_TOKEN;
-      if (!token)
-        throw new Error("Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).");
+      if (!token || token.trim().length === 0) {
+        const cwd2 = process.cwd();
+        throw new Error([
+          "Missing GITHUB_TOKEN (or GITHUB_API_TOKEN).",
+          `cwd: ${cwd2}`,
+          "Hints:",
+          "- export GITHUB_TOKEN=... before running relasy",
+          "- if you rely on .env, run the command from repo root (where .env lives)",
+          "- or pass an explicit env file path in the CLI"
+        ].join("\n"));
+      }
       process.env.GITHUB_TOKEN = process.env.GITHUB_TOKEN || token;
       process.env.GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN || token;
       const cwd = process.env.GITHUB_WORKSPACE || process.cwd();
@@ -22526,10 +22535,11 @@ var require_git = __commonJS({
   "../../packages/core/dist/lib/git.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.isUserSet = exports2.getDate = exports2.git = exports2.commitsAfterVersion = exports2.lastTag = exports2.remote = void 0;
+    exports2.isUserSet = exports2.getDate = exports2.git = exports2.commitsAfterVersion = exports2.commitsBetweenRefs = exports2.commitsAfterRef = exports2.lastTag = exports2.listTags = exports2.dateAtRef = exports2.remote = void 0;
     var utils_1 = require_utils2();
     var git = (...cmd) => (0, utils_1.execFile)("git", cmd);
     exports2.git = git;
+    var splitLines = (txt) => txt.split("\n").filter(Boolean);
     var remote = () => {
       const url = git("remote", "get-url", "origin").trim();
       const path = url.replace(/\.git$/, "").replace(/^.*github.com/, "").split(":").join("/").replace(/^\/+/, "");
@@ -22538,10 +22548,18 @@ var require_git = __commonJS({
     exports2.remote = remote;
     var getDate = () => git("log", "-1", "--format=%cd", "--date=short");
     exports2.getDate = getDate;
+    var dateAtRef = (ref) => git("log", "-1", "--format=%cd", "--date=short", ref);
+    exports2.dateAtRef = dateAtRef;
+    var listTags = () => splitLines(git("tag", "--sort=creatordate")).filter(Boolean);
+    exports2.listTags = listTags;
     var lastTag = () => git("describe", "--abbrev=0", "--tags");
     exports2.lastTag = lastTag;
-    var commitsAfter = (tag) => git("rev-list", "--reverse", `${tag}..`).split("\n").filter(Boolean);
-    var commitsAll = () => git("rev-list", "--reverse", "HEAD").split("\n").filter(Boolean);
+    var commitsAfter = (ref) => splitLines(git("rev-list", "--reverse", `${ref}..`));
+    var commitsAll = () => splitLines(git("rev-list", "--reverse", "HEAD"));
+    var commitsAfterRef = (ref) => commitsAfter(ref);
+    exports2.commitsAfterRef = commitsAfterRef;
+    var commitsBetweenRefs = (fromExclusive, to) => fromExclusive ? splitLines(git("rev-list", "--reverse", `${fromExclusive}..${to}`)) : splitLines(git("rev-list", "--reverse", to));
+    exports2.commitsBetweenRefs = commitsBetweenRefs;
     var isUserSet = () => {
       try {
         const user = `${git("config", "user.name")}${git("config", "user.email")}`.trim();
@@ -26943,8 +26961,10 @@ var require_schema = __commonJS({
       return result;
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.ConfigSchema = exports2.PoliciesConfigSchema = exports2.RulesConfigSchema = exports2.ChangeDefinitionSchema = exports2.PkgConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = void 0;
+    exports2.ConfigSchema = exports2.PoliciesConfigSchema = exports2.RulesConfigSchema = exports2.ChangeDefinitionSchema = exports2.PkgConfigSchema = exports2.ManagerSchema = exports2.NPMManagerSchema = exports2.CustomManagerSchema = exports2.changeTypes = exports2.ChangelogConfigSchema = exports2.RuleLevelSchema = exports2.ruleLevelValues = void 0;
     var z = __importStar(require_zod());
+    exports2.ruleLevelValues = ["skip", "warn", "error"];
+    exports2.RuleLevelSchema = z.enum(exports2.ruleLevelValues);
     exports2.ChangelogConfigSchema = z.object({
       templates: z.object({
         header: z.string().optional(),
@@ -26990,10 +27010,11 @@ var require_schema = __commonJS({
       paths: z.union([z.string(), z.array(z.string()).min(1)]).optional()
     }).strict();
     exports2.RulesConfigSchema = z.object({
-      labelConflict: z.enum(["skip", "warn", "error"]).optional(),
-      inferredPackageMissing: z.enum(["skip", "warn", "error"]).optional(),
-      detectionConflict: z.enum(["skip", "warn", "error"]).optional(),
-      nonPrCommit: z.enum(["skip", "warn", "error"]).optional()
+      labelConflict: exports2.RuleLevelSchema.optional(),
+      inferredPackageMissing: exports2.RuleLevelSchema.optional(),
+      detectionConflict: exports2.RuleLevelSchema.optional(),
+      nonPrCommit: exports2.RuleLevelSchema.optional(),
+      versionTagMismatch: exports2.RuleLevelSchema.optional()
     }).optional();
     exports2.PoliciesConfigSchema = z.object({
       labelMode: z.enum(["strict", "permissive"]).optional(),
@@ -29842,7 +29863,8 @@ var require_defaults = __commonJS({
       labelConflict: "error",
       inferredPackageMissing: "error",
       detectionConflict: "error",
-      nonPrCommit: "skip"
+      nonPrCommit: "skip",
+      versionTagMismatch: "error"
     };
   }
 });
@@ -29906,6 +29928,10 @@ var require_load = __commonJS({
       }
       return [key, { name: value.name, paths: toPathList(value.paths) }];
     }));
+    var normalizeRules = (rules) => ({
+      ...defaults_1.defaultRuleLevels,
+      ...rules ?? {}
+    });
     var normalizeChanges = (changes) => {
       const titles = { ...defaults_1.defaultChangeTypes };
       const icons = { ...defaults_1.defaultChangeTypeEmojis };
@@ -29985,12 +30011,7 @@ var require_load = __commonJS({
           labelMode: config.policies?.labelMode ?? defaults_1.defaultLabelMode,
           autoAddInferredPackages: config.policies?.autoAddInferredPackages ?? false,
           detectionUse: config.policies?.detectionUse ?? defaults_1.defaultDetectionUse,
-          rules: {
-            labelConflict: config.policies?.rules?.labelConflict ?? defaults_1.defaultRuleLevels.labelConflict,
-            inferredPackageMissing: config.policies?.rules?.inferredPackageMissing ?? defaults_1.defaultRuleLevels.inferredPackageMissing,
-            detectionConflict: config.policies?.rules?.detectionConflict ?? defaults_1.defaultRuleLevels.detectionConflict,
-            nonPrCommit: config.policies?.rules?.nonPrCommit ?? defaults_1.defaultRuleLevels.nonPrCommit
-          }
+          rules: normalizeRules(config.policies?.rules)
         },
         changeTypes: normalizedChanges.titles,
         changeTypeEmojis: normalizedChanges.icons,
@@ -42804,12 +42825,17 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
         }
       }
       for (const source of detectionUse) {
-        if (source === "labels" && labelsType)
-          return labelsType;
-        if (source === "commits" && commitsType)
-          return commitsType;
+        if (source === "labels" && labelsType) {
+          return { type: labelsType, isRefinement: false };
+        }
+        if (source === "commits" && commitsType) {
+          return { type: commitsType, isRefinement: false };
+        }
       }
-      return labelsType || commitsType || "chore";
+      if (labelsType || commitsType) {
+        return { type: labelsType || commitsType || "chore", isRefinement: false };
+      }
+      return { type: "chore", isRefinement: true };
     };
     var toSyntheticChange = (api, commit) => {
       const [title, ...bodyLines] = commit.message.split("\n");
@@ -42825,7 +42851,8 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
         labels: { nodes: [] },
         type: commitDetected || "chore",
         pkgs: [],
-        sourceCommit: commit.oid
+        sourceCommit: commit.oid,
+        isRefinement: !commitDetected
       };
     };
     var FetchApi = class {
@@ -42873,14 +42900,16 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
           const { changeTypes, pkgs } = (0, labels_1.parseLabels)(this.api.config, (0, ramda_1.pluck)("name", pr.labels.nodes));
           const fromLabels = changeTypes.find(Boolean)?.changeType;
           const fromCommits = detectTypeFromPRCommits(this.api, pr);
+          const detected = resolveDetectedType(this.api, fromLabels, fromCommits);
           return {
             ...pr,
-            type: resolveDetectedType(this.api, fromLabels, fromCommits),
+            type: detected.type,
+            isRefinement: detected.isRefinement,
             pkgs: pkgs.map(({ pkg }) => pkg)
           };
         };
-        this.changes = async (version) => {
-          const commits = await this.commits((0, git_1.commitsAfterVersion)(version));
+        this.resolveChangesFromCommits = async (commitOids) => {
+          const commits = await this.commits(commitOids);
           const resolutions = commits.map(this.toResolution);
           const prNumbers = [
             ...new Set(resolutions.filter((r) => r.kind === "pr").map((r) => r.prNumber))
@@ -42903,6 +42932,9 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
           const syntheticChanges = nonPrCommits.map((c) => toSyntheticChange(this.api, c));
           return [...prChanges, ...syntheticChanges];
         };
+        this.changes = async (version) => this.resolveChangesFromCommits((0, git_1.commitsAfterVersion)(version));
+        this.changesSinceRef = async (ref) => this.resolveChangesFromCommits((0, git_1.commitsAfterRef)(ref));
+        this.changesBetweenRefs = async (fromExclusive, to) => this.resolveChangesFromCommits((0, git_1.commitsBetweenRefs)(fromExclusive, to));
       }
     };
     exports2.FetchApi = FetchApi;
@@ -42922,9 +42954,19 @@ var require_render = __commonJS({
     var newLine = (size) => (0, ramda_1.range)(0, size).map(() => "\n").join("");
     var lines = (xs, size = 1) => xs.filter(Boolean).join(newLine(size));
     var space = (n, txt = "") => `${(0, ramda_1.range)(0, n * 2).map(() => " ").join("")}${txt}`;
-    var indent = (txt, n = 1) => space(n, txt.replace(/\n/g, `
-${space(n)}`));
     var applyTemplate = (template, values) => Object.entries(values).reduce((acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value), template);
+    var formatDateLong = (date) => {
+      const parsed = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+      if (Number.isNaN(parsed.getTime()))
+        return date;
+      return parsed.toLocaleDateString("en-US", {
+        month: "long",
+        day: "2-digit",
+        year: "numeric",
+        timeZone: "UTC"
+      });
+    };
+    var normalizeVersionLabel = (version) => version.startsWith("v") ? version : `v${version}`;
     var RenderAPI = class {
       constructor(api) {
         this.api = api;
@@ -42944,32 +42986,11 @@ ${space(n)}`));
             return space(1, `- \u{1F4E6} ${pkgLinks[0]}`);
           return space(1, `- \u{1F4E6} Packages (${pkgLinks.length}): ${pkgLinks.join(", ")}`);
         };
-        this.packageInline = (pkgs) => {
-          const pkgLinks = this.packageLinks(pkgs);
-          if (!pkgLinks.length)
-            return "";
-          if (pkgLinks.length === 1)
-            return `\u{1F4E6} ${pkgLinks[0]}`;
-          return `\u{1F4E6} ${pkgLinks.join(", ")}`;
-        };
-        this.authorInline = (change) => `\u{1F9D1}\u200D\u{1F4BB} ${this.author(change)}`;
-        this.quoteBlock = (text) => text.split("\n").map((line) => `> ${line}`).join("\n");
-        this.renderBody = (body) => {
-          const cleaned = body.trim();
-          if (!cleaned)
-            return "";
-          const isSingleLine = !cleaned.includes("\n");
-          const isShort = cleaned.length <= 140;
-          if (isSingleLine && isShort) {
-            return space(1, `\u{1F4DD} ${cleaned}`);
-          }
-          return indent(lines([
-            "<details>",
-            "  <summary>\u{1F4DD} PR details</summary>",
-            "",
-            this.quoteBlock(cleaned),
-            "</details>"
-          ]), 1);
+        this.scopeInline = (pkgs) => {
+          const normalized = this.normalizedPkgs(pkgs);
+          if (normalized.length === 0)
+            return "general";
+          return normalized.map((pkg) => `\`${pkg}\``).join(" \u2022 ");
         };
         this.packageGroupKey = (pkgs) => {
           const normalized = this.normalizedPkgs(pkgs);
@@ -42989,19 +43010,25 @@ ${space(n)}`));
           }
           return "unknown";
         };
+        this.refLabel = ({ number, sourceCommit }) => {
+          if (number > 0)
+            return `#${number}`;
+          if (sourceCommit)
+            return `commit ${sourceCommit.slice(0, 7)}`;
+          return "unknown";
+        };
         this.author = ({ author }) => author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
         this.change = (change) => {
-          const { title, body, pkgs } = change;
+          const { title, pkgs } = change;
           const template = this.api.config.changelog?.templates?.item;
-          const details = template ? this.renderBody(body || "") : "";
           const stats = lines([
             this.packageStats(pkgs),
             space(1, `- \u{1F9D1}\u200D\u{1F4BB} ${this.author(change)}`)
           ]);
-          const meta = [this.packageInline(pkgs), this.authorInline(change)].filter(Boolean).join(" \xB7 ");
           const defaultItem = lines([
-            `* ${this.ref(change)} \u2014 **${title?.trim() || "Untitled change"}**`,
-            space(1, `_${meta}_`)
+            `* **${this.refLabel(change)}** \u2014 ${title?.trim() || "Untitled change"}  `,
+            `&nbsp; &nbsp; \u{1F4E6} **Scope:** ${this.scopeInline(pkgs)}  `,
+            `&nbsp; &nbsp; \u270D\uFE0F **By:** ${this.author(change)}`
           ]);
           if (!template)
             return defaultItem;
@@ -43010,32 +43037,50 @@ ${space(n)}`));
             TITLE: title?.trim() || "",
             AUTHOR: this.author(change),
             PACKAGES: lines(this.packageLinks(pkgs)),
-            BODY: body || "",
-            DETAILS: details,
+            BODY: "",
+            DETAILS: "",
             STATS: stats
           });
         };
         this.iconForType = (type) => this.api.config.changeTypeEmojis?.[type] || "";
         this.sectionHeading = (type, label) => {
           const icon = this.iconForType(type);
-          return icon ? `#### ${icon} ${label}` : `#### ${label}`;
+          const headerLabel = label.toUpperCase();
+          return icon ? `### ${icon} ${headerLabel}` : `### ${headerLabel}`;
         };
+        this.detectBump = (changes) => {
+          const rank = { patch: 0, minor: 1, major: 2 };
+          return changes.reduce((current, change) => {
+            const bump = this.api.config.changeTypeBumps?.[change.type] ?? (change.type === "breaking" ? "major" : change.type === "feature" ? "minor" : "patch");
+            return rank[bump] > rank[current] ? bump : current;
+          }, "patch");
+        };
+        this.badge = (label, value, color) => `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
         this.summary = (changes) => {
           const packageCount = new Set(changes.flatMap((change) => change.pkgs)).size;
-          const byType = (0, ramda_1.groupBy)(({ type }) => type, changes);
-          const typeSummary = Object.entries(this.api.config.changeTypes).flatMap(([type]) => {
-            if (!(0, utils_1.isKey)(byType, type))
-              return [];
-            const icon = this.iconForType(type) || "\u2022";
-            return `${icon} ${byType[type].length}`;
-          });
-          return `> ${typeSummary.join(" \xB7 ")} \xB7 \u{1F4E6} ${packageCount || 0} packages \xB7 \u{1F522} ${changes.length} changes`;
+          const bump = this.detectBump(changes).toUpperCase();
+          const bumpColor = bump === "MAJOR" ? "red" : bump === "MINOR" ? "yellow" : "green";
+          return [
+            this.badge("BUMP", bump, bumpColor),
+            this.badge("CHANGES", String(changes.length), "blue"),
+            this.badge("PACKAGES", String(packageCount || 0), "orange")
+          ].join(" ");
+        };
+        this.defaultHeader = (tag, previousTag, releaseDate) => {
+          const date = formatDateLong(releaseDate || (0, git_1.getDate)());
+          const current = normalizeVersionLabel(tag.toString());
+          if (previousTag) {
+            const previous = normalizeVersionLabel(previousTag);
+            const compareUrl = `https://github.com/${this.api.config.gh}/compare/${previous}...${current}`;
+            return `# \u{1F680} ${link(current, compareUrl)} &nbsp; \u2022 &nbsp; ${date}`;
+          }
+          return `# \u{1F680} ${current} &nbsp; \u2022 &nbsp; ${date}`;
         };
         this.section = (type, label, changes) => {
           const renderedChanges = lines(changes.map(this.change));
           const template = this.api.config.changelog?.templates?.section;
           if (!template) {
-            return lines([this.sectionHeading(type, label), renderedChanges]);
+            return lines([this.sectionHeading(type, label), renderedChanges, "<br>"]);
           }
           return applyTemplate(template, {
             LABEL: label,
@@ -43049,11 +43094,34 @@ ${space(n)}`));
             ...Object.entries(byPkg).flatMap(([pkgKey, pkgChanges]) => {
               const pkgTitle = this.packageGroupTitle(pkgKey);
               return lines([`##### \u{1F4E6} ${pkgTitle}`, ...pkgChanges.map(this.change)]);
-            })
+            }),
+            "<br>"
           ]);
         };
-        this.changes = (tag, changes) => {
-          const groups = (0, ramda_1.groupBy)(({ type }) => type, changes);
+        this.refinementLink = (change) => {
+          if (change.sourceCommit) {
+            return `https://github.com/${this.api.config.gh}/commit/${change.sourceCommit}`;
+          }
+          if (change.number > 0) {
+            return this.api.github.issue(change.number);
+          }
+          return `https://github.com/${this.api.config.gh}`;
+        };
+        this.refinementItem = (change) => `&nbsp; &nbsp; [\u{1F517}](${this.refinementLink(change)}) &nbsp; ${change.title?.trim() || "Untitled change"}  `;
+        this.refinementsSection = (changes) => {
+          if (changes.length === 0)
+            return "";
+          return lines([
+            "---",
+            "### \u{1F6E0}\uFE0F OTHER REFINEMENTS",
+            "",
+            ...changes.map(this.refinementItem)
+          ]);
+        };
+        this.changes = (tag, changes, previousTag, releaseDate) => {
+          const primaryChanges = changes.filter((x) => !x.isRefinement);
+          const refinements = changes.filter((x) => x.isRefinement);
+          const groups = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
           const sectionTitles = {
             ...this.api.config.changeTypes
           };
@@ -43061,12 +43129,12 @@ ${space(n)}`));
           const header = headerTemplate ? applyTemplate(headerTemplate, {
             VERSION: tag.toString(),
             DATE: (0, git_1.getDate)()
-          }) : `## ${tag.toString()} (${(0, git_1.getDate)()})`;
+          }) : this.defaultHeader(tag, previousTag, releaseDate);
           const grouping = this.api.config.changelog?.grouping ?? "none";
-          if (changes.length === 0) {
+          if (primaryChanges.length === 0 && refinements.length === 0) {
             return lines([header, "_No user-facing changes since the last tag._"], 2);
           }
-          const sections = grouping === "none" ? [lines(changes.map(this.change))] : Object.entries(sectionTitles).flatMap(([type, label]) => {
+          const sections = grouping === "none" ? [lines(primaryChanges.map(this.change))] : Object.entries(sectionTitles).flatMap(([type, label]) => {
             if (!(0, utils_1.isKey)(groups, type))
               return "";
             if (grouping === "package") {
@@ -43075,8 +43143,10 @@ ${space(n)}`));
             return this.section(type, label, groups[type]);
           });
           const hasCustomLayout = Boolean(this.api.config.changelog?.templates?.item || this.api.config.changelog?.templates?.section);
-          const summary2 = hasCustomLayout ? "" : this.summary(changes);
-          return lines([header, summary2, ...sections], 2);
+          const summary2 = hasCustomLayout ? "" : this.summary(primaryChanges);
+          const divider = hasCustomLayout ? "" : "---";
+          const refinementsSection = this.refinementsSection(refinements);
+          return lines([header, summary2, divider, ...sections, refinementsSection], 2);
         };
       }
     };
@@ -43091,6 +43161,7 @@ var require_changelog = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.renderChangelog = void 0;
     var git_1 = require_git();
+    var version_1 = require_version();
     var fetch_1 = require_fetch2();
     var render_1 = require_render();
     var detectChangeType = (changes, changeTypeBumps) => {
@@ -43101,19 +43172,65 @@ var require_changelog = __commonJS({
       }, "patch");
       return highest;
     };
-    var renderChangelog = async (api) => {
-      const version = api.module.version();
+    var enforceVersionTagRule = (api, previousVersion) => {
       try {
-        version.isEqual((0, git_1.lastTag)());
+        previousVersion.isEqual((0, git_1.lastTag)());
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
-        if (!message.includes("No names found")) {
-          throw new Error(`Unable to continue release. package.json version must match the last git tag. Root cause: ${message}`);
+        if (message.includes("No names found")) {
+          return;
+        }
+        const rule = api.config.policies?.rules?.versionTagMismatch ?? "error";
+        const mismatchMessage = `package.json version must match the last git tag. Root cause: ${message}`;
+        if (rule === "error") {
+          throw new Error(`Unable to continue release. ${mismatchMessage}`);
+        }
+        if (rule === "warn") {
+          api.logger.warn(`[relasy] Continuing despite version/tag mismatch because policies.rules.version-tag-mismatch=warn. ${mismatchMessage}`);
         }
       }
-      const changes = await new fetch_1.FetchApi(api).changes(version);
-      await api.module.bump(detectChangeType(changes, api.config?.changeTypeBumps ?? {}));
-      return new render_1.RenderAPI(api).changes(api.module.version(), changes);
+    };
+    var renderIncrementalChangelog = async (api, options) => {
+      const fetch = new fetch_1.FetchApi(api);
+      const renderer = new render_1.RenderAPI(api);
+      const currentVersion = api.module.version();
+      const sinceRef = options.sinceCommit || options.sinceTag;
+      const changes = sinceRef ? await fetch.changesSinceRef(sinceRef) : await fetch.changes(currentVersion);
+      if (!sinceRef) {
+        await api.module.bump(detectChangeType(changes, api.config?.changeTypeBumps ?? {}));
+        return renderer.changes(api.module.version(), changes, currentVersion.toString());
+      }
+      return renderer.changes(currentVersion, changes, options.sinceTag);
+    };
+    var renderFullHistoryChangelog = async (api) => {
+      const tags = (0, git_1.listTags)();
+      const fetch = new fetch_1.FetchApi(api);
+      const renderer = new render_1.RenderAPI(api);
+      if (tags.length === 0) {
+        const currentVersion = api.module.version();
+        const changes = await fetch.changes(currentVersion);
+        return renderer.changes(currentVersion, changes);
+      }
+      const sections = [];
+      for (let i = 0; i < tags.length; i += 1) {
+        const tag = tags[i];
+        const previousTag = i > 0 ? tags[i - 1] : void 0;
+        const changes = await fetch.changesBetweenRefs(previousTag, tag);
+        sections.push(renderer.changes(version_1.Version.parse(tag), changes, previousTag, (0, git_1.dateAtRef)(tag)));
+      }
+      return sections.reverse().join("\n\n---\n\n");
+    };
+    var renderChangelog = async (api, options = {}) => {
+      const hasCustomStart = Boolean(options.sinceTag || options.sinceCommit);
+      if (options.all) {
+        return renderFullHistoryChangelog(api);
+      }
+      if (hasCustomStart) {
+        return renderIncrementalChangelog(api, options);
+      }
+      const previousVersion = api.module.version();
+      enforceVersionTagRule(api, previousVersion);
+      return renderIncrementalChangelog(api, options);
     };
     exports2.renderChangelog = renderChangelog;
   }
@@ -43406,8 +43523,8 @@ var require_dist = __commonJS({
         const config = await (0, config_1.loadConfig)();
         return new _Relasy(config, new gh_1.Github(config.gh, void 0, config.project.baseBranch), (0, project_1.setupToolchain)(config.project));
       }
-      changelog() {
-        return (0, changelog_1.renderChangelog)(this);
+      changelog(options) {
+        return (0, changelog_1.renderChangelog)(this, options);
       }
       labels(ls) {
         return (0, labels_1.genLabels)(this.config, ls);

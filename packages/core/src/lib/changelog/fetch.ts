@@ -2,7 +2,11 @@ import { pluck } from "ramda";
 import { Change, Api, Commit, PR } from "./types";
 import { parseLabels } from "../labels";
 import { Version } from "../version";
-import { commitsAfterVersion } from "../git";
+import {
+  commitsAfterRef,
+  commitsAfterVersion,
+  commitsBetweenRefs,
+} from "../git";
 
 export const parsePRNumberFromCommitMessage = (
   msg: string,
@@ -114,7 +118,7 @@ const resolveDetectedType = (
   api: Api,
   labelsType?: string,
   commitsType?: string,
-): string => {
+): { type: string; isRefinement: boolean } => {
   const detectionUse = api.config.policies?.detectionUse ?? ["labels"];
   const conflictRule = api.config.policies?.rules?.detectionConflict ?? "error";
 
@@ -131,11 +135,20 @@ const resolveDetectedType = (
   }
 
   for (const source of detectionUse) {
-    if (source === "labels" && labelsType) return labelsType;
-    if (source === "commits" && commitsType) return commitsType;
+    if (source === "labels" && labelsType) {
+      return { type: labelsType, isRefinement: false };
+    }
+
+    if (source === "commits" && commitsType) {
+      return { type: commitsType, isRefinement: false };
+    }
   }
 
-  return labelsType || commitsType || "chore";
+  if (labelsType || commitsType) {
+    return { type: labelsType || commitsType || "chore", isRefinement: false };
+  }
+
+  return { type: "chore", isRefinement: true };
 };
 
 const toSyntheticChange = (api: Api, commit: Commit): Change => {
@@ -158,6 +171,7 @@ const toSyntheticChange = (api: Api, commit: Commit): Change => {
     type: (commitDetected || "chore") as Change["type"],
     pkgs: [],
     sourceCommit: commit.oid,
+    isRefinement: !commitDetected,
   };
 };
 
@@ -226,20 +240,20 @@ export class FetchApi {
 
     const fromLabels = changeTypes.find(Boolean)?.changeType;
     const fromCommits = detectTypeFromPRCommits(this.api, pr);
+    const detected = resolveDetectedType(this.api, fromLabels, fromCommits);
 
     return {
       ...pr,
-      type: resolveDetectedType(
-        this.api,
-        fromLabels,
-        fromCommits,
-      ) as Change["type"],
+      type: detected.type as Change["type"],
+      isRefinement: detected.isRefinement,
       pkgs: pkgs.map(({ pkg }) => pkg),
     };
   };
 
-  public changes = async (version: Version): Promise<Change[]> => {
-    const commits = await this.commits(commitsAfterVersion(version));
+  private resolveChangesFromCommits = async (
+    commitOids: string[],
+  ): Promise<Change[]> => {
+    const commits = await this.commits(commitOids);
     const resolutions = commits.map(this.toResolution);
     const prNumbers = [
       ...new Set(
@@ -295,4 +309,16 @@ export class FetchApi {
     );
     return [...prChanges, ...syntheticChanges];
   };
+
+  public changes = async (version: Version): Promise<Change[]> =>
+    this.resolveChangesFromCommits(commitsAfterVersion(version));
+
+  public changesSinceRef = async (ref: string): Promise<Change[]> =>
+    this.resolveChangesFromCommits(commitsAfterRef(ref));
+
+  public changesBetweenRefs = async (
+    fromExclusive: string | undefined,
+    to: string,
+  ): Promise<Change[]> =>
+    this.resolveChangesFromCommits(commitsBetweenRefs(fromExclusive, to));
 }

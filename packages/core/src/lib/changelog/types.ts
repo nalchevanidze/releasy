@@ -35,6 +35,7 @@ export type Change = PR & {
   type: ChangeType;
   pkgs: string[];
   sourceCommit?: string;
+  isRefinement?: boolean;
 };
 
 export type GitHubClient = {

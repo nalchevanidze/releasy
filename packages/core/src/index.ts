@@ -8,7 +8,7 @@ export {
 } from "./lib/config";
 import { setupEnv } from "./lib/utils";
 import { setupToolchain } from "./lib/project";
-import { renderChangelog } from "./lib/changelog";
+import { renderChangelog, type ChangelogOptions } from "./lib/changelog";
 import { genLabels, parseLabels } from "./lib/labels";
 export * from "./app";
 export { withRetry } from "./lib/retry";
@@ -16,7 +16,7 @@ export { exit } from "./lib/utils";
 
 export interface IRelasy extends Api {
   version(): ReturnType<Api["module"]["version"]>;
-  changelog(): Promise<string>;
+  changelog(options?: ChangelogOptions): Promise<string>;
   labels(ls: string[]): ReturnType<typeof genLabels>;
   parseLabels(labels: string[]): ReturnType<typeof parseLabels>;
 }
@@ -35,8 +35,8 @@ export class Relasy extends Api implements IRelasy {
 
   public version = () => this.module.version();
 
-  public changelog() {
-    return renderChangelog(this);
+  public changelog(options?: ChangelogOptions) {
+    return renderChangelog(this, options);
   }
 
   public labels(ls: string[]) {

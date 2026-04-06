@@ -1,4 +1,4 @@
-import { ChangeType, DetectionInput, LabelMode, RuleLevel } from "./schema";
+import { ChangeType, DetectionInput, LabelMode, RulesConfig } from "./schema";
 
 export type BumpLevel = "major" | "minor" | "patch";
 
@@ -31,9 +31,10 @@ export const defaultChangeTypeBumps: Record<ChangeType, BumpLevel> = {
 
 export const defaultLabelMode: LabelMode = "strict";
 export const defaultDetectionUse: DetectionInput[] = ["labels"];
-export const defaultRuleLevels: Record<string, RuleLevel> = {
+export const defaultRuleLevels: Required<RulesConfig> = {
   labelConflict: "error",
   inferredPackageMissing: "error",
   detectionConflict: "error",
   nonPrCommit: "skip",
+  versionTagMismatch: "error",
 };

@@ -1,8 +1,11 @@
 import * as z from "zod";
 
+export const ruleLevelValues = ["skip", "warn", "error"] as const;
+export const RuleLevelSchema = z.enum(ruleLevelValues);
+
 export type LabelType = "pkgs" | "changeTypes";
 export type LabelMode = "strict" | "permissive";
-export type RuleLevel = "skip" | "warn" | "error";
+export type RuleLevel = z.infer<typeof RuleLevelSchema>;
 export type DetectionInput = "labels" | "commits";
 export type BumpLevel = "major" | "minor" | "patch";
 
@@ -25,6 +28,7 @@ export type RulesConfig = {
   inferredPackageMissing?: RuleLevel;
   detectionConflict?: RuleLevel;
   nonPrCommit?: RuleLevel;
+  versionTagMismatch?: RuleLevel;
 };
 
 export type PoliciesConfig = {
@@ -114,10 +118,11 @@ export const ChangeDefinitionSchema = z
 
 export const RulesConfigSchema = z
   .object({
-    labelConflict: z.enum(["skip", "warn", "error"]).optional(),
-    inferredPackageMissing: z.enum(["skip", "warn", "error"]).optional(),
-    detectionConflict: z.enum(["skip", "warn", "error"]).optional(),
-    nonPrCommit: z.enum(["skip", "warn", "error"]).optional(),
+    labelConflict: RuleLevelSchema.optional(),
+    inferredPackageMissing: RuleLevelSchema.optional(),
+    detectionConflict: RuleLevelSchema.optional(),
+    nonPrCommit: RuleLevelSchema.optional(),
+    versionTagMismatch: RuleLevelSchema.optional(),
   })
   .optional();
 

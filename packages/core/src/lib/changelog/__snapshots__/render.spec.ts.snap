@@ -1,199 +1,259 @@
 // Vitest Snapshot v1
 
 exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no author url) 1`] = `
-"## v4.1.0 (2026-04-05)
+"# 🚀 v4.1.0 &nbsp; • &nbsp; April 05, 2026
 
-> 🧹 1 · 📦 0 packages · 🔢 1 changes
+![BUMP](https://img.shields.io/badge/BUMP-PATCH-green?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-1-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-0-orange?style=flat-square)
 
-* commit abcdef1 — **Standalone commit**
-  _🧑‍💻 @ci-bot_"
+---
+
+* **commit abcdef1** — Standalone commit  
+&nbsp; &nbsp; 📦 **Scope:** general  
+&nbsp; &nbsp; ✍️ **By:** @ci-bot"
 `;
 
 exports[`RenderAPI snapshots > custom item template skips default visual summary 1`] = `
-"## v4.0.8 (2026-04-05)
+"# 🚀 v4.0.8 &nbsp; • &nbsp; April 05, 2026
 
-#### 📚 Documentation
-- Add style guide"
+### 📚 DOCUMENTATION
+- Add style guide
+<br>"
 `;
 
 exports[`RenderAPI snapshots > custom section/item templates 1`] = `
-"## v4.0.0 (2026-04-05)
+"# 🚀 v4.0.0 &nbsp; • &nbsp; April 05, 2026
 
 ### Features
 - [#40](https://github.com/acme/demo/issues/40) | Template driven entry | [@author](https://example.com/author) | [core](https://npmjs.com/package/@acme/core)"
 `;
 
 exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
-"## v2.0.0 (2026-04-05)
+"# 🚀 v2.0.0 &nbsp; • &nbsp; April 05, 2026
 
-> ✨ 1 · 🐛 1 · 📦 2 packages · 🔢 2 changes
+![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
 
-#### ✨ Features
-* [#10](https://github.com/acme/demo/issues/10) — **Ship onboarding**
-  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+---
 
-#### 🐛 Fixes
-* [#11](https://github.com/acme/demo/issues/11) — **Fix race condition**
-  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
+### ✨ FEATURES
+* **#10** — Ship onboarding  
+&nbsp; &nbsp; 📦 **Scope:** \`core\` • \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>
+
+### 🐛 FIXES
+* **#11** — Fix race condition  
+&nbsp; &nbsp; 📦 **Scope:** \`core\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>"
 `;
 
 exports[`RenderAPI snapshots > default layout renders top-level visual summary 1`] = `
-"## v4.0.7 (2026-04-05)
+"# 🚀 v4.0.7 &nbsp; • &nbsp; April 05, 2026
 
-> ✨ 2 · 🐛 1 · 📦 3 packages · 🔢 3 changes
+![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-3-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-3-orange?style=flat-square)
 
-#### ✨ Features
-* [#57](https://github.com/acme/demo/issues/57) — **Ship composer**
-  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_
-* [#58](https://github.com/acme/demo/issues/58) — **Ship presets**
-  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+---
 
-#### 🐛 Fixes
-* [#59](https://github.com/acme/demo/issues/59) — **Fix lint script**
-  _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@author](https://example.com/author)_"
+### ✨ FEATURES
+* **#57** — Ship composer  
+&nbsp; &nbsp; 📦 **Scope:** \`core\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+* **#58** — Ship presets  
+&nbsp; &nbsp; 📦 **Scope:** \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>
+
+### 🐛 FIXES
+* **#59** — Fix lint script  
+&nbsp; &nbsp; 📦 **Scope:** \`cli\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>"
 `;
 
 exports[`RenderAPI snapshots > empty change list renders a friendly empty-state note 1`] = `
-"## v4.0.5 (2026-04-05)
+"# 🚀 v4.0.5 &nbsp; • &nbsp; April 05, 2026
 
 _No user-facing changes since the last tag._"
 `;
 
 exports[`RenderAPI snapshots > grouping none renders a flat list without sections 1`] = `
-"## v4.0.1 (2026-04-05)
+"# 🚀 v4.0.1 &nbsp; • &nbsp; April 05, 2026
 
-> ✨ 1 · 🐛 1 · 📦 2 packages · 🔢 2 changes
+![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
 
-* [#50](https://github.com/acme/demo/issues/50) — **Add keyboard shortcuts**
-  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
-* [#51](https://github.com/acme/demo/issues/51) — **Handle null session**
-  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
+---
+
+* **#50** — Add keyboard shortcuts  
+&nbsp; &nbsp; 📦 **Scope:** \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+* **#51** — Handle null session  
+&nbsp; &nbsp; 📦 **Scope:** \`core\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)"
 `;
 
 exports[`RenderAPI snapshots > item template can consume DETAILS and STATS placeholders 1`] = `
-"## v4.0.4 (2026-04-05)
+"# 🚀 v4.0.4 &nbsp; • &nbsp; April 05, 2026
 
-#### 📚 Documentation
+### 📚 DOCUMENTATION
 * Add migration guide
   source=[#55](https://github.com/acme/demo/issues/55)
   stats=  - 📦 Packages (2): [cli](https://npmjs.com/package/@acme/cli), [core](https://npmjs.com/package/@acme/core)
   - 🧑‍💻 [@author](https://example.com/author)
-  details=  <details>
-    <summary>📝 PR details</summary>
-  > Step 1
-  > Step 2
-  </details>"
+  details=
+<br>"
 `;
 
 exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
-"## v3.4.0 (2026-04-05)
+"# 🚀 v3.4.0 &nbsp; • &nbsp; April 05, 2026
 
-> 💥 1 · ✨ 2 · 🐛 2 · 🧹 2 · 📦 3 packages · 🔢 7 changes
+![BUMP](https://img.shields.io/badge/BUMP-MAJOR-red?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-7-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-3-orange?style=flat-square)
 
-#### 💥 Breaking
+---
+
+### 💥 BREAKING
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
-* [#20](https://github.com/acme/demo/issues/20) — **Drop legacy auth**
-  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_
+* **#20** — Drop legacy auth  
+&nbsp; &nbsp; 📦 **Scope:** \`core\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>
 
-#### ✨ Features
+### ✨ FEATURES
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
-* [#21](https://github.com/acme/demo/issues/21) — **Add cache layer**
-  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_
+* **#21** — Add cache layer  
+&nbsp; &nbsp; 📦 **Scope:** \`core\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
 ##### 📦 [web](https://npmjs.com/package/@acme/web)
-* [#22](https://github.com/acme/demo/issues/22) — **Add dashboard**
-  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+* **#22** — Add dashboard  
+&nbsp; &nbsp; 📦 **Scope:** \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>
 
-#### 🐛 Fixes
+### 🐛 FIXES
 ##### 📦 [web](https://npmjs.com/package/@acme/web)
-* [#23](https://github.com/acme/demo/issues/23) — **Fix pagination**
-  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+* **#23** — Fix pagination  
+&nbsp; &nbsp; 📦 **Scope:** \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
 ##### 📦 General
-* [#24](https://github.com/acme/demo/issues/24) — **Fix typo**
-  _🧑‍💻 [@author](https://example.com/author)_
+* **#24** — Fix typo  
+&nbsp; &nbsp; 📦 **Scope:** general  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>
 
-#### 🧹 Chores
+### 🧹 CHORES
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
-* [#25](https://github.com/acme/demo/issues/25) — **Bump deps**
-  _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@author](https://example.com/author)_
+* **#25** — Bump deps  
+&nbsp; &nbsp; 📦 **Scope:** \`cli\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
 ##### 📦 General
-* [#26](https://github.com/acme/demo/issues/26) — **Refactor scripts**
-  _🧑‍💻 [@author](https://example.com/author)_"
+* **#26** — Refactor scripts  
+&nbsp; &nbsp; 📦 **Scope:** general  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>"
 `;
 
 exports[`RenderAPI snapshots > package grouping normalizes multi-package keys 1`] = `
-"## v3.4.1 (2026-04-05)
+"# 🚀 v3.4.1 &nbsp; • &nbsp; April 05, 2026
 
-> ✨ 2 · 📦 2 packages · 🔢 2 changes
+![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
 
-#### ✨ Features
+---
+
+### ✨ FEATURES
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)
-* [#30](https://github.com/acme/demo/issues/30) — **Ship shared auth layer**
-  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
-* [#31](https://github.com/acme/demo/issues/31) — **Expand auth docs**
-  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_"
+* **#30** — Ship shared auth layer  
+&nbsp; &nbsp; 📦 **Scope:** \`core\` • \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+* **#31** — Expand auth docs  
+&nbsp; &nbsp; 📦 **Scope:** \`core\` • \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>"
 `;
 
 exports[`RenderAPI snapshots > package grouping renders normalized multi-package sections 1`] = `
-"## v4.0.2 (2026-04-05)
+"# 🚀 v4.0.2 &nbsp; • &nbsp; April 05, 2026
 
-> 🐛 2 · 📦 2 packages · 🔢 2 changes
+![BUMP](https://img.shields.io/badge/BUMP-PATCH-green?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
 
-#### 🐛 Fixes
+---
+
+### 🐛 FIXES
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)
-* [#52](https://github.com/acme/demo/issues/52) — **Align package order**
-  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
-* [#53](https://github.com/acme/demo/issues/53) — **Keep grouping stable**
-  _📦 [core](https://npmjs.com/package/@acme/core), [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_"
+* **#52** — Align package order  
+&nbsp; &nbsp; 📦 **Scope:** \`core\` • \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+* **#53** — Keep grouping stable  
+&nbsp; &nbsp; 📦 **Scope:** \`core\` • \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>"
 `;
 
 exports[`RenderAPI snapshots > section icons come from user config changeTypeEmojis 1`] = `
-"## v4.0.9 (2026-04-05)
+"# 🚀 v4.0.9 &nbsp; • &nbsp; April 05, 2026
 
-> 🚀 1 · 🛠️ 1 · 📦 2 packages · 🔢 2 changes
+![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
 
-#### 🚀 Features
-* [#61](https://github.com/acme/demo/issues/61) — **Ship inline editor**
-  _📦 [web](https://npmjs.com/package/@acme/web) · 🧑‍💻 [@author](https://example.com/author)_
+---
 
-#### 🛠️ Fixes
-* [#62](https://github.com/acme/demo/issues/62) — **Handle stale cache**
-  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
+### 🚀 FEATURES
+* **#61** — Ship inline editor  
+&nbsp; &nbsp; 📦 **Scope:** \`web\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>
+
+### 🛠️ FIXES
+* **#62** — Handle stale cache  
+&nbsp; &nbsp; 📦 **Scope:** \`core\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>"
 `;
 
 exports[`RenderAPI snapshots > section templates are ignored when grouping is none 1`] = `
-"## v4.0.6 (2026-04-05)
+"# 🚀 v4.0.6 &nbsp; • &nbsp; April 05, 2026
 
-* [#56](https://github.com/acme/demo/issues/56) — **Increase coverage for renderer**
-  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@author](https://example.com/author)_"
+* **#56** — Increase coverage for renderer  
+&nbsp; &nbsp; 📦 **Scope:** \`core\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)"
 `;
 
 exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] = `
 "## Release v1.2.3 on 2026-04-05
 
-> ✨ 1 · 🐛 1 · 🧹 1 · 📦 2 packages · 🔢 3 changes
+![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-3-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
 
-#### ✨ Features
+---
+
+### ✨ FEATURES
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
-* [#1](https://github.com/acme/demo/issues/1) — **Add dark mode**
-  _📦 [core](https://npmjs.com/package/@acme/core) · 🧑‍💻 [@alice](https://example.com/alice)_
+* **#1** — Add dark mode  
+&nbsp; &nbsp; 📦 **Scope:** \`core\`  
+&nbsp; &nbsp; ✍️ **By:** [@alice](https://example.com/alice)
+<br>
 
-#### 🐛 Fixes
+### 🐛 FIXES
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
-* [#2](https://github.com/acme/demo/issues/2) — **Fix login**
-  _📦 [cli](https://npmjs.com/package/@acme/cli) · 🧑‍💻 [@bob](https://example.com/bob)_
+* **#2** — Fix login  
+&nbsp; &nbsp; 📦 **Scope:** \`cli\`  
+&nbsp; &nbsp; ✍️ **By:** [@bob](https://example.com/bob)
+<br>
 
-#### 🧹 Chores
+### 🧹 CHORES
 ##### 📦 General
-* [#3](https://github.com/acme/demo/issues/3) — **Minor cleanup**
-  _🧑‍💻 [@chris](https://example.com/chris)_"
+* **#3** — Minor cleanup  
+&nbsp; &nbsp; 📦 **Scope:** general  
+&nbsp; &nbsp; ✍️ **By:** [@chris](https://example.com/chris)
+<br>"
 `;
 
 exports[`RenderAPI snapshots > unknown package labels fall back to raw names with links when available 1`] = `
-"## v4.0.3 (2026-04-05)
+"# 🚀 v4.0.3 &nbsp; • &nbsp; April 05, 2026
 
-> ✨ 1 · 📦 1 packages · 🔢 1 changes
+![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-1-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-1-orange?style=flat-square)
 
-#### ✨ Features
-* [#54](https://github.com/acme/demo/issues/54) — **Wire analytics hook**
-  _📦 [sdk](https://npmjs.com/package/sdk) · 🧑‍💻 [@author](https://example.com/author)_"
+---
+
+### ✨ FEATURES
+* **#54** — Wire analytics hook  
+&nbsp; &nbsp; 📦 **Scope:** \`sdk\`  
+&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
+<br>"
 `;
