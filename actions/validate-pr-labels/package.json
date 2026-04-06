@@ -1,7 +1,7 @@
 {
   "name": "@relasy/validate-pr-labels-action",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "dist/index.js",
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.js",
