@@ -1,9 +1,4 @@
-import {
-  ChangeType,
-  DetectionInput,
-  LabelMode,
-  RulesConfig,
-} from "./schema";
+import { ChangeType, DetectionInput, LabelMode, RulesConfig } from "./schema";
 
 export type BumpLevel = "major" | "minor" | "patch";
 

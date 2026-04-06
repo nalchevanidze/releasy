@@ -32,7 +32,10 @@ const commitsAll = () => splitLines(git("rev-list", "--reverse", "HEAD"));
 
 export const commitsAfterRef = (ref: string) => commitsAfter(ref);
 
-export const commitsBetweenRefs = (fromExclusive: string | undefined, to: string) =>
+export const commitsBetweenRefs = (
+  fromExclusive: string | undefined,
+  to: string,
+) =>
   fromExclusive
     ? splitLines(git("rev-list", "--reverse", `${fromExclusive}..${to}`))
     : splitLines(git("rev-list", "--reverse", to));

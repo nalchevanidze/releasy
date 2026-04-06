@@ -2,7 +2,11 @@ import { pluck } from "ramda";
 import { Change, Api, Commit, PR } from "./types";
 import { parseLabels } from "../labels";
 import { Version } from "../version";
-import { commitsAfterRef, commitsAfterVersion, commitsBetweenRefs } from "../git";
+import {
+  commitsAfterRef,
+  commitsAfterVersion,
+  commitsBetweenRefs,
+} from "../git";
 
 export const parsePRNumberFromCommitMessage = (
   msg: string,

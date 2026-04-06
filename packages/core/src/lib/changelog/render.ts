@@ -164,7 +164,8 @@ export class RenderAPI {
   private summary = (changes: Change[]) => {
     const packageCount = new Set(changes.flatMap((change) => change.pkgs)).size;
     const bump = this.detectBump(changes).toUpperCase();
-    const bumpColor = bump === "MAJOR" ? "red" : bump === "MINOR" ? "yellow" : "green";
+    const bumpColor =
+      bump === "MAJOR" ? "red" : bump === "MINOR" ? "yellow" : "green";
 
     return [
       this.badge("BUMP", bump, bumpColor),
@@ -294,13 +295,16 @@ export class RenderAPI {
 
     const hasCustomLayout = Boolean(
       this.api.config.changelog?.templates?.item ||
-        this.api.config.changelog?.templates?.section,
+      this.api.config.changelog?.templates?.section,
     );
 
     const summary = hasCustomLayout ? "" : this.summary(primaryChanges);
     const divider = hasCustomLayout ? "" : "---";
     const refinementsSection = this.refinementsSection(refinements);
 
-    return lines([header, summary, divider, ...sections, refinementsSection], 2);
+    return lines(
+      [header, summary, divider, ...sections, refinementsSection],
+      2,
+    );
   };
 }

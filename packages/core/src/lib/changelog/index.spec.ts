@@ -149,7 +149,15 @@ describe("renderChangelog", () => {
       "ok\n\n---\n\nok",
     );
 
-    expect(mockChangesBetweenRefs).toHaveBeenNthCalledWith(1, undefined, "v1.0.0");
-    expect(mockChangesBetweenRefs).toHaveBeenNthCalledWith(2, "v1.0.0", "v1.1.0");
+    expect(mockChangesBetweenRefs).toHaveBeenNthCalledWith(
+      1,
+      undefined,
+      "v1.0.0",
+    );
+    expect(mockChangesBetweenRefs).toHaveBeenNthCalledWith(
+      2,
+      "v1.0.0",
+      "v1.1.0",
+    );
   });
 });

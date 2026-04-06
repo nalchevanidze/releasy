@@ -45,8 +45,7 @@ const enforceVersionTagRule = (api: Api, previousVersion: Version) => {
     }
 
     const rule = api.config.policies?.rules?.versionTagMismatch ?? "error";
-    const mismatchMessage =
-      `package.json version must match the last git tag. Root cause: ${message}`;
+    const mismatchMessage = `package.json version must match the last git tag. Root cause: ${message}`;
 
     if (rule === "error") {
       throw new Error(`Unable to continue release. ${mismatchMessage}`);
