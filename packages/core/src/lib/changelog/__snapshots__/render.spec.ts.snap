@@ -7,9 +7,7 @@ exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no 
 
 ---
 
-* **commit abcdef1** — Standalone commit  
-&nbsp; &nbsp; 📦 **Scope:** general  
-&nbsp; &nbsp; ✍️ **By:** @ci-bot"
+&nbsp; &nbsp; &nbsp; &nbsp; └─ [abcdef1](https://github.com/acme/demo/commit/abcdef1234567890): Standalone commit  "
 `;
 
 exports[`RenderAPI snapshots > custom item template skips default visual summary 1`] = `

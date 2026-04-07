@@ -19,6 +19,11 @@ const space = (n: number, txt: string = "") =>
     .map(() => " ")
     .join("")}${txt}`;
 
+const nbspIndent = (level: number, txt: string = "") =>
+  `${range(0, level)
+    .map(() => "&nbsp; &nbsp; ")
+    .join("")}${txt}`;
+
 const applyTemplate = (template: string, values: Record<string, string>) =>
   Object.entries(values).reduce(
     (acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value),
@@ -90,7 +95,7 @@ export class RenderAPI {
     }
 
     if (sourceCommit) {
-      return `commit ${sourceCommit.slice(0, 7)}`;
+      return sourceCommit.slice(0, 7);
     }
 
     return "unknown";
@@ -98,7 +103,7 @@ export class RenderAPI {
 
   private refLabel = ({ number, sourceCommit }: Change) => {
     if (number > 0) return `#${number}`;
-    if (sourceCommit) return `commit ${sourceCommit.slice(0, 7)}`;
+    if (sourceCommit) return sourceCommit.slice(0, 7);
     return "unknown";
   };
 
@@ -114,10 +119,15 @@ export class RenderAPI {
       space(1, `- 🧑‍💻 ${this.author(change)}`),
     ]);
 
-    const defaultItem = lines([
+    const commitOnlyDefaultItem =
+      change.sourceCommit && change.number <= 0
+        ? this.commitLine(change)
+        : "";
+
+    const defaultItem = commitOnlyDefaultItem || lines([
       `* **${this.refLabel(change)}** — ${title?.trim() || "Untitled change"}  `,
-      `&nbsp; &nbsp; 📦 **Scope:** ${this.scopeInline(pkgs)}  `,
-      `&nbsp; &nbsp; ✍️ **By:** ${this.author(change)}`,
+      `${nbspIndent(1, `📦 **Scope:** ${this.scopeInline(pkgs)}`)}  `,
+      nbspIndent(1, `✍️ **By:** ${this.author(change)}`),
     ]);
 
     if (!template) return defaultItem;
@@ -237,19 +247,51 @@ export class RenderAPI {
     return `https://github.com/${this.api.config.gh}`;
   };
 
-  private refinementItem = (change: Change) =>
-    `&nbsp; &nbsp; [🔗](${this.refinementLink(change)}) &nbsp; ${
-      change.title?.trim() || "Untitled change"
-    }  `;
+  private commitLine = (change: Change) => {
+    const short = change.sourceCommit?.slice(0, 7) || "unknown";
+    return `${nbspIndent(2, `└─ ${link(short, this.refinementLink(change))}: ${change.title?.trim() || "Untitled change"}`)}  `;
+  };
 
-  private refinementsSection = (changes: Change[]) => {
-    if (changes.length === 0) return "";
+  private refinementItem = (change: Change) => {
+    if (change.sourceCommit) {
+      return this.commitLine(change);
+    }
+
+    return `${nbspIndent(1, `[🔗](${this.refinementLink(change)}) &nbsp; ${
+      change.title?.trim() || "Untitled change"
+    }`)}  `;
+  };
+
+  private isReleasePrTitle = (title: string) =>
+    /^publish release\s+v?\d+\.\d+\.\d+(?:[-+][\w.-]+)?\s*$/i.test(title);
+
+  private isIgnoredRefinement = (change: Change) => {
+    const title = change.title?.trim() || "";
+    const body = change.body?.trim() || "";
+
+    return (
+      change.number > 0 &&
+      !change.sourceCommit &&
+      this.isReleasePrTitle(title) &&
+      body.includes("# 🚀")
+    );
+  };
+
+  private refinementsSection = (
+    changes: Change[],
+    includeDivider: boolean = true,
+  ) => {
+    const visibleRefinements = changes.filter(
+      (change) => !this.isIgnoredRefinement(change),
+    );
+
+    if (visibleRefinements.length === 0) return "";
 
     return lines([
-      "---",
-      "### 🛠️ OTHER REFINEMENTS",
+      includeDivider ? "---" : "",
+      "### 🔧 INTERNAL REFINEMENTS",
       "",
-      ...changes.map(this.refinementItem),
+      ...visibleRefinements.map(this.refinementItem),
     ]);
   };
 
@@ -278,6 +320,17 @@ export class RenderAPI {
 
     if (primaryChanges.length === 0 && refinements.length === 0) {
       return lines([header, "_No user-facing changes since the last tag._"], 2);
+    }
+
+    if (primaryChanges.length === 0 && refinements.length > 0) {
+      return lines(
+        [
+          header,
+          "_No categorized user-facing changes in this release._",
+          this.refinementsSection(refinements, false),
+        ],
+        2,
+      );
     }
 
     const sections =

@@ -43726,6 +43726,7 @@ var require_render = __commonJS({
     var newLine = (size) => (0, ramda_1.range)(0, size).map(() => "\n").join("");
     var lines = (xs, size = 1) => xs.filter(Boolean).join(newLine(size));
     var space = (n, txt = "") => `${(0, ramda_1.range)(0, n * 2).map(() => " ").join("")}${txt}`;
+    var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
     var applyTemplate = (template, values) => Object.entries(values).reduce((acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value), template);
     var formatDateLong = (date) => {
       const parsed = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
@@ -43778,7 +43779,7 @@ var require_render = __commonJS({
             return link(`#${number}`, this.api.github.issue(number));
           }
           if (sourceCommit) {
-            return `commit ${sourceCommit.slice(0, 7)}`;
+            return sourceCommit.slice(0, 7);
           }
           return "unknown";
         };
@@ -43786,7 +43787,7 @@ var require_render = __commonJS({
           if (number > 0)
             return `#${number}`;
           if (sourceCommit)
-            return `commit ${sourceCommit.slice(0, 7)}`;
+            return sourceCommit.slice(0, 7);
           return "unknown";
         };
         this.author = ({ author }) => author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
@@ -43797,10 +43798,11 @@ var require_render = __commonJS({
             this.packageStats(pkgs),
             space(1, `- \u{1F9D1}\u200D\u{1F4BB} ${this.author(change)}`)
           ]);
-          const defaultItem = lines([
+          const commitOnlyDefaultItem = change.sourceCommit && change.number <= 0 ? this.commitLine(change) : "";
+          const defaultItem = commitOnlyDefaultItem || lines([
             `* **${this.refLabel(change)}** \u2014 ${title?.trim() || "Untitled change"}  `,
-            `&nbsp; &nbsp; \u{1F4E6} **Scope:** ${this.scopeInline(pkgs)}  `,
-            `&nbsp; &nbsp; \u270D\uFE0F **By:** ${this.author(change)}`
+            `${nbspIndent(1, `\u{1F4E6} **Scope:** ${this.scopeInline(pkgs)}`)}  `,
+            nbspIndent(1, `\u270D\uFE0F **By:** ${this.author(change)}`)
           ]);
           if (!template)
             return defaultItem;
@@ -43879,15 +43881,31 @@ var require_render = __commonJS({
           }
           return `https://github.com/${this.api.config.gh}`;
         };
-        this.refinementItem = (change) => `&nbsp; &nbsp; [\u{1F517}](${this.refinementLink(change)}) &nbsp; ${change.title?.trim() || "Untitled change"}  `;
-        this.refinementsSection = (changes) => {
-          if (changes.length === 0)
+        this.commitLine = (change) => {
+          const short = change.sourceCommit?.slice(0, 7) || "unknown";
+          return `${nbspIndent(2, `\u2514\u2500 ${link(short, this.refinementLink(change))}: ${change.title?.trim() || "Untitled change"}`)}  `;
+        };
+        this.refinementItem = (change) => {
+          if (change.sourceCommit) {
+            return this.commitLine(change);
+          }
+          return `${nbspIndent(1, `[\u{1F517}](${this.refinementLink(change)}) &nbsp; ${change.title?.trim() || "Untitled change"}`)}  `;
+        };
+        this.isReleasePrTitle = (title) => /^publish release\s+v?\d+\.\d+\.\d+(?:[-+][\w.-]+)?\s*$/i.test(title);
+        this.isIgnoredRefinement = (change) => {
+          const title = change.title?.trim() || "";
+          const body = change.body?.trim() || "";
+          return change.number > 0 && !change.sourceCommit && this.isReleasePrTitle(title) && body.includes("# \u{1F680}");
+        };
+        this.refinementsSection = (changes, includeDivider = true) => {
+          const visibleRefinements = changes.filter((change) => !this.isIgnoredRefinement(change));
+          if (visibleRefinements.length === 0)
             return "";
           return lines([
-            "---",
-            "### \u{1F6E0}\uFE0F OTHER REFINEMENTS",
+            includeDivider ? "---" : "",
+            "### \u{1F527} INTERNAL REFINEMENTS",
             "",
-            ...changes.map(this.refinementItem)
+            ...visibleRefinements.map(this.refinementItem)
           ]);
         };
         this.changes = (tag, changes, previousTag, releaseDate) => {
@@ -43905,6 +43923,13 @@ var require_render = __commonJS({
           const grouping = this.api.config.changelog?.grouping ?? "none";
           if (primaryChanges.length === 0 && refinements.length === 0) {
             return lines([header, "_No user-facing changes since the last tag._"], 2);
+          }
+          if (primaryChanges.length === 0 && refinements.length > 0) {
+            return lines([
+              header,
+              "_No categorized user-facing changes in this release._",
+              this.refinementsSection(refinements, false)
+            ], 2);
           }
           const sections = grouping === "none" ? [lines(primaryChanges.map(this.change))] : Object.entries(sectionTitles).flatMap(([type, label]) => {
             if (!(0, utils_1.isKey)(groups, type))
