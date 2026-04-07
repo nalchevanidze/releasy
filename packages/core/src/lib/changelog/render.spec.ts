@@ -415,4 +415,50 @@ describe("RenderAPI snapshots", () => {
 
     expect(markdown).toMatchSnapshot();
   });
+
+  test("filters generated release PR refinements (with and without v prefix)", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.1"), [
+      c({
+        number: 71,
+        isRefinement: true,
+        title: "Publish Release 0.2.1",
+        body: "# 🚀 v0.2.1",
+      }),
+      c({
+        number: 72,
+        isRefinement: true,
+        title: "Publish Release v0.2.2",
+        body: "# 🚀 v0.2.2",
+      }),
+      c({
+        number: 0,
+        sourceCommit: "1234567890abcdef",
+        isRefinement: true,
+        title: "internal cleanup",
+        body: "n/a",
+      }),
+    ]);
+
+    expect(markdown).not.toContain("Publish Release 0.2.1");
+    expect(markdown).not.toContain("Publish Release v0.2.2");
+    expect(markdown).toContain("### 🔧 INTERNAL REFINEMENTS");
+    expect(markdown).toContain("└── [1234567]");
+  });
+
+  test("does not filter non-generated refinements", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.2"), [
+      c({
+        number: 73,
+        isRefinement: true,
+        title: "Publish Release process docs",
+        body: "# docs",
+      }),
+    ]);
+
+    expect(markdown).toContain("Publish Release process docs");
+  });
 });
