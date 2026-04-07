@@ -43692,7 +43692,7 @@ var require_markdown = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.markdownFormatter = void 0;
-    var lines = (xs) => xs.join("\n");
+    var lines = (...xs) => xs.filter(Boolean).join("\n");
     var withMarker = (type, txt) => {
       switch (type) {
         case "tree":
@@ -43703,7 +43703,7 @@ var require_markdown = __commonJS({
           return txt;
       }
     };
-    var list = (header, items, marker = "plain") => lines([...header, ...items.map((item) => withMarker(marker, item))].map((value) => `${value}  `));
+    var list = (header, items, marker = "plain") => lines(header, items.map((item) => withMarker(marker, item)).map((value) => `${value}  `));
     exports2.markdownFormatter = {
       doc: (node, render) => {
         const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
@@ -43717,7 +43717,7 @@ var require_markdown = __commonJS({
         const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
         const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
         const stats = node.stats ? [(node.stats || []).map(render).join(" ")] : [];
-        return lines([header, ...stats, ...node.children.map(render)]);
+        return lines(header, stats, node.children.map(render));
       },
       section: (node, render) => {
         const heading = node.header ? render(node.header) : "";
