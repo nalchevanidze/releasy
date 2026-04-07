@@ -386,8 +386,8 @@ describe("RenderAPI snapshots", () => {
       }),
     ]);
 
-    expect(markdown).toContain("Ship&nbsp;&nbsp;presets");
-    expect(markdown).toContain("internal&nbsp;&nbsp;cleanup");
+    expect(markdown).toContain("Ship  presets");
+    expect(markdown).toContain("internal  cleanup");
   });
 
   test("caps internal changes list and collapses overflow in details", () => {
