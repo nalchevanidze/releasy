@@ -77,23 +77,24 @@ export const markdownFormatter: ChangelogRenderer<string> = {
 
   primaryItem: (node, render) => {
     const meta = (node.children || []).map(render);
-    const withBreaks = meta.map((line, idx) =>
-      idx < meta.length - 1 ? `${line}  ` : line,
-    );
+    const nestedMeta = meta.map((line, idx) => {
+      const prefixed = nbspIndent(1, `└ ${line}`);
+      return idx < meta.length - 1 ? `${prefixed}  ` : prefixed;
+    });
 
     return lines([
       `**${node.refLabel}** — ${node.title}  `,
-      ...withBreaks,
+      ...nestedMeta,
     ]);
   },
 
   internalItem: (node, render) => {
     const hash = render(node.tabel).trim();
-    return hash ? `${hash} - ${node.value}` : node.value;
+    return hash ? `${hash}: ${node.value}` : node.value;
   },
 
   metaItem: (node, render) =>
-    nbspIndent(1, `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`),
+    `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`,
 
   header: (node, render) =>
     `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,

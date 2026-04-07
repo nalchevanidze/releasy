@@ -43723,23 +43723,26 @@ var require_markdown = __commonJS({
       cluster: (node, render) => {
         const heading = node.header ? render(node.header) : "";
         const renderedItems = node.children.map(render);
-        const styledItems = node.childrenStyle === "tree" ? renderedItems.map((line) => `${nbspIndent(2, `\u2514 ${line}`)}  `) : renderedItems;
-        const compact = node.childrenStyle !== "tree" && node.children.every((child) => child.type === "primaryItem");
+        const styledItems = node.childrenStyle === "tree" ? renderedItems.map((line) => `${nbspIndent(2, `\u2514 ${line}`)}  `) : node.childrenStyle === "bullet" ? renderedItems.map((line) => `* ${line}`) : renderedItems;
+        const compact = node.childrenStyle === "bullet" || node.childrenStyle !== "tree" && node.children.every((child) => child.type === "primaryItem");
         return compact ? lines([heading, ...styledItems], 1) : lines([heading, ...styledItems]);
       },
       primaryItem: (node, render) => {
         const meta = (node.children || []).map(render);
-        const withBreaks = meta.map((line, idx) => idx < meta.length - 1 ? `${line}  ` : line);
+        const nestedMeta = meta.map((line, idx) => {
+          const prefixed = nbspIndent(1, `\u2514 ${line}`);
+          return idx < meta.length - 1 ? `${prefixed}  ` : prefixed;
+        });
         return lines([
-          `* **${node.refLabel}** \u2014 ${node.title}  `,
-          ...withBreaks
+          `**${node.refLabel}** \u2014 ${node.title}  `,
+          ...nestedMeta
         ]);
       },
       internalItem: (node, render) => {
         const hash = render(node.tabel).trim();
         return hash ? `${hash}: ${node.value}` : node.value;
       },
-      metaItem: (node, render) => nbspIndent(1, `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`),
+      metaItem: (node, render) => `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`,
       header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
       stat: (node) => {
         if (node.name === "bump") {
@@ -43920,7 +43923,7 @@ var require_plan = __commonJS({
         return [
           {
             type: "section",
-            children: [cluster(items, void 0, hasInternal ? "tree" : "plain")]
+            children: [cluster(items, void 0, hasInternal ? "tree" : "bullet")]
           }
         ];
       }
@@ -43936,7 +43939,7 @@ var require_plan = __commonJS({
             {
               type: "section",
               header: sectionHeader(api, sectionId, sectionLabel),
-              children: Object.entries(byPkg).map(([key, pkgChanges]) => cluster(pkgChanges.map((change) => resolvedItem(api, change)), packageHeader(api, key)))
+              children: Object.entries(byPkg).map(([key, pkgChanges]) => cluster(pkgChanges.map((change) => resolvedItem(api, change)), packageHeader(api, key), "bullet"))
             }
           ];
         }
@@ -43944,7 +43947,7 @@ var require_plan = __commonJS({
           {
             type: "section",
             header: sectionHeader(api, sectionId, sectionLabel),
-            children: [cluster(typeChanges.map((change) => resolvedItem(api, change)))]
+            children: [cluster(typeChanges.map((change) => resolvedItem(api, change)), void 0, "bullet")]
           }
         ];
       });
