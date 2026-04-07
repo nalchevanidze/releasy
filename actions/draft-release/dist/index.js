@@ -42922,62 +42922,66 @@ var require_markdown = __commonJS({
     exports2.markdownFormatter = void 0;
     var ramda_1 = require_src();
     var lines = (xs, size = 1) => xs.filter(Boolean).join((0, ramda_1.range)(0, size).map(() => "\n").join(""));
-    var link = (name, url) => `[${name}](${url})`;
+    var mdLink = (name, url) => `[${name}](${url})`;
     var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
     exports2.markdownFormatter = {
       doc: (node, render) => {
-        const version = node.versionLabel.startsWith("v") ? node.versionLabel : `v${node.versionLabel}`;
-        const parsedDate = /* @__PURE__ */ new Date(`${node.releaseDate}T00:00:00Z`);
-        const date = Number.isNaN(parsedDate.getTime()) ? node.releaseDate : parsedDate.toLocaleDateString("en-US", {
+        const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
+        const parsedDate = /* @__PURE__ */ new Date(`${node.date}T00:00:00Z`);
+        const date = Number.isNaN(parsedDate.getTime()) ? node.date : parsedDate.toLocaleDateString("en-US", {
           month: "long",
           day: "2-digit",
           year: "numeric",
           timeZone: "UTC"
         });
-        const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
+        const versionText = node.compareUrl ? mdLink(version, node.compareUrl) : version;
         const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
-        if (node.children.length === 0)
-          return header;
-        const renderedChildren = node.children.map(render);
-        if (node.children[0]?.type === "summary") {
-          return lines([header, renderedChildren[0], "---", ...renderedChildren.slice(1)], 2);
+        const statsLine = (node.stats || []).map(render).join(" ");
+        const body = lines(node.children.map(render), 2);
+        if (statsLine) {
+          return lines([header, statsLine, "---", body], 2);
         }
-        return lines([header, ...renderedChildren], 2);
-      },
-      summary: (node) => {
-        const bumpLabel = node.bump.toUpperCase();
-        const bumpColor = bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
-        const summaryBadge = (label, value, color) => `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
-        return [
-          summaryBadge("BUMP", bumpLabel, bumpColor),
-          summaryBadge("CHANGES", String(node.changeCount), "blue"),
-          summaryBadge("PACKAGES", String(node.packageCount || 0), "orange")
-        ].join(" ");
+        return lines([header, body], 2);
       },
       section: (node, render) => {
+        const heading = node.header ? render(node.header) : "";
         const body = lines(node.children.map(render));
         const overflow = node.overflowHiddenCount && node.overflowHiddenCount > 0 ? nbspIndent(2, `\u2514 +${node.overflowHiddenCount} more`) : "";
-        const label = node.sectionLabel.toUpperCase();
-        const heading = node.sectionIcon ? `### ${node.sectionIcon} ${label}` : `### ${label}`;
-        return lines([heading, body, overflow, "<br>"]);
+        return lines([heading, body, overflow, heading ? "<br>" : ""]);
       },
-      group: (node, render) => {
-        const heading = node.groupKind === "package" ? `##### \u{1F4E6} ${(node.groupLabel || []).map(render).join("")}` : "";
-        return lines([heading, render(node.children)]);
+      cluster: (node, render) => {
+        const heading = node.header ? render(node.header) : "";
+        const renderedItems = node.children.map(render);
+        const compact = node.children.every((child) => child.type === "primaryItem");
+        return compact ? lines([heading, ...renderedItems], 1) : lines([heading, ...renderedItems]);
       },
-      list: (node, render) => lines(node.children.map(render)),
-      item: (node, render) => {
-        if (node.isInternal) {
-          const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
-          return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+      primaryItem: (node, render) => {
+        const meta = (node.children || []).map(render);
+        const withBreaks = meta.map((line, idx) => idx < meta.length - 1 ? `${line}  ` : line);
+        return lines([
+          `* **${node.refLabel}** \u2014 ${node.title}  `,
+          ...withBreaks
+        ]);
+      },
+      internalItem: (node) => {
+        const ref = node.refUrl ? mdLink(node.refLabel, node.refUrl) : node.refLabel;
+        return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+      },
+      metaItem: (node, render) => nbspIndent(1, `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`),
+      header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
+      stat: (node) => {
+        if (node.name === "bump") {
+          const bumpLabel = node.value.toUpperCase();
+          const color = bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
+          return `![BUMP](https://img.shields.io/badge/BUMP-${encodeURIComponent(bumpLabel)}-${color}?style=flat-square)`;
         }
-        const renderedChildren = (node.children || []).map(render);
-        const childLines = renderedChildren.map((line, idx) => idx < renderedChildren.length - 1 ? `${line}  ` : line);
-        return lines([`* **${node.ref.label}** \u2014 ${node.title}  `, ...childLines]);
+        if (node.name === "changes") {
+          return `![CHANGES](https://img.shields.io/badge/CHANGES-${encodeURIComponent(node.value)}-blue?style=flat-square)`;
+        }
+        return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(node.value)}-orange?style=flat-square)`;
       },
-      subitem: (node, render) => nbspIndent(1, `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`),
       text: (node) => node.value,
-      link: (node) => link(node.label, node.url),
+      link: (node) => mdLink(node.label, node.url),
       empty: () => "_No user-facing changes since the last tag._"
     };
   }
@@ -42994,18 +42998,20 @@ var require_renderer = __commonJS({
         switch (node.type) {
           case "doc":
             return renderer.doc(node, render);
-          case "summary":
-            return renderer.summary(node, render);
           case "section":
             return renderer.section(node, render);
-          case "group":
-            return renderer.group(node, render);
-          case "list":
-            return renderer.list(node, render);
-          case "item":
-            return renderer.item(node, render);
-          case "subitem":
-            return renderer.subitem(node, render);
+          case "cluster":
+            return renderer.cluster(node, render);
+          case "primaryItem":
+            return renderer.primaryItem(node, render);
+          case "internalItem":
+            return renderer.internalItem(node, render);
+          case "metaItem":
+            return renderer.metaItem(node, render);
+          case "header":
+            return renderer.header(node, render);
+          case "stat":
+            return renderer.stat(node, render);
           case "text":
             return renderer.text(node, render);
           case "link":
@@ -43030,30 +43036,27 @@ var require_plan = __commonJS({
     var git_1 = require_git();
     var utils_1 = require_utils2();
     var maxInternalChangesToShow = 5;
-    var txt = (value) => ({ type: "text", value });
-    var lnk = (label, url) => ({
-      type: "link",
-      label,
-      url
-    });
+    var text = (value) => ({ type: "text", value });
+    var link = (label, url) => ({ type: "link", label, url });
     var normalizedPkgs = (pkgs) => [...new Set(pkgs)].sort();
     var packageGroupKey = (pkgs) => {
       const normalized = normalizedPkgs(pkgs);
       return normalized.length ? normalized.join(",") : "general";
     };
-    var packagePart = (api, labelName) => {
-      const pkg = api.config.pkgs[labelName];
-      const longName = pkg?.name || labelName;
-      const url = api.module.pkg(longName);
-      return url ? lnk(labelName, url) : txt(labelName);
-    };
-    var packageGroupParts = (api, key) => {
-      if (key === "general")
-        return [txt("General")];
-      return key.split(",").flatMap((pkg, idx) => [
-        ...idx > 0 ? [txt(" \xB7 ")] : [],
-        packagePart(api, pkg)
-      ]);
+    var packageHeader = (api, key) => {
+      if (key === "general") {
+        return { type: "header", level: 5, icon: "\u{1F4E6}", children: [text("General")] };
+      }
+      const children = key.split(",").flatMap((pkg, idx) => {
+        const conf = api.config.pkgs[pkg];
+        const longName = conf?.name || pkg;
+        const url = api.module.pkg(longName);
+        return [
+          ...idx > 0 ? [text(" \xB7 ")] : [],
+          url ? link(pkg, url) : text(pkg)
+        ];
+      });
+      return { type: "header", level: 5, icon: "\u{1F4E6}", children };
     };
     var detectBump = (api, changes) => {
       const rank = { patch: 0, minor: 1, major: 2 };
@@ -43066,53 +43069,48 @@ var require_plan = __commonJS({
     var isIgnoredRefinement = (change) => {
       const title = change.title?.trim() || "";
       const body = change.body?.trim() || "";
-      const markedReleasePr = body.includes("<!-- relasy:release-pr -->");
-      const legacyReleasePrTitle = isReleasePrTitle(title);
-      return change.number > 0 && !change.sourceCommit && (markedReleasePr || legacyReleasePrTitle);
+      return change.number > 0 && !change.sourceCommit && (body.includes("<!-- relasy:release-pr -->") || isReleasePrTitle(title));
     };
     var changeTitle = (change) => change.title?.trim() || "Untitled change";
     var shortCommit = (change) => change.sourceCommit?.slice(0, 7) || "unknown";
-    var refForPrimary = (change) => {
+    var primaryRefLabel = (change) => {
       if (change.number > 0)
-        return { label: `#${change.number}` };
+        return `#${change.number}`;
       if (change.sourceCommit)
-        return { label: shortCommit(change) };
-      return { label: "unknown" };
+        return shortCommit(change);
+      return "unknown";
     };
-    var authorParts = (change) => {
+    var authorInline = (change) => {
       const login = change.author.login?.trim();
       if (!login || login.toLowerCase() === "unknown")
         return [];
-      const url = change.author.url;
-      return url ? [lnk(`@${login}`, url)] : [txt(`@${login}`)];
+      return change.author.url ? [link(`@${login}`, change.author.url)] : [text(`@${login}`)];
     };
-    var isCommitOnlyChange = (change) => Boolean(change.sourceCommit && change.number <= 0);
     var primaryItem = (change) => {
       const children = [];
-      const scopeValues = normalizedPkgs(change.pkgs);
-      if (scopeValues.length > 0) {
+      const scope = normalizedPkgs(change.pkgs);
+      if (scope.length > 0) {
         children.push({
-          type: "subitem",
+          type: "metaItem",
           icon: "\u{1F4E6}",
           label: "Scope",
-          children: [txt(scopeValues.map((x) => `\`${x}\``).join(" \u2022 "))]
+          children: [text(scope.map((x) => `\`${x}\``).join(" \u2022 "))]
         });
       }
-      const authorInline = authorParts(change);
-      if (authorInline.length > 0) {
+      const author = authorInline(change);
+      if (author.length > 0) {
         children.push({
-          type: "subitem",
+          type: "metaItem",
           icon: "\u270D\uFE0F",
           label: "By",
-          children: authorInline
+          children: author
         });
       }
       return {
-        type: "item",
-        isInternal: false,
-        ref: refForPrimary(change),
+        type: "primaryItem",
+        refLabel: primaryRefLabel(change),
         title: changeTitle(change),
-        children
+        children: children.length ? children : void 0
       };
     };
     var refinementUrl = (api, change) => {
@@ -43125,33 +43123,30 @@ var require_plan = __commonJS({
       return `https://github.com/${api.config.gh}`;
     };
     var internalItem = (api, change) => ({
-      type: "item",
-      isInternal: true,
-      ref: { label: "\u2514", url: refinementUrl(api, change) },
+      type: "internalItem",
+      refLabel: "\u2514",
+      refUrl: refinementUrl(api, change),
       title: changeTitle(change)
     });
-    var resolvedItem = (api, change) => isCommitOnlyChange(change) ? internalItem(api, change) : primaryItem(change);
-    var sectionMeta = (api, sectionId, sectionLabel) => ({
-      sectionId,
-      sectionLabel,
-      sectionIcon: api.config.changeTypeEmojis?.[sectionId] || (sectionId === "internal" ? "\u{1F527}" : void 0)
+    var resolvedItem = (api, change) => change.sourceCommit && change.number <= 0 ? internalItem(api, change) : primaryItem(change);
+    var sectionHeader = (api, sectionId, sectionLabel) => ({
+      type: "header",
+      level: 3,
+      icon: api.config.changeTypeEmojis?.[sectionId] || (sectionId === "internal" ? "\u{1F527}" : void 0),
+      children: [text(sectionLabel.toUpperCase())]
     });
-    var makeGroup = (groupKind, items, groupLabel) => ({
-      type: "group",
-      groupKind,
-      groupLabel,
-      children: {
-        type: "list",
-        children: items
-      }
+    var cluster = (children, header) => ({
+      type: "cluster",
+      header,
+      children
     });
-    var buildPrimaryBlocks = (api, primaryChanges) => {
+    var buildPrimarySections = (api, primaryChanges) => {
       const grouping = api.config.changelog?.grouping ?? "none";
       if (grouping === "none") {
         return [
           {
-            type: "list",
-            children: primaryChanges.map((change) => resolvedItem(api, change))
+            type: "section",
+            children: [cluster(primaryChanges.map((change) => resolvedItem(api, change)))]
           }
         ];
       }
@@ -43163,22 +43158,19 @@ var require_plan = __commonJS({
         const typeChanges = byType[sectionId];
         if (grouping === "package") {
           const byPkg = (0, ramda_1.groupBy)((change) => packageGroupKey(change.pkgs), typeChanges);
-          const groups = Object.entries(byPkg).map(([key, changes]) => makeGroup("package", changes.map((change) => resolvedItem(api, change)), packageGroupParts(api, key)));
           return [
             {
               type: "section",
-              ...sectionMeta(api, sectionId, sectionLabel),
-              children: groups
+              header: sectionHeader(api, sectionId, sectionLabel),
+              children: Object.entries(byPkg).map(([key, pkgChanges]) => cluster(pkgChanges.map((change) => resolvedItem(api, change)), packageHeader(api, key)))
             }
           ];
         }
         return [
           {
             type: "section",
-            ...sectionMeta(api, sectionId, sectionLabel),
-            children: [
-              makeGroup("flat", typeChanges.map((change) => resolvedItem(api, change)))
-            ]
+            header: sectionHeader(api, sectionId, sectionLabel),
+            children: [cluster(typeChanges.map((change) => resolvedItem(api, change)))]
           }
         ];
       });
@@ -43191,11 +43183,9 @@ var require_plan = __commonJS({
       const hidden = visible.slice(maxInternalChangesToShow);
       return {
         type: "section",
-        ...sectionMeta(api, "internal", "Internal Changes"),
+        header: sectionHeader(api, "internal", "Internal Changes"),
         overflowHiddenCount: hidden.length || void 0,
-        children: [
-          makeGroup("flat", shown.map((change) => internalItem(api, change)))
-        ]
+        children: [cluster(shown.map((change) => internalItem(api, change)))]
       };
     };
     var tagRef = (version) => version.startsWith("v") ? version : `v${version}`;
@@ -43206,13 +43196,13 @@ var require_plan = __commonJS({
       build(tag, changes, previousTag, releaseDate) {
         const primaryChanges = changes.filter((x) => !x.isRefinement);
         const refinements = changes.filter((x) => x.isRefinement);
-        const current = tag.toString();
-        const compareUrl = previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}` : void 0;
+        const version = tag.toString();
+        const compareUrl = previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(version)}` : void 0;
         if (primaryChanges.length === 0 && refinements.length === 0) {
           return {
             type: "doc",
-            versionLabel: current,
-            releaseDate: releaseDate || (0, git_1.getDate)(),
+            version,
+            date: releaseDate || (0, git_1.getDate)(),
             compareUrl,
             children: [{ type: "empty" }]
           };
@@ -43221,30 +43211,31 @@ var require_plan = __commonJS({
           const internal2 = internalSection(this.api, refinements);
           return {
             type: "doc",
-            versionLabel: current,
-            releaseDate: releaseDate || (0, git_1.getDate)(),
+            version,
+            date: releaseDate || (0, git_1.getDate)(),
             compareUrl,
             children: internal2 ? [internal2] : [{ type: "empty" }]
           };
         }
-        const summary2 = {
-          type: "summary",
-          bump: detectBump(this.api, primaryChanges),
-          changeCount: primaryChanges.length,
-          packageCount: new Set(primaryChanges.flatMap((change) => change.pkgs)).size
-        };
-        const children = [
-          summary2,
-          ...buildPrimaryBlocks(this.api, primaryChanges)
+        const stats = [
+          { type: "stat", name: "bump", value: detectBump(this.api, primaryChanges) },
+          { type: "stat", name: "changes", value: String(primaryChanges.length) },
+          {
+            type: "stat",
+            name: "packages",
+            value: String(new Set(primaryChanges.flatMap((change) => change.pkgs)).size)
+          }
         ];
+        const children = buildPrimarySections(this.api, primaryChanges);
         const internal = internalSection(this.api, refinements);
         if (internal)
           children.push(internal);
         return {
           type: "doc",
-          versionLabel: current,
-          releaseDate: releaseDate || (0, git_1.getDate)(),
+          version,
+          date: releaseDate || (0, git_1.getDate)(),
           compareUrl,
+          stats,
           children
         };
       }

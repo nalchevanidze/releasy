@@ -1,84 +1,84 @@
+export type Node =
+  | DocNode
+  | SectionNode
+  | ClusterNode
+  | PrimaryItemNode
+  | InternalItemNode
+  | MetaItemNode
+  | HeaderNode
+  | StatNode
+  | TextNode
+  | LinkNode
+  | EmptyNode;
 
-
-export type ChangelogNode =
-  | ChangelogDocNode
-  | ChangelogSummaryNode
-  | ChangelogSectionNode
-  | ChangelogClusterNode
-  | Header
-  | ChangelogItemNode
-  | ChangelogSubitemNode
-  | ChangelogTextNode
-  | ChangelogLinkNode
-  | ChangelogEmptyNode;
-
-export type ChangelogDocNode = {
+export type DocNode = {
   type: "doc";
-  versionLabel: string;
-  releaseDate: string;
+  version: string;
+  date: string;
   compareUrl?: string;
-  children: ChangelogNode[];
+  stats?: StatNode[];
+  children: Array<SectionNode | EmptyNode>;
 };
 
-export type ChangelogSummaryNode = {
-  type: "summary";
-  bump: "major" | "minor" | "patch";
-  changeCount: number;
-  packageCount: number;
-};
-
-export type ChangelogSectionNode = {
+export type SectionNode = {
   type: "section";
-  sectionLabel: string;
-  sectionIcon?: string;
+  header?: HeaderNode;
   overflowHiddenCount?: number;
-  children: ChangelogClusterNode[];
+  children: ClusterNode[];
 };
 
-export type ChangelogClusterNode = {
+export type ClusterNode = {
   type: "cluster";
-  header?: Header;
-  children: ChangelogItemNode[];
+  header?: HeaderNode;
+  children: Array<PrimaryItemNode | InternalItemNode>;
 };
 
-export type ChangeRef = {
-  label: string;
-  url?: string;
-};
-
-export type ChangelogItemNode = {
-  type: "item";
-  isInternal: boolean;
-  ref: ChangeRef;
+export type PrimaryItemNode = {
+  type: "primaryItem";
+  refLabel: string;
+  refUrl?: string;
   title: string;
-  children?: ChangelogSubitemNode[];
+  children?: MetaItemNode[];
 };
 
-export type ChangelogSubitemNode = {
-  type: "subitem";
+export type InternalItemNode = {
+  type: "internalItem";
+  refLabel: string;
+  refUrl?: string;
+  title: string;
+};
+
+export type MetaItemNode = {
+  type: "metaItem";
   icon: string;
   label: string;
-  children: ChangelogNode[];
+  children: Array<TextNode | LinkNode>;
 };
 
-export type ChangelogTextNode = {
+export type HeaderNode = {
+  type: "header";
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+  icon?: string;
+  children: Array<TextNode | LinkNode>;
+};
+
+export type StatNode = {
+  type: "stat";
+  name: "bump" | "changes" | "packages";
+  value: string;
+};
+
+export type TextNode = {
   type: "text";
   value: string;
 };
 
-export type Header = {
-  type: "header";
-  level: 1 | 2 | 3 | 4 | 5 | 6;
-  icon?: string;
-  content: string;
-};
-
-export type ChangelogLinkNode = {
+export type LinkNode = {
   type: "link";
   label: string;
   url: string;
 };
 
-export type ChangelogEmptyNode = {
+export type EmptyNode = {
   type: "empty";
 };

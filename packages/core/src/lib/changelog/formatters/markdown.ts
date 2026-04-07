@@ -10,7 +10,7 @@ const lines = (xs: string[], size: number = 1) =>
         .join(""),
     );
 
-const link = (name: string, url: string) => `[${name}](${url})`;
+const mdLink = (name: string, url: string) => `[${name}](${url})`;
 
 const nbspIndent = (level: number, txt: string = "") =>
   `${range(0, level)
@@ -19,91 +19,90 @@ const nbspIndent = (level: number, txt: string = "") =>
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
-    const version = node.versionLabel.startsWith("v")
-      ? node.versionLabel
-      : `v${node.versionLabel}`;
+    const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
 
-    const parsedDate = new Date(`${node.releaseDate}T00:00:00Z`);
+    const parsedDate = new Date(`${node.date}T00:00:00Z`);
     const date = Number.isNaN(parsedDate.getTime())
-      ? node.releaseDate
+      ? node.date
       : parsedDate.toLocaleDateString("en-US", {
-        month: "long",
-        day: "2-digit",
-        year: "numeric",
-        timeZone: "UTC",
-      });
+          month: "long",
+          day: "2-digit",
+          year: "numeric",
+          timeZone: "UTC",
+        });
 
-    const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
+    const versionText = node.compareUrl ? mdLink(version, node.compareUrl) : version;
     const header = `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
 
-    if (node.children.length === 0) return header;
+    const statsLine = (node.stats || []).map(render).join(" ");
+    const body = lines(node.children.map(render), 2);
 
-    const renderedChildren = node.children.map(render);
-
-    if (node.children[0]?.type === "summary") {
-      return lines([header, renderedChildren[0], "---", ...renderedChildren.slice(1)], 2);
+    if (statsLine) {
+      return lines([header, statsLine, "---", body], 2);
     }
 
-    return lines([header, ...renderedChildren], 2);
-  },
-
-  summary: (node) => {
-    const bumpLabel = node.bump.toUpperCase();
-    const bumpColor =
-      bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
-
-    const summaryBadge = (label: string, value: string, color: string) =>
-      `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
-
-    return [
-      summaryBadge("BUMP", bumpLabel, bumpColor),
-      summaryBadge("CHANGES", String(node.changeCount), "blue"),
-      summaryBadge("PACKAGES", String(node.packageCount || 0), "orange"),
-    ].join(" ");
+    return lines([header, body], 2);
   },
 
   section: (node, render) => {
+    const heading = node.header ? render(node.header) : "";
     const body = lines(node.children.map(render));
     const overflow =
       node.overflowHiddenCount && node.overflowHiddenCount > 0
         ? nbspIndent(2, `└ +${node.overflowHiddenCount} more`)
         : "";
 
-    const label = node.sectionLabel.toUpperCase();
-    const heading = node.sectionIcon
-      ? `### ${node.sectionIcon} ${label}`
-      : `### ${label}`;
-
-    return lines([heading, body, overflow, "<br>"]);
+    return lines([heading, body, overflow, heading ? "<br>" : ""]);
   },
 
   cluster: (node, render) => {
-    return lines([node.header ? render(node.header) : "", ...node.children.map(render)]);
+    const heading = node.header ? render(node.header) : "";
+    const renderedItems = node.children.map(render);
+    const compact = node.children.every((child) => child.type === "primaryItem");
+    return compact ? lines([heading, ...renderedItems], 1) : lines([heading, ...renderedItems]);
   },
 
-  header: (node) =>
-    `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.content}`,
-
-  item: (node, render) => {
-    if (node.isInternal) {
-      const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
-      return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
-    }
-
-    const renderedChildren = (node.children || []).map(render);
-    const childLines = renderedChildren.map((line, idx) =>
-      idx < renderedChildren.length - 1 ? `${line}  ` : line,
+  primaryItem: (node, render) => {
+    const meta = (node.children || []).map(render);
+    const withBreaks = meta.map((line, idx) =>
+      idx < meta.length - 1 ? `${line}  ` : line,
     );
 
-    return lines([`* **${node.ref.label}** — ${node.title}  `, ...childLines]);
+    return lines([
+      `* **${node.refLabel}** — ${node.title}  `,
+      ...withBreaks,
+    ]);
   },
 
-  subitem: (node, render) =>
+  internalItem: (node) => {
+    const ref = node.refUrl ? mdLink(node.refLabel, node.refUrl) : node.refLabel;
+    return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+  },
+
+  metaItem: (node, render) =>
     nbspIndent(1, `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`),
+
+  header: (node, render) =>
+    `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
+
+  stat: (node) => {
+    if (node.name === "bump") {
+      const bumpLabel = node.value.toUpperCase();
+      const color =
+        bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
+      return `![BUMP](https://img.shields.io/badge/BUMP-${encodeURIComponent(bumpLabel)}-${color}?style=flat-square)`;
+    }
+
+    if (node.name === "changes") {
+      return `![CHANGES](https://img.shields.io/badge/CHANGES-${encodeURIComponent(node.value)}-blue?style=flat-square)`;
+    }
+
+    return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(node.value)}-orange?style=flat-square)`;
+  },
 
   text: (node) => node.value,
 
-  link: (node) => link(node.label, node.url),
+  link: (node) => mdLink(node.label, node.url),
 
   empty: () => "_No user-facing changes since the last tag._",
 };
