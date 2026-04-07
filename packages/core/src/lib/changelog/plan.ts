@@ -1,16 +1,15 @@
 import { groupBy } from "ramda";
 import {
   ChangelogDocNode,
-  ChangelogGroupNode,
+  ChangelogClusterNode,
   ChangelogItemNode,
   ChangelogLinkNode,
-  ChangelogListNode,
-  ChangelogNode,
   ChangelogSectionNode,
   ChangelogSubitemNode,
   ChangelogSummaryNode,
   ChangelogTextNode,
   ChangeRef,
+  Header,
 } from "./ast";
 import { getDate } from "../git";
 import { isKey } from "../utils";
@@ -33,28 +32,20 @@ const packageGroupKey = (pkgs: string[]) => {
   return normalized.length ? normalized.join(",") : "general";
 };
 
-const packagePart = (
-  api: Api,
-  labelName: string,
-): ChangelogTextNode | ChangelogLinkNode => {
-  const pkg = api.config.pkgs[labelName];
-  const longName = pkg?.name || labelName;
-  const url = api.module.pkg(longName);
-  return url ? lnk(labelName, url) : txt(labelName);
-};
+const markdownLink = (label: string, url: string) => `[${label}](${url})`;
 
-const packageGroupParts = (
-  api: Api,
-  key: string,
-): Array<ChangelogTextNode | ChangelogLinkNode> => {
-  if (key === "general") return [txt("General")];
+const packageHeadingContent = (api: Api, key: string): string => {
+  if (key === "general") return "General";
 
   return key
     .split(",")
-    .flatMap((pkg, idx) => [
-      ...(idx > 0 ? [txt(" · ")] : []),
-      packagePart(api, pkg),
-    ]);
+    .map((labelName) => {
+      const pkg = api.config.pkgs[labelName];
+      const longName = pkg?.name || labelName;
+      const url = api.module.pkg(longName);
+      return url ? markdownLink(labelName, url) : labelName;
+    })
+    .join(" · ");
 };
 
 const detectBump = (
@@ -169,39 +160,30 @@ const resolvedItem = (api: Api, change: Change) =>
   isCommitOnlyChange(change) ? internalItem(api, change) : primaryItem(change);
 
 const sectionMeta = (api: Api, sectionId: string, sectionLabel: string) => ({
-  sectionId,
   sectionLabel,
   sectionIcon:
     api.config.changeTypeEmojis?.[sectionId] ||
     (sectionId === "internal" ? "🔧" : undefined),
 });
 
-const makeGroup = (
-  groupKind: "package" | "flat",
+const makeCluster = (
   items: ReturnType<typeof resolvedItem>[],
-  groupLabel?: Array<ChangelogTextNode | ChangelogLinkNode>,
-): ChangelogGroupNode => ({
-  type: "group",
-  groupKind,
-  groupLabel,
-  children: {
-    type: "list",
-    children: items,
-  },
+  header?: Header,
+): ChangelogClusterNode => ({
+  type: "cluster",
+  header,
+  children: items,
 });
 
 const buildPrimaryBlocks = (
   api: Api,
   primaryChanges: Change[],
-): Array<ChangelogSectionNode | ChangelogListNode> => {
+): Array<ChangelogSectionNode | ChangelogClusterNode> => {
   const grouping = api.config.changelog?.grouping ?? "none";
 
   if (grouping === "none") {
     return [
-      {
-        type: "list",
-        children: primaryChanges.map((change) => resolvedItem(api, change)),
-      },
+      makeCluster(primaryChanges.map((change) => resolvedItem(api, change))),
     ];
   }
 
@@ -220,11 +202,12 @@ const buildPrimaryBlocks = (
       );
 
       const groups = Object.entries(byPkg).map(([key, changes]) =>
-        makeGroup(
-          "package",
-          changes.map((change) => resolvedItem(api, change)),
-          packageGroupParts(api, key),
-        ),
+        makeCluster(changes.map((change) => resolvedItem(api, change)), {
+          type: "header",
+          level: 5,
+          icon: "📦",
+          content: packageHeadingContent(api, key),
+        }),
       );
 
       return [
@@ -241,10 +224,7 @@ const buildPrimaryBlocks = (
         type: "section",
         ...sectionMeta(api, sectionId, sectionLabel),
         children: [
-          makeGroup(
-            "flat",
-            typeChanges.map((change) => resolvedItem(api, change)),
-          ),
+          makeCluster(typeChanges.map((change) => resolvedItem(api, change))),
         ],
       },
     ];
@@ -266,10 +246,7 @@ const internalSection = (
     ...sectionMeta(api, "internal", "Internal Changes"),
     overflowHiddenCount: hidden.length || undefined,
     children: [
-      makeGroup(
-        "flat",
-        shown.map((change) => internalItem(api, change)),
-      ),
+      makeCluster(shown.map((change) => internalItem(api, change))),
     ],
   };
 };

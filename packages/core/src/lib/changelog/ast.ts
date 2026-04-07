@@ -4,8 +4,8 @@ export type ChangelogNode =
   | ChangelogDocNode
   | ChangelogSummaryNode
   | ChangelogSectionNode
-  | ChangelogGroupNode
-  | ChangelogListNode
+  | ChangelogClusterNode
+  | Header
   | ChangelogItemNode
   | ChangelogSubitemNode
   | ChangelogTextNode
@@ -29,22 +29,15 @@ export type ChangelogSummaryNode = {
 
 export type ChangelogSectionNode = {
   type: "section";
-  sectionId: string;
   sectionLabel: string;
   sectionIcon?: string;
   overflowHiddenCount?: number;
-  children: ChangelogGroupNode[];
+  children: ChangelogClusterNode[];
 };
 
-export type ChangelogGroupNode = {
-  type: "group";
-  groupKind: "package" | "flat";
-  groupLabel?: ChangelogNode[];
-  children: ChangelogListNode;
-};
-
-export type ChangelogListNode = {
-  type: "list";
+export type ChangelogClusterNode = {
+  type: "cluster";
+  header?: Header;
   children: ChangelogItemNode[];
 };
 
@@ -61,7 +54,6 @@ export type ChangelogItemNode = {
   children?: ChangelogSubitemNode[];
 };
 
-
 export type ChangelogSubitemNode = {
   type: "subitem";
   icon: string;
@@ -72,6 +64,13 @@ export type ChangelogSubitemNode = {
 export type ChangelogTextNode = {
   type: "text";
   value: string;
+};
+
+export type Header = {
+  type: "header";
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+  icon?: string;
+  content: string;
 };
 
 export type ChangelogLinkNode = {

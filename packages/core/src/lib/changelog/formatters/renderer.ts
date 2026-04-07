@@ -1,23 +1,23 @@
 import {
   ChangelogDocNode,
   ChangelogEmptyNode,
-  ChangelogGroupNode,
+  ChangelogClusterNode,
   ChangelogItemNode,
   ChangelogLinkNode,
-  ChangelogListNode,
   ChangelogNode,
   ChangelogSectionNode,
   ChangelogSubitemNode,
   ChangelogSummaryNode,
   ChangelogTextNode,
+  Header,
 } from "../ast";
 
 export type ChangelogRenderer<T> = {
   doc: (node: ChangelogDocNode, render: RenderNode<T>) => T;
   summary: (node: ChangelogSummaryNode, render: RenderNode<T>) => T;
   section: (node: ChangelogSectionNode, render: RenderNode<T>) => T;
-  group: (node: ChangelogGroupNode, render: RenderNode<T>) => T;
-  list: (node: ChangelogListNode, render: RenderNode<T>) => T;
+  cluster: (node: ChangelogClusterNode, render: RenderNode<T>) => T;
+  header: (node: Header, render: RenderNode<T>) => T;
   item: (node: ChangelogItemNode, render: RenderNode<T>) => T;
   subitem: (node: ChangelogSubitemNode, render: RenderNode<T>) => T;
   text: (node: ChangelogTextNode, render: RenderNode<T>) => T;
@@ -39,10 +39,10 @@ export const renderAst = <T>(
         return renderer.summary(node, render);
       case "section":
         return renderer.section(node, render);
-      case "group":
-        return renderer.group(node, render);
-      case "list":
-        return renderer.list(node, render);
+      case "cluster":
+        return renderer.cluster(node, render);
+      case "header":
+        return renderer.header(node, render);
       case "item":
         return renderer.item(node, render);
       case "subitem":

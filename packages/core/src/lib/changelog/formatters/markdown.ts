@@ -27,11 +27,11 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     const date = Number.isNaN(parsedDate.getTime())
       ? node.releaseDate
       : parsedDate.toLocaleDateString("en-US", {
-          month: "long",
-          day: "2-digit",
-          year: "numeric",
-          timeZone: "UTC",
-        });
+        month: "long",
+        day: "2-digit",
+        year: "numeric",
+        timeZone: "UTC",
+      });
 
     const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
     const header = `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
@@ -77,16 +77,12 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     return lines([heading, body, overflow, "<br>"]);
   },
 
-  group: (node, render) => {
-    const heading =
-      node.groupKind === "package"
-        ? `##### 📦 ${(node.groupLabel || []).map(render).join("")}`
-        : "";
-
-    return lines([heading, render(node.children)]);
+  cluster: (node, render) => {
+    return lines([node.header ? render(node.header) : "", ...node.children.map(render)]);
   },
 
-  list: (node, render) => lines(node.children.map(render)),
+  header: (node) =>
+    `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.content}`,
 
   item: (node, render) => {
     if (node.isInternal) {
