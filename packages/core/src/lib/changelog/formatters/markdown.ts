@@ -1,5 +1,6 @@
 import { range } from "ramda";
-import { ChangelogDocumentNode, ChangelogNode, InlinePart } from "../ast";
+import { InlinePart } from "../ast";
+import { ChangelogRenderer } from "./renderer";
 
 const newLine = (size: number) =>
   range(0, size)
@@ -34,73 +35,71 @@ const normalizeVersionLabel = (version: string) =>
 const badge = (label: string, value: string, color: string) =>
   `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
 
-export class MarkdownFormatter {
-  private renderParts = (parts: InlinePart[]) =>
-    parts
-      .map((part) =>
-        part.type === "link" ? link(part.label, part.url) : part.value,
-      )
-      .join("");
+const renderParts = (parts: InlinePart[]) =>
+  parts
+    .map((part) => (part.type === "link" ? link(part.label, part.url) : part.value))
+    .join("");
 
-  private renderNode = (node: ChangelogNode): string => {
-    switch (node.type) {
-      case "document":
-        return this.renderDocument(node);
-      case "header": {
-        const version = normalizeVersionLabel(node.versionLabel);
-        const date = formatDateLong(node.releaseDate);
-        const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
-        return `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
-      }
-      case "summary": {
-        const bumpLabel = node.bump.toUpperCase();
-        const bumpColor =
-          bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
+export const markdownFormatter: ChangelogRenderer<string> = {
+  document: (node, render) => lines(node.children.map(render), 2),
 
-        return [
-          badge("BUMP", bumpLabel, bumpColor),
-          badge("CHANGES", String(node.changeCount), "blue"),
-          badge("PACKAGES", String(node.packageCount || 0), "orange"),
-        ].join(" ");
-      }
-      case "empty":
-        return `_${node.message}_`;
-      case "divider":
-        return "---";
-      case "item": {
-        if (node.kind === "internal") {
-          return `${nbspIndent(2, `${link("└", node.url)} ${node.title}`)}  `;
-        }
+  header: (node) => {
+    const version = normalizeVersionLabel(node.versionLabel);
+    const date = formatDateLong(node.releaseDate);
+    const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
+    return `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
+  },
 
-        const scope = node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" • ");
-        return lines([
-          `* **${node.ref}** — ${node.title}  `,
-          `${nbspIndent(1, `📦 **Scope:** ${scope}`)}  `,
-          nbspIndent(1, `✍️ **By:** ${this.renderParts(node.author)}`),
-        ]);
-      }
-      case "list":
-        return lines(node.children.map(this.renderNode));
-      case "group":
-        return lines([
-          `##### 📦 ${this.renderParts(node.labelParts)}`,
-          ...node.children.map(this.renderNode),
-        ]);
-      case "section": {
-        const body = lines(node.children.map(this.renderNode));
-        const overflow =
-          node.overflowCount && node.overflowCount > 0
-            ? nbspIndent(2, `└ +${node.overflowCount} more`)
-            : "";
-        const label = node.heading.label.toUpperCase();
-        const heading = node.heading.icon
-          ? `### ${node.heading.icon} ${label}`
-          : `### ${label}`;
-        return lines([heading, body, overflow, "<br>"]);
-      }
+  summary: (node) => {
+    const bumpLabel = node.bump.toUpperCase();
+    const bumpColor =
+      bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
+
+    return [
+      badge("BUMP", bumpLabel, bumpColor),
+      badge("CHANGES", String(node.changeCount), "blue"),
+      badge("PACKAGES", String(node.packageCount || 0), "orange"),
+    ].join(" ");
+  },
+
+  divider: () => "---",
+
+  item: (node) => {
+    if (node.kind === "internal") {
+      return `${nbspIndent(2, `${link("└", node.url)} ${node.title}`)}  `;
     }
-  };
 
-  public renderDocument = (document: ChangelogDocumentNode): string =>
-    lines(document.children.map(this.renderNode), 2);
-}
+    const scope =
+      node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" • ");
+
+    return lines([
+      `* **${node.ref}** — ${node.title}  `,
+      `${nbspIndent(1, `📦 **Scope:** ${scope}`)}  `,
+      nbspIndent(1, `✍️ **By:** ${renderParts(node.author)}`),
+    ]);
+  },
+
+  list: (node, render) => lines(node.children.map(render)),
+
+  group: (node, render) =>
+    lines([
+      `##### 📦 ${renderParts(node.labelParts)}`,
+      ...node.children.map(render),
+    ]),
+
+  section: (node, render) => {
+    const body = lines(node.children.map(render));
+    const overflow =
+      node.overflowCount && node.overflowCount > 0
+        ? nbspIndent(2, `└ +${node.overflowCount} more`)
+        : "";
+    const label = node.heading.label.toUpperCase();
+    const heading = node.heading.icon
+      ? `### ${node.heading.icon} ${label}`
+      : `### ${label}`;
+
+    return lines([heading, body, overflow, "<br>"]);
+  },
+
+  empty: (node) => `_${node.message}_`,
+};

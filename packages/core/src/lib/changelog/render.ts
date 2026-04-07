@@ -1,5 +1,6 @@
 import { Version } from "../version";
-import { MarkdownFormatter } from "./formatters/markdown";
+import { markdownFormatter } from "./formatters/markdown";
+import { renderAst } from "./formatters/renderer";
 import { ChangelogPlanner } from "./plan";
 import { Api, Change } from "./types";
 
@@ -19,6 +20,6 @@ export class RenderAPI {
       releaseDate,
     );
 
-    return new MarkdownFormatter().renderDocument(ast);
+    return renderAst(ast, markdownFormatter);
   };
 }
