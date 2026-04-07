@@ -89,58 +89,73 @@ export class RenderAPI {
     return this.packageLinks(pkgKey.split(",")).join(" · ");
   };
 
-  private ref = ({ number, sourceCommit }: Change) => {
-    if (number > 0) {
-      return link(`#${number}`, this.api.github.issue(number));
+  private ref = (change: Change) => {
+    if (change.number > 0) {
+      return link(`#${change.number}`, this.api.github.issue(change.number));
     }
 
-    if (sourceCommit) {
-      return sourceCommit.slice(0, 7);
+    if (change.sourceCommit) {
+      return this.shortCommit(change);
     }
 
     return "unknown";
   };
 
-  private refLabel = ({ number, sourceCommit }: Change) => {
-    if (number > 0) return `#${number}`;
-    if (sourceCommit) return sourceCommit.slice(0, 7);
+  private refLabel = (change: Change) => {
+    if (change.number > 0) return `#${change.number}`;
+    if (change.sourceCommit) return this.shortCommit(change);
     return "unknown";
   };
 
   private author = ({ author }: Change) =>
     author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
 
-  private change = (change: Change): string => {
-    const { title, pkgs } = change;
-    const template = this.api.config.changelog?.templates?.item;
+  private changeTitle = (change: Change) =>
+    change.title?.trim() || "Untitled change";
 
-    const stats = lines([
-      this.packageStats(pkgs),
+  private shortCommit = (change: Change) =>
+    change.sourceCommit?.slice(0, 7) || "unknown";
+
+  private isCommitOnlyChange = (change: Change) =>
+    Boolean(change.sourceCommit && change.number <= 0);
+
+  private changeStats = (change: Change) =>
+    lines([
+      this.packageStats(change.pkgs),
       space(1, `- 🧑‍💻 ${this.author(change)}`),
     ]);
 
-    const commitOnlyDefaultItem =
-      change.sourceCommit && change.number <= 0
-        ? this.commitLine(change)
-        : "";
-
-    const defaultItem = commitOnlyDefaultItem || lines([
-      `* **${this.refLabel(change)}** — ${title?.trim() || "Untitled change"}  `,
-      `${nbspIndent(1, `📦 **Scope:** ${this.scopeInline(pkgs)}`)}  `,
+  private defaultPrimaryItem = (change: Change) =>
+    lines([
+      `* **${this.refLabel(change)}** — ${this.changeTitle(change)}  `,
+      `${nbspIndent(1, `📦 **Scope:** ${this.scopeInline(change.pkgs)}`)}  `,
       nbspIndent(1, `✍️ **By:** ${this.author(change)}`),
     ]);
 
-    if (!template) return defaultItem;
+  private templatedItem = (change: Change) => {
+    const template = this.api.config.changelog?.templates?.item;
+    if (!template) return "";
 
     return applyTemplate(template, {
       REF: this.ref(change),
-      TITLE: title?.trim() || "",
+      TITLE: change.title?.trim() || "",
       AUTHOR: this.author(change),
-      PACKAGES: lines(this.packageLinks(pkgs)),
+      PACKAGES: lines(this.packageLinks(change.pkgs)),
       BODY: "",
       DETAILS: "",
-      STATS: stats,
+      STATS: this.changeStats(change),
     });
+  };
+
+  private change = (change: Change): string => {
+    if (this.isCommitOnlyChange(change)) {
+      return this.commitLine(change);
+    }
+
+    const templated = this.templatedItem(change);
+    if (templated) return templated;
+
+    return this.defaultPrimaryItem(change);
   };
 
   private iconForType = (type: string) =>
@@ -247,20 +262,14 @@ export class RenderAPI {
     return `https://github.com/${this.api.config.gh}`;
   };
 
-  private commitLine = (change: Change) => {
-    const short = change.sourceCommit?.slice(0, 7) || "unknown";
-    return `${nbspIndent(2, `└─ ${link(short, this.refinementLink(change))}: ${change.title?.trim() || "Untitled change"}`)}  `;
-  };
+  private commitLine = (change: Change) =>
+    `${nbspIndent(2, `${link("└", this.refinementLink(change))} ${this.changeTitle(change)}`)}  `;
 
-  private refinementItem = (change: Change) => {
-    if (change.sourceCommit) {
-      return this.commitLine(change);
-    }
+  private linkedRefinementLine = (change: Change) =>
+    `${nbspIndent(1, `[🔗](${this.refinementLink(change)}) &nbsp; ${this.changeTitle(change)}`)}  `;
 
-    return `${nbspIndent(1, `[🔗](${this.refinementLink(change)}) &nbsp; ${
-      change.title?.trim() || "Untitled change"
-    }`)}  `;
-  };
+  private refinementItem = (change: Change) =>
+    change.sourceCommit ? this.commitLine(change) : this.linkedRefinementLine(change);
 
   private isReleasePrTitle = (title: string) =>
     /^publish release\s+v?\d+\.\d+\.\d+(?:[-+][\w.-]+)?\s*$/i.test(title);
@@ -269,31 +278,76 @@ export class RenderAPI {
     const title = change.title?.trim() || "";
     const body = change.body?.trim() || "";
 
+    const markedReleasePr = body.includes("<!-- relasy:release-pr -->");
+    const legacyReleasePrTitle = this.isReleasePrTitle(title);
+
     return (
       change.number > 0 &&
       !change.sourceCommit &&
-      this.isReleasePrTitle(title) &&
-      body.includes("# 🚀")
+      (markedReleasePr || legacyReleasePrTitle)
     );
   };
+
+  private visibleRefinements = (changes: Change[]) =>
+    changes.filter((change) => !this.isIgnoredRefinement(change));
 
   private refinementsSection = (
     changes: Change[],
-    includeDivider: boolean = true,
+    includeDivider: boolean = false,
   ) => {
-    const visibleRefinements = changes.filter(
-      (change) => !this.isIgnoredRefinement(change),
-    );
-
-    if (visibleRefinements.length === 0) return "";
+    const visible = this.visibleRefinements(changes);
+    if (visible.length === 0) return "";
 
     return lines([
       includeDivider ? "---" : "",
-      "### 🔧 INTERNAL REFINEMENTS",
+      "### 🔧 INTERNAL CHANGES",
       "",
-      ...visibleRefinements.map(this.refinementItem),
+      ...visible.map(this.refinementItem),
     ]);
   };
+
+  private header = (tag: Version, previousTag?: string, releaseDate?: string) => {
+    const template = this.api.config.changelog?.templates?.header;
+
+    if (!template) {
+      return this.defaultHeader(tag, previousTag, releaseDate);
+    }
+
+    return applyTemplate(template, {
+      VERSION: tag.toString(),
+      DATE: getDate(),
+    });
+  };
+
+  private sections = (primaryChanges: Change[]) => {
+    const grouping = this.api.config.changelog?.grouping ?? "none";
+
+    if (grouping === "none") {
+      return [lines(primaryChanges.map(this.change))];
+    }
+
+    const groups = groupBy(({ type }) => type, primaryChanges);
+    const sectionTitles = { ...this.api.config.changeTypes };
+
+    return Object.entries(sectionTitles).flatMap(([type, label]) => {
+      if (!isKey(groups, type)) return "";
+
+      if (grouping === "package") {
+        return this.sectionByPackage(type, label, groups[type]);
+      }
+
+      return this.section(type, label, groups[type]);
+    });
+  };
+
+  private hasCustomLayout = () =>
+    Boolean(
+      this.api.config.changelog?.templates?.item ||
+        this.api.config.changelog?.templates?.section,
+    );
+
+  private emptyState = (header: string) =>
+    lines([header, "_No user-facing changes since the last tag._"], 2);
 
   public changes = (
     tag: Version,
@@ -303,56 +357,22 @@ export class RenderAPI {
   ) => {
     const primaryChanges = changes.filter((x) => !x.isRefinement);
     const refinements = changes.filter((x) => x.isRefinement);
-    const groups = groupBy(({ type }) => type, primaryChanges);
-    const sectionTitles = {
-      ...this.api.config.changeTypes,
-    };
-
-    const headerTemplate = this.api.config.changelog?.templates?.header;
-    const header = headerTemplate
-      ? applyTemplate(headerTemplate, {
-          VERSION: tag.toString(),
-          DATE: getDate(),
-        })
-      : this.defaultHeader(tag, previousTag, releaseDate);
-
-    const grouping = this.api.config.changelog?.grouping ?? "none";
+    const header = this.header(tag, previousTag, releaseDate);
 
     if (primaryChanges.length === 0 && refinements.length === 0) {
-      return lines([header, "_No user-facing changes since the last tag._"], 2);
+      return this.emptyState(header);
     }
 
     if (primaryChanges.length === 0 && refinements.length > 0) {
-      return lines(
-        [
-          header,
-          "_No categorized user-facing changes in this release._",
-          this.refinementsSection(refinements, false),
-        ],
-        2,
-      );
+      const refinementOnly = this.refinementsSection(refinements, false);
+      return refinementOnly
+        ? lines([header, refinementOnly], 2)
+        : this.emptyState(header);
     }
 
-    const sections =
-      grouping === "none"
-        ? [lines(primaryChanges.map(this.change))]
-        : Object.entries(sectionTitles).flatMap(([type, label]) => {
-            if (!isKey(groups, type)) return "";
-
-            if (grouping === "package") {
-              return this.sectionByPackage(type, label, groups[type]);
-            }
-
-            return this.section(type, label, groups[type]);
-          });
-
-    const hasCustomLayout = Boolean(
-      this.api.config.changelog?.templates?.item ||
-      this.api.config.changelog?.templates?.section,
-    );
-
-    const summary = hasCustomLayout ? "" : this.summary(primaryChanges);
-    const divider = hasCustomLayout ? "" : "---";
+    const sections = this.sections(primaryChanges);
+    const summary = this.hasCustomLayout() ? "" : this.summary(primaryChanges);
+    const divider = this.hasCustomLayout() ? "" : "---";
     const refinementsSection = this.refinementsSection(refinements);
 
     return lines(

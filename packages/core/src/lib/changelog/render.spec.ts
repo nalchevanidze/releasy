@@ -443,16 +443,33 @@ describe("RenderAPI snapshots", () => {
 
     expect(markdown).not.toContain("Publish Release 0.2.1");
     expect(markdown).not.toContain("Publish Release v0.2.2");
-    expect(markdown).toContain("### 🔧 INTERNAL REFINEMENTS");
-    expect(markdown).toContain("└── [1234567]");
+    expect(markdown).toContain("### 🔧 INTERNAL CHANGES");
+    expect(markdown).toContain(
+      "[└](https://github.com/acme/demo/commit/1234567890abcdef) internal cleanup",
+    );
   });
 
-  test("does not filter non-generated refinements", () => {
+  test("filters refinement when relasy release marker is present", () => {
     const api = baseApi({ grouping: "scope" });
 
     const markdown = new RenderAPI(api).changes(Version.parse("4.1.2"), [
       c({
         number: 73,
+        isRefinement: true,
+        title: "Some unrelated title",
+        body: "notes\n\n<!-- relasy:release-pr -->",
+      }),
+    ]);
+
+    expect(markdown).not.toContain("Some unrelated title");
+  });
+
+  test("does not filter non-generated refinements", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.3"), [
+      c({
+        number: 74,
         isRefinement: true,
         title: "Publish Release process docs",
         body: "# docs",

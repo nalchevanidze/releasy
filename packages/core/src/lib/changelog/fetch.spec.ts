@@ -1,5 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
-import { FetchApi, parsePRNumberFromCommitMessage } from "./fetch";
+import {
+  FetchApi,
+  isReleaseCommit,
+  isReleasePr,
+  parsePRNumberFromCommitMessage,
+} from "./fetch";
 import { Version } from "../version";
 
 vi.mock("../git", () => ({
@@ -16,6 +21,7 @@ type BuildOptions = {
   prTitle?: string;
   prBody?: string;
   prLabels?: string[];
+  prHeadRefName?: string;
   commits?: any[];
   prCommits?: Array<{ messageHeadline?: string; messageBody?: string }>;
 };
@@ -146,6 +152,58 @@ describe("parsePRNumberFromCommitMessage", () => {
     expect(
       parsePRNumberFromCommitMessage("chore: update docs"),
     ).toBeUndefined();
+  });
+});
+
+describe("release artifact exclusion", () => {
+  test("identifies release PR by exact title + release branch", () => {
+    expect(
+      isReleasePr({
+        number: 1,
+        title: "Publish Release 1.2.3",
+        body: "",
+        headRefName: "release-v1.2.3",
+        author: { login: "bot", url: "" },
+        labels: { nodes: [] },
+      }),
+    ).toBe(true);
+
+    expect(
+      isReleasePr({
+        number: 1,
+        title: "Publish Release process docs",
+        body: "",
+        headRefName: "release-v1.2.3",
+        author: { login: "bot", url: "" },
+        labels: { nodes: [] },
+      }),
+    ).toBe(false);
+  });
+
+  test("identifies release commits by title/merge message", () => {
+    expect(
+      isReleaseCommit({
+        oid: "a",
+        message: "Publish Release v1.2.3",
+        associatedPullRequests: { nodes: [] },
+      } as any),
+    ).toBe(true);
+
+    expect(
+      isReleaseCommit({
+        oid: "b",
+        message: "Merge pull request #1 from org/release-v1.2.3",
+        associatedPullRequests: { nodes: [] },
+      } as any),
+    ).toBe(true);
+
+    expect(
+      isReleaseCommit({
+        oid: "c",
+        message: "docs: update release process",
+        associatedPullRequests: { nodes: [] },
+      } as any),
+    ).toBe(false);
   });
 });
 
