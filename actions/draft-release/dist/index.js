@@ -42922,7 +42922,6 @@ var require_markdown = __commonJS({
     exports2.markdownFormatter = void 0;
     var ramda_1 = require_src();
     var lines = (xs, size = 1) => xs.filter(Boolean).join((0, ramda_1.range)(0, size).map(() => "\n").join(""));
-    var mdLink = (name, url) => `[${name}](${url})`;
     var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
     exports2.markdownFormatter = {
       doc: (node, render) => {
@@ -42934,7 +42933,7 @@ var require_markdown = __commonJS({
           year: "numeric",
           timeZone: "UTC"
         });
-        const versionText = node.compareUrl ? mdLink(version, node.compareUrl) : version;
+        const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
         const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
         const statsLine = (node.stats || []).map(render).join(" ");
         const body = lines(node.children.map(render), 2);
@@ -42952,8 +42951,9 @@ var require_markdown = __commonJS({
       cluster: (node, render) => {
         const heading = node.header ? render(node.header) : "";
         const renderedItems = node.children.map(render);
-        const compact = node.children.every((child) => child.type === "primaryItem");
-        return compact ? lines([heading, ...renderedItems], 1) : lines([heading, ...renderedItems]);
+        const styledItems = node.childrenStyle === "tree" ? renderedItems.map((line) => `${nbspIndent(2, `\u2514 ${line}`)}  `) : renderedItems;
+        const compact = node.childrenStyle !== "tree" && node.children.every((child) => child.type === "primaryItem");
+        return compact ? lines([heading, ...styledItems], 1) : lines([heading, ...styledItems]);
       },
       primaryItem: (node, render) => {
         const meta = (node.children || []).map(render);
@@ -42963,9 +42963,9 @@ var require_markdown = __commonJS({
           ...withBreaks
         ]);
       },
-      internalItem: (node) => {
-        const ref = node.refUrl ? mdLink(node.refLabel, node.refUrl) : node.refLabel;
-        return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+      internalItem: (node, render) => {
+        const hash = render(node.tabel).trim();
+        return hash ? `${hash}: ${node.value}` : node.value;
       },
       metaItem: (node, render) => nbspIndent(1, `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`),
       header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
@@ -42981,7 +42981,7 @@ var require_markdown = __commonJS({
         return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(node.value)}-orange?style=flat-square)`;
       },
       text: (node) => node.value,
-      link: (node) => mdLink(node.label, node.url),
+      link: (node) => `[${node.label}](${node.url})`,
       empty: () => "_No user-facing changes since the last tag._"
     };
   }
@@ -43124,9 +43124,8 @@ var require_plan = __commonJS({
     };
     var internalItem = (api, change) => ({
       type: "internalItem",
-      refLabel: "\u2514",
-      refUrl: refinementUrl(api, change),
-      title: changeTitle(change)
+      tabel: change.sourceCommit ? link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)) : text(""),
+      value: changeTitle(change)
     });
     var resolvedItem = (api, change) => change.sourceCommit && change.number <= 0 ? internalItem(api, change) : primaryItem(change);
     var sectionHeader = (api, sectionId, sectionLabel) => ({
@@ -43135,18 +43134,21 @@ var require_plan = __commonJS({
       icon: api.config.changeTypeEmojis?.[sectionId] || (sectionId === "internal" ? "\u{1F527}" : void 0),
       children: [text(sectionLabel.toUpperCase())]
     });
-    var cluster = (children, header) => ({
+    var cluster = (children, header, childrenStyle) => ({
       type: "cluster",
       header,
+      childrenStyle,
       children
     });
     var buildPrimarySections = (api, primaryChanges) => {
       const grouping = api.config.changelog?.grouping ?? "none";
       if (grouping === "none") {
+        const items = primaryChanges.map((change) => resolvedItem(api, change));
+        const hasInternal = items.some((item) => item.type === "internalItem");
         return [
           {
             type: "section",
-            children: [cluster(primaryChanges.map((change) => resolvedItem(api, change)))]
+            children: [cluster(items, void 0, hasInternal ? "tree" : "plain")]
           }
         ];
       }
@@ -43185,7 +43187,7 @@ var require_plan = __commonJS({
         type: "section",
         header: sectionHeader(api, "internal", "Internal Changes"),
         overflowHiddenCount: hidden.length || void 0,
-        children: [cluster(shown.map((change) => internalItem(api, change)))]
+        children: [cluster(shown.map((change) => internalItem(api, change)), void 0, "tree")]
       };
     };
     var tagRef = (version) => version.startsWith("v") ? version : `v${version}`;

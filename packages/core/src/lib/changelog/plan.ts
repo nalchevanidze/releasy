@@ -143,9 +143,10 @@ const refinementUrl = (api: Api, change: Change) => {
 
 const internalItem = (api: Api, change: Change): InternalItemNode => ({
   type: "internalItem",
-  refLabel: "└",
-  refUrl: refinementUrl(api, change),
-  title: changeTitle(change),
+  tabel: change.sourceCommit
+    ? link(change.sourceCommit.slice(0, 7), refinementUrl(api, change))
+    : text(""),
+  value: changeTitle(change),
 });
 
 const resolvedItem = (
@@ -166,9 +167,11 @@ const sectionHeader = (api: Api, sectionId: string, sectionLabel: string): Heade
 const cluster = (
   children: Array<PrimaryItemNode | InternalItemNode>,
   header?: HeaderNode,
+  childrenStyle?: "plain" | "tree" | "bullet",
 ): ClusterNode => ({
   type: "cluster",
   header,
+  childrenStyle,
   children,
 });
 
@@ -176,10 +179,13 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
   const grouping = api.config.changelog?.grouping ?? "none";
 
   if (grouping === "none") {
+    const items = primaryChanges.map((change) => resolvedItem(api, change));
+    const hasInternal = items.some((item) => item.type === "internalItem");
+
     return [
       {
         type: "section",
-        children: [cluster(primaryChanges.map((change) => resolvedItem(api, change)))],
+        children: [cluster(items, undefined, hasInternal ? "tree" : "bullet")],
       },
     ];
   }
@@ -206,6 +212,7 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
             cluster(
               pkgChanges.map((change) => resolvedItem(api, change)),
               packageHeader(api, key),
+              "bullet",
             ),
           ),
         },
@@ -216,7 +223,7 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
       {
         type: "section",
         header: sectionHeader(api, sectionId, sectionLabel),
-        children: [cluster(typeChanges.map((change) => resolvedItem(api, change)))],
+        children: [cluster(typeChanges.map((change) => resolvedItem(api, change)), undefined, "bullet")],
       },
     ];
   });
@@ -233,7 +240,7 @@ const internalSection = (api: Api, refinements: Change[]): SectionNode | undefin
     type: "section",
     header: sectionHeader(api, "internal", "Internal Changes"),
     overflowHiddenCount: hidden.length || undefined,
-    children: [cluster(shown.map((change) => internalItem(api, change)))],
+    children: [cluster(shown.map((change) => internalItem(api, change)), undefined, "tree")],
   };
 };
 

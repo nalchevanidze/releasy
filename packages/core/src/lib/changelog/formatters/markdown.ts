@@ -10,7 +10,6 @@ const lines = (xs: string[], size: number = 1) =>
         .join(""),
     );
 
-const mdLink = (name: string, url: string) => `[${name}](${url})`;
 
 const nbspIndent = (level: number, txt: string = "") =>
   `${range(0, level)
@@ -25,13 +24,13 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     const date = Number.isNaN(parsedDate.getTime())
       ? node.date
       : parsedDate.toLocaleDateString("en-US", {
-          month: "long",
-          day: "2-digit",
-          year: "numeric",
-          timeZone: "UTC",
-        });
+        month: "long",
+        day: "2-digit",
+        year: "numeric",
+        timeZone: "UTC",
+      });
 
-    const versionText = node.compareUrl ? mdLink(version, node.compareUrl) : version;
+    const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
     const header = `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
 
     const statsLine = (node.stats || []).map(render).join(" ");
@@ -58,8 +57,22 @@ export const markdownFormatter: ChangelogRenderer<string> = {
   cluster: (node, render) => {
     const heading = node.header ? render(node.header) : "";
     const renderedItems = node.children.map(render);
-    const compact = node.children.every((child) => child.type === "primaryItem");
-    return compact ? lines([heading, ...renderedItems], 1) : lines([heading, ...renderedItems]);
+
+    const styledItems =
+      node.childrenStyle === "tree"
+        ? renderedItems.map((line) => `${nbspIndent(2, `└ ${line}`)}  `)
+        : node.childrenStyle === "bullet"
+          ? renderedItems.map((line) => `* ${line}`)
+          : renderedItems;
+
+    const compact =
+      node.childrenStyle === "bullet" ||
+      (node.childrenStyle !== "tree" &&
+        node.children.every((child) => child.type === "primaryItem"));
+
+    return compact
+      ? lines([heading, ...styledItems], 1)
+      : lines([heading, ...styledItems]);
   },
 
   primaryItem: (node, render) => {
@@ -69,14 +82,14 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     );
 
     return lines([
-      `* **${node.refLabel}** — ${node.title}  `,
+      `**${node.refLabel}** — ${node.title}  `,
       ...withBreaks,
     ]);
   },
 
-  internalItem: (node) => {
-    const ref = node.refUrl ? mdLink(node.refLabel, node.refUrl) : node.refLabel;
-    return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+  internalItem: (node, render) => {
+    const hash = render(node.tabel).trim();
+    return hash ? `${hash} - ${node.value}` : node.value;
   },
 
   metaItem: (node, render) =>
@@ -102,7 +115,7 @@ export const markdownFormatter: ChangelogRenderer<string> = {
 
   text: (node) => node.value,
 
-  link: (node) => mdLink(node.label, node.url),
+  link: (node) => `[${node.label}](${node.url})`,
 
   empty: () => "_No user-facing changes since the last tag._",
 };

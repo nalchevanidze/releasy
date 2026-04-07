@@ -30,6 +30,7 @@ export type SectionNode = {
 export type ClusterNode = {
   type: "cluster";
   header?: HeaderNode;
+  childrenStyle?: "plain" | "tree" | "bullet";
   children: Array<PrimaryItemNode | InternalItemNode>;
 };
 
@@ -43,9 +44,8 @@ export type PrimaryItemNode = {
 
 export type InternalItemNode = {
   type: "internalItem";
-  refLabel: string;
-  refUrl?: string;
-  title: string;
+  tabel: LinkNode | TextNode;
+  value: string;
 };
 
 export type MetaItemNode = {

@@ -328,7 +328,7 @@ describe("RenderAPI snapshots", () => {
     expect(markdown).not.toContain("Publish Release v0.2.2");
     expect(markdown).toContain("### 🔧 INTERNAL CHANGES");
     expect(markdown).toContain(
-      "[└](https://github.com/acme/demo/commit/1234567890abcdef) internal cleanup",
+      "[1234567](https://github.com/acme/demo/commit/1234567890abcdef): internal cleanup",
     );
   });
 
