@@ -42914,12 +42914,82 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
   }
 });
 
+// ../../packages/core/dist/lib/changelog/formatters/markdown.js
+var require_markdown = __commonJS({
+  "../../packages/core/dist/lib/changelog/formatters/markdown.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.markdownFormatter = void 0;
+    var ramda_1 = require_src();
+    var lines = (xs, size = 1) => xs.filter(Boolean).join((0, ramda_1.range)(0, size).map(() => "\n").join(""));
+    var link = (name, url) => `[${name}](${url})`;
+    var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
+    var renderParts = (parts) => parts.map((part) => part.type === "link" ? link(part.label, part.url) : part.value).join("");
+    exports2.markdownFormatter = {
+      doc: (node, render) => {
+        const version = node.versionLabel.startsWith("v") ? node.versionLabel : `v${node.versionLabel}`;
+        const parsedDate = /* @__PURE__ */ new Date(`${node.releaseDate}T00:00:00Z`);
+        const date = Number.isNaN(parsedDate.getTime()) ? node.releaseDate : parsedDate.toLocaleDateString("en-US", {
+          month: "long",
+          day: "2-digit",
+          year: "numeric",
+          timeZone: "UTC"
+        });
+        const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
+        const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
+        if (node.children.length === 0)
+          return header;
+        const renderedChildren = node.children.map(render);
+        if (node.children[0]?.type === "summary") {
+          return lines([header, renderedChildren[0], "---", ...renderedChildren.slice(1)], 2);
+        }
+        return lines([header, ...renderedChildren], 2);
+      },
+      summary: (node) => {
+        const bumpLabel = node.bump.toUpperCase();
+        const bumpColor = bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
+        const summaryBadge = (label, value, color) => `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
+        return [
+          summaryBadge("BUMP", bumpLabel, bumpColor),
+          summaryBadge("CHANGES", String(node.changeCount), "blue"),
+          summaryBadge("PACKAGES", String(node.packageCount || 0), "orange")
+        ].join(" ");
+      },
+      section: (node, render) => {
+        const body = lines(node.children.map(render));
+        const overflow = node.overflowHiddenCount && node.overflowHiddenCount > 0 ? nbspIndent(2, `\u2514 +${node.overflowHiddenCount} more`) : "";
+        const label = node.sectionLabel.toUpperCase();
+        const heading = node.sectionIcon ? `### ${node.sectionIcon} ${label}` : `### ${label}`;
+        return lines([heading, body, overflow, "<br>"]);
+      },
+      group: (node, render) => {
+        const heading = node.groupKind === "package" ? `##### \u{1F4E6} ${renderParts(node.groupLabel || [])}` : "";
+        return lines([heading, render(node.children)]);
+      },
+      list: (node, render) => lines(node.children.map(render)),
+      primaryItem: (node) => {
+        const scope = node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" \u2022 ");
+        return lines([
+          `* **${node.ref.label}** \u2014 ${node.title}  `,
+          `${nbspIndent(1, `\u{1F4E6} **Scope:** ${scope}`)}  `,
+          nbspIndent(1, `\u270D\uFE0F **By:** ${renderParts(node.author)}`)
+        ]);
+      },
+      internalItem: (node) => {
+        const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
+        return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+      },
+      empty: () => "_No user-facing changes since the last tag._"
+    };
+  }
+});
+
 // ../../packages/core/dist/lib/changelog/formatters/renderer.js
 var require_renderer = __commonJS({
   "../../packages/core/dist/lib/changelog/formatters/renderer.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.isSummaryBlock = exports2.renderAst = void 0;
+    exports2.renderAst = void 0;
     var renderAst = (root, renderer) => {
       const render = (node) => {
         switch (node.type) {
@@ -42929,14 +42999,14 @@ var require_renderer = __commonJS({
             return renderer.summary(node, render);
           case "section":
             return renderer.section(node, render);
-          case "list":
-            return renderer.list(node, render);
           case "group":
             return renderer.group(node, render);
-          case "primaryChange":
-            return renderer.primaryChange(node, render);
-          case "internalChange":
-            return renderer.internalChange(node, render);
+          case "list":
+            return renderer.list(node, render);
+          case "primaryItem":
+            return renderer.primaryItem(node, render);
+          case "internalItem":
+            return renderer.internalItem(node, render);
           case "empty":
             return renderer.empty(node, render);
         }
@@ -42944,91 +43014,6 @@ var require_renderer = __commonJS({
       return render(root);
     };
     exports2.renderAst = renderAst;
-    var isSummaryBlock = (block) => block.type === "summary";
-    exports2.isSummaryBlock = isSummaryBlock;
-  }
-});
-
-// ../../packages/core/dist/lib/changelog/formatters/markdown.js
-var require_markdown = __commonJS({
-  "../../packages/core/dist/lib/changelog/formatters/markdown.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.markdownFormatter = void 0;
-    var ramda_1 = require_src();
-    var renderer_1 = require_renderer();
-    var newLine = (size) => (0, ramda_1.range)(0, size).map(() => "\n").join("");
-    var lines = (xs, size = 1) => xs.filter(Boolean).join(newLine(size));
-    var link = (name, url) => `[${name}](${url})`;
-    var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
-    var formatDateLong = (date) => {
-      const parsed = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-      if (Number.isNaN(parsed.getTime()))
-        return date;
-      return parsed.toLocaleDateString("en-US", {
-        month: "long",
-        day: "2-digit",
-        year: "numeric",
-        timeZone: "UTC"
-      });
-    };
-    var normalizeVersionLabel = (version) => version.startsWith("v") ? version : `v${version}`;
-    var badge = (label, value, color) => `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
-    var renderParts = (parts) => parts.map((part) => part.type === "link" ? link(part.label, part.url) : part.value).join("");
-    exports2.markdownFormatter = {
-      doc: (node, render) => {
-        const version = normalizeVersionLabel(node.meta.versionLabel);
-        const date = formatDateLong(node.meta.releaseDate);
-        const versionText = node.meta.compareUrl ? link(version, node.meta.compareUrl) : version;
-        const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
-        if (node.blocks.length === 0)
-          return header;
-        const renderedBlocks = node.blocks.map(render);
-        if (node.blocks.length > 1 && (0, renderer_1.isSummaryBlock)(node.blocks[0])) {
-          return lines([
-            header,
-            renderedBlocks[0],
-            "---",
-            ...renderedBlocks.slice(1)
-          ], 2);
-        }
-        return lines([header, ...renderedBlocks], 2);
-      },
-      summary: (node) => {
-        const bumpLabel = node.bump.toUpperCase();
-        const bumpColor = bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
-        return [
-          badge("BUMP", bumpLabel, bumpColor),
-          badge("CHANGES", String(node.changeCount), "blue"),
-          badge("PACKAGES", String(node.packageCount || 0), "orange")
-        ].join(" ");
-      },
-      section: (node, render) => {
-        const body = lines(node.groups.map(render));
-        const overflow = node.overflowHiddenCount && node.overflowHiddenCount > 0 ? nbspIndent(2, `\u2514 +${node.overflowHiddenCount} more`) : "";
-        const label = node.label.toUpperCase();
-        const heading = node.icon ? `### ${node.icon} ${label}` : `### ${label}`;
-        return lines([heading, body, overflow, "<br>"]);
-      },
-      list: (node, render) => lines(node.items.map(render)),
-      group: (node, render) => {
-        const heading = node.kind === "package" ? `##### \u{1F4E6} ${renderParts(node.label || [])}` : "";
-        return lines([heading, ...node.items.map(render)]);
-      },
-      primaryChange: (node) => {
-        const scope = node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" \u2022 ");
-        return lines([
-          `* **${node.ref.label}** \u2014 ${node.title}  `,
-          `${nbspIndent(1, `\u{1F4E6} **Scope:** ${scope}`)}  `,
-          nbspIndent(1, `\u270D\uFE0F **By:** ${renderParts(node.author)}`)
-        ]);
-      },
-      internalChange: (node) => {
-        const ref = node.url ? link("\u2514", node.url) : "\u2514";
-        return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
-      },
-      empty: () => "_No user-facing changes since the last tag._"
-    };
   }
 });
 
@@ -43080,12 +43065,12 @@ var require_plan = __commonJS({
     };
     var changeTitle = (change) => change.title?.trim() || "Untitled change";
     var shortCommit = (change) => change.sourceCommit?.slice(0, 7) || "unknown";
-    var refLabel = (change) => {
+    var refForPrimary = (change) => {
       if (change.number > 0)
-        return `#${change.number}`;
+        return { label: `#${change.number}` };
       if (change.sourceCommit)
-        return shortCommit(change);
-      return "unknown";
+        return { label: shortCommit(change) };
+      return { label: "unknown" };
     };
     var authorParts = (change) => {
       const login = change.author.login;
@@ -43094,8 +43079,8 @@ var require_plan = __commonJS({
     };
     var isCommitOnlyChange = (change) => Boolean(change.sourceCommit && change.number <= 0);
     var primaryItem = (change) => ({
-      type: "primaryChange",
-      ref: { label: refLabel(change) },
+      type: "primaryItem",
+      ref: refForPrimary(change),
       title: changeTitle(change),
       scope: normalizedPkgs(change.pkgs),
       author: authorParts(change)
@@ -43110,58 +43095,61 @@ var require_plan = __commonJS({
       return `https://github.com/${api.config.gh}`;
     };
     var internalItem = (api, change) => ({
-      type: "internalChange",
-      url: refinementUrl(api, change),
+      type: "internalItem",
+      ref: { label: "\u2514", url: refinementUrl(api, change) },
       title: changeTitle(change)
     });
-    var primaryResolvedItem = (api, change) => isCommitOnlyChange(change) ? internalItem(api, change) : primaryItem(change);
-    var sectionMeta = (api, id, label) => ({
-      id,
-      label,
-      icon: api.config.changeTypeEmojis?.[id] || (id === "internal" ? "\u{1F527}" : void 0)
+    var resolvedItem = (api, change) => isCommitOnlyChange(change) ? internalItem(api, change) : primaryItem(change);
+    var sectionMeta = (api, sectionId, sectionLabel) => ({
+      sectionId,
+      sectionLabel,
+      sectionIcon: api.config.changeTypeEmojis?.[sectionId] || (sectionId === "internal" ? "\u{1F527}" : void 0)
+    });
+    var makeGroup = (groupKind, items, groupLabel) => ({
+      type: "group",
+      groupKind,
+      groupLabel,
+      children: {
+        type: "list",
+        children: items
+      }
     });
     var buildPrimaryBlocks = (api, primaryChanges) => {
       const grouping = api.config.changelog?.grouping ?? "none";
       if (grouping === "none") {
-        const list = {
-          type: "list",
-          items: primaryChanges.map((change) => primaryResolvedItem(api, change))
-        };
-        return [list];
+        return [
+          {
+            type: "list",
+            children: primaryChanges.map((change) => resolvedItem(api, change))
+          }
+        ];
       }
       const byType = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
       const sectionTitles = { ...api.config.changeTypes };
-      return Object.entries(sectionTitles).flatMap(([changeType, label]) => {
-        if (!(0, utils_1.isKey)(byType, changeType))
+      return Object.entries(sectionTitles).flatMap(([sectionId, sectionLabel]) => {
+        if (!(0, utils_1.isKey)(byType, sectionId))
           return [];
-        const typeChanges = byType[changeType];
+        const typeChanges = byType[sectionId];
         if (grouping === "package") {
           const byPkg = (0, ramda_1.groupBy)((change) => packageGroupKey(change.pkgs), typeChanges);
-          const groups = Object.entries(byPkg).map(([key, changes]) => ({
-            type: "group",
-            kind: "package",
-            label: packageGroupParts(api, key),
-            items: changes.map((change) => primaryResolvedItem(api, change))
-          }));
-          const section2 = {
-            type: "section",
-            ...sectionMeta(api, changeType, label),
-            groups
-          };
-          return [section2];
-        }
-        const section = {
-          type: "section",
-          ...sectionMeta(api, changeType, label),
-          groups: [
+          const groups = Object.entries(byPkg).map(([key, changes]) => makeGroup("package", changes.map((change) => resolvedItem(api, change)), packageGroupParts(api, key)));
+          return [
             {
-              type: "group",
-              kind: "flat",
-              items: typeChanges.map((change) => primaryResolvedItem(api, change))
+              type: "section",
+              ...sectionMeta(api, sectionId, sectionLabel),
+              children: groups
             }
-          ]
-        };
-        return [section];
+          ];
+        }
+        return [
+          {
+            type: "section",
+            ...sectionMeta(api, sectionId, sectionLabel),
+            children: [
+              makeGroup("flat", typeChanges.map((change) => resolvedItem(api, change)))
+            ]
+          }
+        ];
       });
     };
     var internalSection = (api, refinements) => {
@@ -43174,12 +43162,8 @@ var require_plan = __commonJS({
         type: "section",
         ...sectionMeta(api, "internal", "Internal Changes"),
         overflowHiddenCount: hidden.length || void 0,
-        groups: [
-          {
-            type: "group",
-            kind: "flat",
-            items: shown.map((change) => internalItem(api, change))
-          }
+        children: [
+          makeGroup("flat", shown.map((change) => internalItem(api, change)))
         ]
       };
     };
@@ -43192,49 +43176,45 @@ var require_plan = __commonJS({
         const primaryChanges = changes.filter((x) => !x.isRefinement);
         const refinements = changes.filter((x) => x.isRefinement);
         const current = tag.toString();
+        const compareUrl = previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}` : void 0;
         if (primaryChanges.length === 0 && refinements.length === 0) {
           return {
             type: "doc",
-            meta: {
-              versionLabel: current,
-              compareUrl: previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}` : void 0,
-              releaseDate: releaseDate || (0, git_1.getDate)()
-            },
-            blocks: [{ type: "empty", reason: "no-user-facing-changes" }]
+            versionLabel: current,
+            releaseDate: releaseDate || (0, git_1.getDate)(),
+            compareUrl,
+            children: [{ type: "empty", reason: "no-user-facing-changes" }]
           };
         }
         if (primaryChanges.length === 0) {
           const internal2 = internalSection(this.api, refinements);
           return {
             type: "doc",
-            meta: {
-              versionLabel: current,
-              compareUrl: previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}` : void 0,
-              releaseDate: releaseDate || (0, git_1.getDate)()
-            },
-            blocks: internal2 ? [internal2] : [{ type: "empty", reason: "no-user-facing-changes" }]
+            versionLabel: current,
+            releaseDate: releaseDate || (0, git_1.getDate)(),
+            compareUrl,
+            children: internal2 ? [internal2] : [{ type: "empty", reason: "no-user-facing-changes" }]
           };
         }
-        const blocks = [
-          {
-            type: "summary",
-            bump: detectBump(this.api, primaryChanges),
-            changeCount: primaryChanges.length,
-            packageCount: new Set(primaryChanges.flatMap((change) => change.pkgs)).size
-          },
+        const summary2 = {
+          type: "summary",
+          bump: detectBump(this.api, primaryChanges),
+          changeCount: primaryChanges.length,
+          packageCount: new Set(primaryChanges.flatMap((change) => change.pkgs)).size
+        };
+        const children = [
+          summary2,
           ...buildPrimaryBlocks(this.api, primaryChanges)
         ];
         const internal = internalSection(this.api, refinements);
         if (internal)
-          blocks.push(internal);
+          children.push(internal);
         return {
           type: "doc",
-          meta: {
-            versionLabel: current,
-            compareUrl: previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}` : void 0,
-            releaseDate: releaseDate || (0, git_1.getDate)()
-          },
-          blocks
+          versionLabel: current,
+          releaseDate: releaseDate || (0, git_1.getDate)(),
+          compareUrl,
+          children
         };
       }
     };

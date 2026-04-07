@@ -1,11 +1,13 @@
 import { groupBy } from "ramda";
 import {
-  ChangelogBlock,
   ChangelogDocNode,
   ChangelogGroupNode,
-  ChangelogItemNode,
-  ChangelogListBlock,
-  ChangelogSectionBlock,
+  ChangelogInternalItemNode,
+  ChangelogListNode,
+  ChangelogPrimaryItemNode,
+  ChangelogSectionNode,
+  ChangelogSummaryNode,
+  ChangeRef,
   InlinePart,
 } from "./ast";
 import { getDate } from "../git";
@@ -83,10 +85,10 @@ const changeTitle = (change: Change) => change.title?.trim() || "Untitled change
 
 const shortCommit = (change: Change) => change.sourceCommit?.slice(0, 7) || "unknown";
 
-const refLabel = (change: Change) => {
-  if (change.number > 0) return `#${change.number}`;
-  if (change.sourceCommit) return shortCommit(change);
-  return "unknown";
+const refForPrimary = (change: Change): ChangeRef => {
+  if (change.number > 0) return { label: `#${change.number}` };
+  if (change.sourceCommit) return { label: shortCommit(change) };
+  return { label: "unknown" };
 };
 
 const authorParts = (change: Change): InlinePart[] => {
@@ -98,9 +100,9 @@ const authorParts = (change: Change): InlinePart[] => {
 const isCommitOnlyChange = (change: Change) =>
   Boolean(change.sourceCommit && change.number <= 0);
 
-const primaryItem = (change: Change): ChangelogItemNode => ({
-  type: "primaryChange",
-  ref: { label: refLabel(change) },
+const primaryItem = (change: Change): ChangelogPrimaryItemNode => ({
+  type: "primaryItem",
+  ref: refForPrimary(change),
   title: changeTitle(change),
   scope: normalizedPkgs(change.pkgs),
   author: authorParts(change),
@@ -118,80 +120,102 @@ const refinementUrl = (api: Api, change: Change) => {
   return `https://github.com/${api.config.gh}`;
 };
 
-const internalItem = (api: Api, change: Change): ChangelogItemNode => ({
-  type: "internalChange",
-  url: refinementUrl(api, change),
+const internalItem = (api: Api, change: Change): ChangelogInternalItemNode => ({
+  type: "internalItem",
+  ref: { label: "└", url: refinementUrl(api, change) },
   title: changeTitle(change),
 });
 
-const primaryResolvedItem = (api: Api, change: Change) =>
+const resolvedItem = (api: Api, change: Change) =>
   isCommitOnlyChange(change) ? internalItem(api, change) : primaryItem(change);
 
-const sectionMeta = (api: Api, id: string, label: string) => ({
-  id,
-  label,
-  icon: api.config.changeTypeEmojis?.[id] || (id === "internal" ? "🔧" : undefined),
+const sectionMeta = (api: Api, sectionId: string, sectionLabel: string) => ({
+  sectionId,
+  sectionLabel,
+  sectionIcon:
+    api.config.changeTypeEmojis?.[sectionId] ||
+    (sectionId === "internal" ? "🔧" : undefined),
 });
 
-const buildPrimaryBlocks = (api: Api, primaryChanges: Change[]): ChangelogBlock[] => {
+const makeGroup = (
+  groupKind: "package" | "flat",
+  items: ReturnType<typeof resolvedItem>[],
+  groupLabel?: InlinePart[],
+): ChangelogGroupNode => ({
+  type: "group",
+  groupKind,
+  groupLabel,
+  children: {
+    type: "list",
+    children: items,
+  },
+});
+
+const buildPrimaryBlocks = (
+  api: Api,
+  primaryChanges: Change[],
+): Array<ChangelogSectionNode | ChangelogListNode> => {
   const grouping = api.config.changelog?.grouping ?? "none";
 
   if (grouping === "none") {
-    const list: ChangelogListBlock = {
-      type: "list",
-      items: primaryChanges.map((change) => primaryResolvedItem(api, change)),
-    };
-
-    return [list];
+    return [
+      {
+        type: "list",
+        children: primaryChanges.map((change) => resolvedItem(api, change)),
+      },
+    ];
   }
 
   const byType = groupBy(({ type }) => type, primaryChanges);
   const sectionTitles = { ...api.config.changeTypes };
 
-  return Object.entries(sectionTitles).flatMap(([changeType, label]) => {
-    if (!isKey(byType, changeType)) return [];
+  return Object.entries(sectionTitles).flatMap(([sectionId, sectionLabel]) => {
+    if (!isKey(byType, sectionId)) return [];
 
-    const typeChanges = byType[changeType];
+    const typeChanges = byType[sectionId];
 
     if (grouping === "package") {
-      const byPkg = groupBy((change: Change) => packageGroupKey(change.pkgs), typeChanges);
+      const byPkg = groupBy(
+        (change: Change) => packageGroupKey(change.pkgs),
+        typeChanges,
+      );
 
-      const groups: ChangelogGroupNode[] = Object.entries(byPkg).map(([key, changes]) => ({
-        type: "group",
-        kind: "package",
-        label: packageGroupParts(api, key),
-        items: changes.map((change) => primaryResolvedItem(api, change)),
-      }));
+      const groups = Object.entries(byPkg).map(([key, changes]) =>
+        makeGroup(
+          "package",
+          changes.map((change) => resolvedItem(api, change)),
+          packageGroupParts(api, key),
+        ),
+      );
 
-      const section: ChangelogSectionBlock = {
-        type: "section",
-        ...sectionMeta(api, changeType, label),
-        groups,
-      };
-
-      return [section];
+      return [
+        {
+          type: "section",
+          ...sectionMeta(api, sectionId, sectionLabel),
+          children: groups,
+        },
+      ];
     }
 
-    const section: ChangelogSectionBlock = {
-      type: "section",
-      ...sectionMeta(api, changeType, label),
-      groups: [
-        {
-          type: "group",
-          kind: "flat",
-          items: typeChanges.map((change) => primaryResolvedItem(api, change)),
-        },
-      ],
-    };
-
-    return [section];
+    return [
+      {
+        type: "section",
+        ...sectionMeta(api, sectionId, sectionLabel),
+        children: [
+          makeGroup(
+            "flat",
+            typeChanges.map((change) => resolvedItem(api, change)),
+          ),
+        ],
+      },
+    ];
   });
 };
 
 const internalSection = (
   api: Api,
   refinements: Change[],
-): ChangelogSectionBlock | undefined => {
+): ChangelogSectionNode | undefined => {
   const visible = refinements.filter((change) => !isIgnoredRefinement(change));
   if (visible.length === 0) return undefined;
 
@@ -202,12 +226,11 @@ const internalSection = (
     type: "section",
     ...sectionMeta(api, "internal", "Internal Changes"),
     overflowHiddenCount: hidden.length || undefined,
-    groups: [
-      {
-        type: "group",
-        kind: "flat",
-        items: shown.map((change) => internalItem(api, change)),
-      },
+    children: [
+      makeGroup(
+        "flat",
+        shown.map((change) => internalItem(api, change)),
+      ),
     ],
   };
 };
@@ -227,18 +250,17 @@ export class ChangelogPlanner {
     const refinements = changes.filter((x) => x.isRefinement);
 
     const current = tag.toString();
+    const compareUrl = previousTag
+      ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}`
+      : undefined;
 
     if (primaryChanges.length === 0 && refinements.length === 0) {
       return {
         type: "doc",
-        meta: {
-          versionLabel: current,
-          compareUrl: previousTag
-            ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}`
-            : undefined,
-          releaseDate: releaseDate || getDate(),
-        },
-        blocks: [{ type: "empty", reason: "no-user-facing-changes" }],
+        versionLabel: current,
+        releaseDate: releaseDate || getDate(),
+        compareUrl,
+        children: [{ type: "empty", reason: "no-user-facing-changes" }],
       };
     }
 
@@ -246,40 +268,36 @@ export class ChangelogPlanner {
       const internal = internalSection(this.api, refinements);
       return {
         type: "doc",
-        meta: {
-          versionLabel: current,
-          compareUrl: previousTag
-            ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}`
-            : undefined,
-          releaseDate: releaseDate || getDate(),
-        },
-        blocks: internal ? [internal] : [{ type: "empty", reason: "no-user-facing-changes" }],
+        versionLabel: current,
+        releaseDate: releaseDate || getDate(),
+        compareUrl,
+        children: internal
+          ? [internal]
+          : [{ type: "empty", reason: "no-user-facing-changes" }],
       };
     }
 
-    const blocks: ChangelogBlock[] = [
-      {
-        type: "summary",
-        bump: detectBump(this.api, primaryChanges),
-        changeCount: primaryChanges.length,
-        packageCount: new Set(primaryChanges.flatMap((change) => change.pkgs)).size,
-      },
+    const summary: ChangelogSummaryNode = {
+      type: "summary",
+      bump: detectBump(this.api, primaryChanges),
+      changeCount: primaryChanges.length,
+      packageCount: new Set(primaryChanges.flatMap((change) => change.pkgs)).size,
+    };
+
+    const children: ChangelogDocNode["children"] = [
+      summary,
       ...buildPrimaryBlocks(this.api, primaryChanges),
     ];
 
     const internal = internalSection(this.api, refinements);
-    if (internal) blocks.push(internal);
+    if (internal) children.push(internal);
 
     return {
       type: "doc",
-      meta: {
-        versionLabel: current,
-        compareUrl: previousTag
-          ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}`
-          : undefined,
-        releaseDate: releaseDate || getDate(),
-      },
-      blocks,
+      versionLabel: current,
+      releaseDate: releaseDate || getDate(),
+      compareUrl,
+      children,
     };
   }
 }

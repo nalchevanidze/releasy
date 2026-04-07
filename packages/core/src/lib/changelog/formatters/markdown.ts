@@ -1,14 +1,15 @@
 import { range } from "ramda";
 import { InlinePart } from "../ast";
-import { ChangelogRenderer, isSummaryBlock } from "./renderer";
-
-const newLine = (size: number) =>
-  range(0, size)
-    .map(() => "\n")
-    .join("");
+import { ChangelogRenderer } from "./renderer";
 
 const lines = (xs: string[], size: number = 1) =>
-  xs.filter(Boolean).join(newLine(size));
+  xs
+    .filter(Boolean)
+    .join(
+      range(0, size)
+        .map(() => "\n")
+        .join(""),
+    );
 
 const link = (name: string, url: string) => `[${name}](${url})`;
 
@@ -17,24 +18,6 @@ const nbspIndent = (level: number, txt: string = "") =>
     .map(() => "&nbsp; &nbsp; ")
     .join("")}${txt}`;
 
-const formatDateLong = (date: string) => {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return date;
-
-  return parsed.toLocaleDateString("en-US", {
-    month: "long",
-    day: "2-digit",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-};
-
-const normalizeVersionLabel = (version: string) =>
-  version.startsWith("v") ? version : `v${version}`;
-
-const badge = (label: string, value: string, color: string) =>
-  `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
-
 const renderParts = (parts: InlinePart[]) =>
   parts
     .map((part) => (part.type === "link" ? link(part.label, part.url) : part.value))
@@ -42,27 +25,32 @@ const renderParts = (parts: InlinePart[]) =>
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
-    const version = normalizeVersionLabel(node.meta.versionLabel);
-    const date = formatDateLong(node.meta.releaseDate);
-    const versionText = node.meta.compareUrl
-      ? link(version, node.meta.compareUrl)
-      : version;
+    const version = node.versionLabel.startsWith("v")
+      ? node.versionLabel
+      : `v${node.versionLabel}`;
+
+    const parsedDate = new Date(`${node.releaseDate}T00:00:00Z`);
+    const date = Number.isNaN(parsedDate.getTime())
+      ? node.releaseDate
+      : parsedDate.toLocaleDateString("en-US", {
+          month: "long",
+          day: "2-digit",
+          year: "numeric",
+          timeZone: "UTC",
+        });
+
+    const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
     const header = `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
 
-    if (node.blocks.length === 0) return header;
+    if (node.children.length === 0) return header;
 
-    const renderedBlocks = node.blocks.map(render);
+    const renderedChildren = node.children.map(render);
 
-    if (node.blocks.length > 1 && isSummaryBlock(node.blocks[0])) {
-      return lines([
-        header,
-        renderedBlocks[0],
-        "---",
-        ...renderedBlocks.slice(1),
-      ], 2);
+    if (node.children[0]?.type === "summary") {
+      return lines([header, renderedChildren[0], "---", ...renderedChildren.slice(1)], 2);
     }
 
-    return lines([header, ...renderedBlocks], 2);
+    return lines([header, ...renderedChildren], 2);
   },
 
   summary: (node) => {
@@ -70,36 +58,43 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     const bumpColor =
       bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
 
+    const summaryBadge = (label: string, value: string, color: string) =>
+      `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
+
     return [
-      badge("BUMP", bumpLabel, bumpColor),
-      badge("CHANGES", String(node.changeCount), "blue"),
-      badge("PACKAGES", String(node.packageCount || 0), "orange"),
+      summaryBadge("BUMP", bumpLabel, bumpColor),
+      summaryBadge("CHANGES", String(node.changeCount), "blue"),
+      summaryBadge("PACKAGES", String(node.packageCount || 0), "orange"),
     ].join(" ");
   },
 
   section: (node, render) => {
-    const body = lines(node.groups.map(render));
+    const body = lines(node.children.map(render));
     const overflow =
       node.overflowHiddenCount && node.overflowHiddenCount > 0
         ? nbspIndent(2, `└ +${node.overflowHiddenCount} more`)
         : "";
 
-    const label = node.label.toUpperCase();
-    const heading = node.icon ? `### ${node.icon} ${label}` : `### ${label}`;
+    const label = node.sectionLabel.toUpperCase();
+    const heading = node.sectionIcon
+      ? `### ${node.sectionIcon} ${label}`
+      : `### ${label}`;
 
     return lines([heading, body, overflow, "<br>"]);
   },
 
-  list: (node, render) => lines(node.items.map(render)),
-
   group: (node, render) => {
     const heading =
-      node.kind === "package" ? `##### 📦 ${renderParts(node.label || [])}` : "";
+      node.groupKind === "package"
+        ? `##### 📦 ${renderParts(node.groupLabel || [])}`
+        : "";
 
-    return lines([heading, ...node.items.map(render)]);
+    return lines([heading, render(node.children)]);
   },
 
-  primaryChange: (node) => {
+  list: (node, render) => lines(node.children.map(render)),
+
+  primaryItem: (node) => {
     const scope =
       node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" • ");
 
@@ -110,8 +105,8 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     ]);
   },
 
-  internalChange: (node) => {
-    const ref = node.url ? link("└", node.url) : "└";
+  internalItem: (node) => {
+    const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
     return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
   },
 
