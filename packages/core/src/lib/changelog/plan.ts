@@ -1,13 +1,15 @@
 import { groupBy } from "ramda";
 import {
+  ChangelogAuthorNode,
   ChangelogDocNode,
   ChangelogGroupNode,
+  ChangelogInlineNode,
   ChangelogItemNode,
   ChangelogListNode,
+  ChangelogScopeNode,
   ChangelogSectionNode,
   ChangelogSummaryNode,
   ChangeRef,
-  InlinePart,
 } from "./ast";
 import { getDate } from "../git";
 import { isKey } from "../utils";
@@ -16,8 +18,12 @@ import { Api, Change } from "./types";
 
 const maxInternalChangesToShow = 5;
 
-const txt = (value: string): InlinePart => ({ type: "text", value });
-const lnk = (label: string, url: string): InlinePart => ({ type: "link", label, url });
+const txt = (value: string): ChangelogInlineNode => ({ type: "text", value });
+const lnk = (label: string, url: string): ChangelogInlineNode => ({
+  type: "link",
+  label,
+  url,
+});
 
 const normalizedPkgs = (pkgs: string[]) => [...new Set(pkgs)].sort();
 
@@ -26,14 +32,14 @@ const packageGroupKey = (pkgs: string[]) => {
   return normalized.length ? normalized.join(",") : "general";
 };
 
-const packagePart = (api: Api, labelName: string): InlinePart => {
+const packagePart = (api: Api, labelName: string): ChangelogInlineNode => {
   const pkg = api.config.pkgs[labelName];
   const longName = pkg?.name || labelName;
   const url = api.module.pkg(longName);
   return url ? lnk(labelName, url) : txt(labelName);
 };
 
-const packageGroupParts = (api: Api, key: string): InlinePart[] => {
+const packageGroupParts = (api: Api, key: string): ChangelogInlineNode[] => {
   if (key === "general") return [txt("General")];
 
   return key
@@ -90,7 +96,7 @@ const refForPrimary = (change: Change): ChangeRef => {
   return { label: "unknown" };
 };
 
-const authorParts = (change: Change): InlinePart[] => {
+const authorParts = (change: Change): ChangelogInlineNode[] => {
   const login = change.author.login;
   const url = change.author.url;
   return url ? [lnk(`@${login}`, url)] : [txt(`@${login}`)];
@@ -99,14 +105,25 @@ const authorParts = (change: Change): InlinePart[] => {
 const isCommitOnlyChange = (change: Change) =>
   Boolean(change.sourceCommit && change.number <= 0);
 
-const primaryItem = (change: Change): ChangelogItemNode => ({
-  type: "item",
-  isInternal: false,
-  ref: refForPrimary(change),
-  title: changeTitle(change),
-  scope: normalizedPkgs(change.pkgs),
-  author: authorParts(change),
-});
+const primaryItem = (change: Change): ChangelogItemNode => {
+  const scopeNode: ChangelogScopeNode = {
+    type: "scope",
+    values: normalizedPkgs(change.pkgs),
+  };
+
+  const authorNode: ChangelogAuthorNode = {
+    type: "author",
+    children: authorParts(change),
+  };
+
+  return {
+    type: "item",
+    isInternal: false,
+    ref: refForPrimary(change),
+    title: changeTitle(change),
+    children: [scopeNode, authorNode],
+  };
+};
 
 const refinementUrl = (api: Api, change: Change) => {
   if (change.sourceCommit) {
@@ -141,7 +158,7 @@ const sectionMeta = (api: Api, sectionId: string, sectionLabel: string) => ({
 const makeGroup = (
   groupKind: "package" | "flat",
   items: ReturnType<typeof resolvedItem>[],
-  groupLabel?: InlinePart[],
+  groupLabel?: ChangelogInlineNode[],
 ): ChangelogGroupNode => ({
   type: "group",
   groupKind,

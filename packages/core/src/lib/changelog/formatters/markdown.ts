@@ -1,5 +1,4 @@
 import { range } from "ramda";
-import { InlinePart } from "../ast";
 import { ChangelogRenderer } from "./renderer";
 
 const lines = (xs: string[], size: number = 1) =>
@@ -17,11 +16,6 @@ const nbspIndent = (level: number, txt: string = "") =>
   `${range(0, level)
     .map(() => "&nbsp; &nbsp; ")
     .join("")}${txt}`;
-
-const renderParts = (parts: InlinePart[]) =>
-  parts
-    .map((part) => (part.type === "link" ? link(part.label, part.url) : part.value))
-    .join("");
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
@@ -86,7 +80,7 @@ export const markdownFormatter: ChangelogRenderer<string> = {
   group: (node, render) => {
     const heading =
       node.groupKind === "package"
-        ? `##### 📦 ${renderParts(node.groupLabel || [])}`
+        ? `##### 📦 ${(node.groupLabel || []).map(render).join("")}`
         : "";
 
     return lines([heading, render(node.children)]);
@@ -94,23 +88,33 @@ export const markdownFormatter: ChangelogRenderer<string> = {
 
   list: (node, render) => lines(node.children.map(render)),
 
-  item: (node) => {
+  item: (node, render) => {
     if (node.isInternal) {
       const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
       return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
     }
 
-    const scope =
-      (node.scope || []).length === 0
-        ? "general"
-        : (node.scope || []).map((x) => `\`${x}\``).join(" • ");
+    const children = node.children || [];
+    const scopeLine = children.find((child) => child.type === "scope");
+    const authorLine = children.find((child) => child.type === "author");
 
     return lines([
       `* **${node.ref.label}** — ${node.title}  `,
-      `${nbspIndent(1, `📦 **Scope:** ${scope}`)}  `,
-      nbspIndent(1, `✍️ **By:** ${renderParts(node.author || [])}`),
+      `${nbspIndent(1, `📦 **Scope:** ${scopeLine ? render(scopeLine) : "general"}`)}  `,
+      nbspIndent(1, `✍️ **By:** ${authorLine ? render(authorLine) : "@unknown"}`),
     ]);
   },
+
+  scope: (node) =>
+    node.values.length === 0
+      ? "general"
+      : node.values.map((x) => `\`${x}\``).join(" • "),
+
+  author: (node, render) => node.children.map(render).join(""),
+
+  text: (node) => node.value,
+
+  link: (node) => link(node.label, node.url),
 
   empty: () => "_No user-facing changes since the last tag._",
 };

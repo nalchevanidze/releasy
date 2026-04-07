@@ -1,11 +1,4 @@
-export type InlinePart =
-  | { type: "text"; value: string }
-  | { type: "link"; label: string; url: string };
 
-export type ChangeRef = {
-  label: string;
-  url?: string;
-};
 
 export type ChangelogNode =
   | ChangelogDocNode
@@ -14,6 +7,10 @@ export type ChangelogNode =
   | ChangelogGroupNode
   | ChangelogListNode
   | ChangelogItemNode
+  | ChangelogScopeNode
+  | ChangelogAuthorNode
+  | ChangelogTextNode
+  | ChangelogLinkNode
   | ChangelogEmptyNode;
 
 export type ChangelogDocNode = {
@@ -21,9 +18,7 @@ export type ChangelogDocNode = {
   versionLabel: string;
   releaseDate: string;
   compareUrl?: string;
-  children: Array<
-    ChangelogSummaryNode | ChangelogSectionNode | ChangelogListNode | ChangelogEmptyNode
-  >;
+  children: ChangelogNode[];
 };
 
 export type ChangelogSummaryNode = {
@@ -45,7 +40,7 @@ export type ChangelogSectionNode = {
 export type ChangelogGroupNode = {
   type: "group";
   groupKind: "package" | "flat";
-  groupLabel?: InlinePart[];
+  groupLabel?: ChangelogNode[];
   children: ChangelogListNode;
 };
 
@@ -54,13 +49,38 @@ export type ChangelogListNode = {
   children: ChangelogItemNode[];
 };
 
+export type ChangeRef = {
+  label: string;
+  url?: string;
+};
+
 export type ChangelogItemNode = {
   type: "item";
   isInternal: boolean;
   ref: ChangeRef;
   title: string;
-  scope?: string[];
-  author?: InlinePart[];
+  children?: Array<ChangelogNode>;
+};
+
+export type ChangelogScopeNode = {
+  type: "scope";
+  values: string[];
+};
+
+export type ChangelogAuthorNode = {
+  type: "author";
+  children: ChangelogNode[];
+};
+
+export type ChangelogTextNode = {
+  type: "text";
+  value: string;
+};
+
+export type ChangelogLinkNode = {
+  type: "link";
+  label: string;
+  url: string;
 };
 
 export type ChangelogEmptyNode = {
