@@ -1,10 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  loadRawConfig,
-  normalizeConfig,
-  normalizeConfigInputKeys,
-  validateChangelogTemplates,
-} from "./load";
+import { loadRawConfig, normalizeConfig, normalizeConfigInputKeys } from "./load";
 
 describe("config normalization", () => {
   test("defaults policy fields", () => {
@@ -106,36 +101,3 @@ describe("config file loading", () => {
   });
 });
 
-describe("template guardrails", () => {
-  test("accepts valid templates", () => {
-    expect(() =>
-      validateChangelogTemplates({
-        templates: {
-          header: "## {{VERSION}} ({{DATE}})",
-          section: "#### {{LABEL}}\n{{CHANGES}}",
-          item: "* {{REF}} {{TITLE}} {{AUTHOR}} {{PACKAGES}}",
-        },
-      }),
-    ).not.toThrow();
-  });
-
-  test("rejects missing required placeholders", () => {
-    expect(() =>
-      validateChangelogTemplates({
-        templates: {
-          section: "#### {{LABEL}}",
-        },
-      }),
-    ).toThrow("missing required placeholders");
-  });
-
-  test("rejects unknown placeholders", () => {
-    expect(() =>
-      validateChangelogTemplates({
-        templates: {
-          item: "* {{REF}} {{TITLE}} {{WHATEVER}}",
-        },
-      }),
-    ).toThrow("unknown placeholders");
-  });
-});

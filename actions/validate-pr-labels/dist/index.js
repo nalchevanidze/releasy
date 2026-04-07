@@ -27738,11 +27738,6 @@ var require_schema = __commonJS({
     exports2.ruleLevelValues = ["skip", "warn", "error"];
     exports2.RuleLevelSchema = z.enum(exports2.ruleLevelValues);
     exports2.ChangelogConfigSchema = z.object({
-      templates: z.object({
-        header: z.string().optional(),
-        section: z.string().optional(),
-        item: z.string().optional()
-      }).optional(),
       grouping: z.enum(["package", "scope", "none"]).optional()
     }).optional();
     exports2.changeTypes = {
@@ -30649,46 +30644,12 @@ var require_load = __commonJS({
       return mod && mod.__esModule ? mod : { "default": mod };
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.normalizeConfigInputKeys = exports2.loadConfig = exports2.loadRawConfig = exports2.resolveRawConfigPath = exports2.normalizeConfig = exports2.validateChangelogTemplates = void 0;
+    exports2.normalizeConfigInputKeys = exports2.loadConfig = exports2.loadRawConfig = exports2.resolveRawConfigPath = exports2.normalizeConfig = void 0;
     var promises_1 = require("fs/promises");
     var js_yaml_1 = __importDefault(require_js_yaml());
     var git_1 = require_git();
     var defaults_1 = require_defaults();
     var schema_1 = require_schema();
-    var readPlaceholders = (template) => {
-      const out = [];
-      const re = /{{([A-Z_]+)}}/g;
-      let match = null;
-      while (match = re.exec(template)) {
-        out.push(match[1]);
-      }
-      return out;
-    };
-    var validateTemplate = (label, template, required, allowed) => {
-      const placeholders = readPlaceholders(template);
-      const missing = required.filter((x) => !placeholders.includes(x));
-      if (missing.length > 0) {
-        throw new Error(`${label} is missing required placeholders: ${missing.join(", ")}`);
-      }
-      const unknown = placeholders.filter((x) => !allowed.includes(x));
-      if (unknown.length > 0) {
-        throw new Error(`${label} contains unknown placeholders: ${unknown.join(", ")}`);
-      }
-    };
-    var validateChangelogTemplates = (changelog) => {
-      if (!changelog)
-        return;
-      if (changelog.templates?.header) {
-        validateTemplate("changelog.templates.header", changelog.templates.header, ["VERSION", "DATE"], ["VERSION", "DATE"]);
-      }
-      if (changelog.templates?.section) {
-        validateTemplate("changelog.templates.section", changelog.templates.section, ["LABEL", "CHANGES"], ["LABEL", "CHANGES"]);
-      }
-      if (changelog.templates?.item) {
-        validateTemplate("changelog.templates.item", changelog.templates.item, ["REF", "TITLE"], ["REF", "TITLE", "AUTHOR", "PACKAGES", "BODY", "DETAILS", "STATS"]);
-      }
-    };
-    exports2.validateChangelogTemplates = validateChangelogTemplates;
     var toPathList = (paths) => {
       if (!paths)
         return void 0;
@@ -30758,7 +30719,7 @@ var require_load = __commonJS({
     };
     var hasNewFields = (cfg) => {
       const topNew = ["policies", "changes", "changelog"].some((key) => key in cfg);
-      const changelogNew = isPlainObject3(cfg.changelog) && ("templates" in cfg.changelog || "grouping" in cfg.changelog);
+      const changelogNew = isPlainObject3(cfg.changelog) && "grouping" in cfg.changelog;
       return topNew || changelogNew;
     };
     var parseConfigInput = (input) => {
@@ -30772,7 +30733,6 @@ var require_load = __commonJS({
       return schema_1.ConfigSchema.parse(normalized);
     };
     var normalizeConfig = (config, gh) => {
-      (0, exports2.validateChangelogTemplates)(config.changelog);
       const normalizedPkgs = normalizePkgs(config.pkgs);
       const normalizedChanges = normalizeChanges(config.changes);
       return {
@@ -30835,7 +30795,7 @@ var require_config = __commonJS({
   "../../packages/core/dist/lib/config.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.validateChangelogTemplates = exports2.normalizeConfigInputKeys = exports2.normalizeConfig = exports2.loadRawConfig = exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
+    exports2.normalizeConfigInputKeys = exports2.normalizeConfig = exports2.loadRawConfig = exports2.loadConfig = exports2.NPMManagerSchema = exports2.ManagerSchema = exports2.CustomManagerSchema = exports2.ConfigSchema = exports2.changeTypes = void 0;
     var schema_1 = require_schema();
     Object.defineProperty(exports2, "changeTypes", { enumerable: true, get: function() {
       return schema_1.changeTypes;
@@ -30864,9 +30824,6 @@ var require_config = __commonJS({
     } });
     Object.defineProperty(exports2, "normalizeConfigInputKeys", { enumerable: true, get: function() {
       return load_1.normalizeConfigInputKeys;
-    } });
-    Object.defineProperty(exports2, "validateChangelogTemplates", { enumerable: true, get: function() {
-      return load_1.validateChangelogTemplates;
     } });
   }
 });
@@ -43729,21 +43686,17 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
   }
 });
 
-// ../../packages/core/dist/lib/changelog/render.js
-var require_render = __commonJS({
-  "../../packages/core/dist/lib/changelog/render.js"(exports2) {
+// ../../packages/core/dist/lib/changelog/formatters/markdown.js
+var require_markdown = __commonJS({
+  "../../packages/core/dist/lib/changelog/formatters/markdown.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.RenderAPI = void 0;
+    exports2.MarkdownFormatter = void 0;
     var ramda_1 = require_src();
-    var utils_1 = require_utils2();
-    var git_1 = require_git();
     var link = (name, url) => `[${name}](${url})`;
     var newLine = (size) => (0, ramda_1.range)(0, size).map(() => "\n").join("");
     var lines = (xs, size = 1) => xs.filter(Boolean).join(newLine(size));
-    var space = (n, txt = "") => `${(0, ramda_1.range)(0, n * 2).map(() => " ").join("")}${txt}`;
     var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
-    var applyTemplate = (template, values) => Object.entries(values).reduce((acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value), template);
     var formatDateLong = (date) => {
       const parsed = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
       if (Number.isNaN(parsed.getTime()))
@@ -43756,8 +43709,7 @@ var require_render = __commonJS({
       });
     };
     var normalizeVersionLabel = (version) => version.startsWith("v") ? version : `v${version}`;
-    var maxInternalChangesToShow = 5;
-    var RenderAPI = class {
+    var MarkdownFormatter = class {
       constructor(api) {
         this.api = api;
         this.pkg = (labelName) => {
@@ -43768,38 +43720,18 @@ var require_render = __commonJS({
         };
         this.normalizedPkgs = (pkgs) => [...new Set(pkgs)].sort();
         this.packageLinks = (pkgs) => this.normalizedPkgs(pkgs).map(this.pkg);
-        this.packageStats = (pkgs) => {
-          const pkgLinks = this.packageLinks(pkgs);
-          if (!pkgLinks.length)
-            return "";
-          if (pkgLinks.length === 1)
-            return space(1, `- \u{1F4E6} ${pkgLinks[0]}`);
-          return space(1, `- \u{1F4E6} Packages (${pkgLinks.length}): ${pkgLinks.join(", ")}`);
-        };
         this.scopeInline = (pkgs) => {
           const normalized = this.normalizedPkgs(pkgs);
           if (normalized.length === 0)
             return "general";
           return normalized.map((pkg) => `\`${pkg}\``).join(" \u2022 ");
         };
-        this.packageGroupKey = (pkgs) => {
-          const normalized = this.normalizedPkgs(pkgs);
-          return normalized.length ? normalized.join(",") : "general";
-        };
         this.packageGroupTitle = (pkgKey) => {
           if (pkgKey === "general")
             return "General";
           return this.packageLinks(pkgKey.split(",")).join(" \xB7 ");
         };
-        this.ref = (change) => {
-          if (change.number > 0) {
-            return link(`#${change.number}`, this.api.github.issue(change.number));
-          }
-          if (change.sourceCommit) {
-            return this.shortCommit(change);
-          }
-          return "unknown";
-        };
+        this.shortCommit = (change) => change.sourceCommit?.slice(0, 7) || "unknown";
         this.refLabel = (change) => {
           if (change.number > 0)
             return `#${change.number}`;
@@ -43809,96 +43741,11 @@ var require_render = __commonJS({
         };
         this.author = ({ author }) => author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
         this.changeTitle = (change) => change.title?.trim() || "Untitled change";
-        this.shortCommit = (change) => change.sourceCommit?.slice(0, 7) || "unknown";
-        this.isCommitOnlyChange = (change) => Boolean(change.sourceCommit && change.number <= 0);
-        this.changeStats = (change) => lines([
-          this.packageStats(change.pkgs),
-          space(1, `- \u{1F9D1}\u200D\u{1F4BB} ${this.author(change)}`)
-        ]);
         this.defaultPrimaryItem = (change) => lines([
           `* **${this.refLabel(change)}** \u2014 ${this.changeTitle(change)}  `,
           `${nbspIndent(1, `\u{1F4E6} **Scope:** ${this.scopeInline(change.pkgs)}`)}  `,
           nbspIndent(1, `\u270D\uFE0F **By:** ${this.author(change)}`)
         ]);
-        this.templatedItem = (change) => {
-          const template = this.api.config.changelog?.templates?.item;
-          if (!template)
-            return "";
-          return applyTemplate(template, {
-            REF: this.ref(change),
-            TITLE: change.title?.trim() || "",
-            AUTHOR: this.author(change),
-            PACKAGES: lines(this.packageLinks(change.pkgs)),
-            BODY: "",
-            DETAILS: "",
-            STATS: this.changeStats(change)
-          });
-        };
-        this.change = (change) => {
-          if (this.isCommitOnlyChange(change)) {
-            return this.commitLine(change);
-          }
-          const templated = this.templatedItem(change);
-          if (templated)
-            return templated;
-          return this.defaultPrimaryItem(change);
-        };
-        this.iconForType = (type) => this.api.config.changeTypeEmojis?.[type] || "";
-        this.sectionHeading = (type, label) => {
-          const icon = this.iconForType(type);
-          const headerLabel = label.toUpperCase();
-          return icon ? `### ${icon} ${headerLabel}` : `### ${headerLabel}`;
-        };
-        this.detectBump = (changes) => {
-          const rank = { patch: 0, minor: 1, major: 2 };
-          return changes.reduce((current, change) => {
-            const bump = this.api.config.changeTypeBumps?.[change.type] ?? (change.type === "breaking" ? "major" : change.type === "feature" ? "minor" : "patch");
-            return rank[bump] > rank[current] ? bump : current;
-          }, "patch");
-        };
-        this.badge = (label, value, color) => `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
-        this.summary = (changes) => {
-          const packageCount = new Set(changes.flatMap((change) => change.pkgs)).size;
-          const bump = this.detectBump(changes).toUpperCase();
-          const bumpColor = bump === "MAJOR" ? "red" : bump === "MINOR" ? "yellow" : "green";
-          return [
-            this.badge("BUMP", bump, bumpColor),
-            this.badge("CHANGES", String(changes.length), "blue"),
-            this.badge("PACKAGES", String(packageCount || 0), "orange")
-          ].join(" ");
-        };
-        this.defaultHeader = (tag, previousTag, releaseDate) => {
-          const date = formatDateLong(releaseDate || (0, git_1.getDate)());
-          const current = normalizeVersionLabel(tag.toString());
-          if (previousTag) {
-            const previous = normalizeVersionLabel(previousTag);
-            const compareUrl = `https://github.com/${this.api.config.gh}/compare/${previous}...${current}`;
-            return `# \u{1F680} ${link(current, compareUrl)} &nbsp; \u2022 &nbsp; ${date}`;
-          }
-          return `# \u{1F680} ${current} &nbsp; \u2022 &nbsp; ${date}`;
-        };
-        this.section = (type, label, changes) => {
-          const renderedChanges = lines(changes.map(this.change));
-          const template = this.api.config.changelog?.templates?.section;
-          if (!template) {
-            return lines([this.sectionHeading(type, label), renderedChanges, "<br>"]);
-          }
-          return applyTemplate(template, {
-            LABEL: label,
-            CHANGES: renderedChanges
-          });
-        };
-        this.sectionByPackage = (type, label, changes) => {
-          const byPkg = (0, ramda_1.groupBy)((change) => this.packageGroupKey(change.pkgs), changes);
-          return lines([
-            this.sectionHeading(type, label),
-            ...Object.entries(byPkg).flatMap(([pkgKey, pkgChanges]) => {
-              const pkgTitle = this.packageGroupTitle(pkgKey);
-              return lines([`##### \u{1F4E6} ${pkgTitle}`, ...pkgChanges.map(this.change)]);
-            }),
-            "<br>"
-          ]);
-        };
         this.refinementLink = (change) => {
           if (change.sourceCommit) {
             return `https://github.com/${this.api.config.gh}/commit/${change.sourceCommit}`;
@@ -43910,85 +43757,265 @@ var require_render = __commonJS({
         };
         this.commitLine = (change) => `${nbspIndent(2, `${link("\u2514", this.refinementLink(change))} ${this.changeTitle(change)}`)}  `;
         this.linkedRefinementLine = (change) => `${nbspIndent(1, `[\u{1F517}](${this.refinementLink(change)}) &nbsp; ${this.changeTitle(change)}`)}  `;
-        this.refinementItem = (change) => change.sourceCommit ? this.commitLine(change) : this.linkedRefinementLine(change);
-        this.isReleasePrTitle = (title) => /^publish release\s+v?\d+\.\d+\.\d+(?:[-+][\w.-]+)?\s*$/i.test(title);
-        this.isIgnoredRefinement = (change) => {
-          const title = change.title?.trim() || "";
-          const body = change.body?.trim() || "";
-          const markedReleasePr = body.includes("<!-- relasy:release-pr -->");
-          const legacyReleasePrTitle = this.isReleasePrTitle(title);
-          return change.number > 0 && !change.sourceCommit && (markedReleasePr || legacyReleasePrTitle);
+        this.badge = (label, value, color) => `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
+        this.sectionHeading = (type, label) => {
+          const icon = this.api.config.changeTypeEmojis?.[type] || "";
+          const headerLabel = label.toUpperCase();
+          return icon ? `### ${icon} ${headerLabel}` : `### ${headerLabel}`;
         };
-        this.visibleRefinements = (changes) => changes.filter((change) => !this.isIgnoredRefinement(change));
-        this.hiddenRefinementLine = (change) => {
-          if (change.sourceCommit) {
-            return `${this.shortCommit(change)}: ${this.changeTitle(change)}  `;
-          }
-          return this.changeTitle(change);
-        };
-        this.refinementsOverflowDetails = (hidden) => {
-          if (hidden.length === 0)
-            return "";
-          return `${nbspIndent(2, `\u2514 +${hidden.length} more`)}`;
-        };
-        this.refinementsSection = (changes, includeDivider = false) => {
-          const visible = this.visibleRefinements(changes);
-          if (visible.length === 0)
-            return "";
-          const shown = visible.slice(0, maxInternalChangesToShow);
-          const hidden = visible.slice(maxInternalChangesToShow);
-          return lines([
-            includeDivider ? "---" : "",
-            "### \u{1F527} INTERNAL CHANGES",
-            "",
-            ...shown.map(this.refinementItem),
-            this.refinementsOverflowDetails(hidden)
-          ]);
-        };
-        this.header = (tag, previousTag, releaseDate) => {
-          const template = this.api.config.changelog?.templates?.header;
-          if (!template) {
-            return this.defaultHeader(tag, previousTag, releaseDate);
-          }
-          return applyTemplate(template, {
-            VERSION: tag.toString(),
-            DATE: (0, git_1.getDate)()
-          });
-        };
-        this.sections = (primaryChanges) => {
-          const grouping = this.api.config.changelog?.grouping ?? "none";
-          if (grouping === "none") {
-            return [lines(primaryChanges.map(this.change))];
-          }
-          const groups = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
-          const sectionTitles = { ...this.api.config.changeTypes };
-          return Object.entries(sectionTitles).flatMap(([type, label]) => {
-            if (!(0, utils_1.isKey)(groups, type))
-              return "";
-            if (grouping === "package") {
-              return this.sectionByPackage(type, label, groups[type]);
+        this.renderNode = (node) => {
+          switch (node.type) {
+            case "document":
+              return this.renderDocument(node);
+            case "header": {
+              const date = formatDateLong(node.releaseDate);
+              const current = normalizeVersionLabel(node.version);
+              if (node.previousTag) {
+                const previous = normalizeVersionLabel(node.previousTag);
+                const compareUrl = `https://github.com/${this.api.config.gh}/compare/${previous}...${current}`;
+                return `# \u{1F680} ${link(current, compareUrl)} &nbsp; \u2022 &nbsp; ${date}`;
+              }
+              return `# \u{1F680} ${current} &nbsp; \u2022 &nbsp; ${date}`;
             }
-            return this.section(type, label, groups[type]);
-          });
+            case "summary": {
+              const bump = node.bump.toUpperCase();
+              const bumpColor = bump === "MAJOR" ? "red" : bump === "MINOR" ? "yellow" : "green";
+              return [
+                this.badge("BUMP", bump, bumpColor),
+                this.badge("CHANGES", String(node.changeCount), "blue"),
+                this.badge("PACKAGES", String(node.packageCount || 0), "orange")
+              ].join(" ");
+            }
+            case "divider":
+              return "---";
+            case "section": {
+              const renderedChildren = lines(node.children.map(this.renderNode));
+              return lines([
+                this.sectionHeading(node.changeType, node.label),
+                renderedChildren,
+                "<br>"
+              ]);
+            }
+            case "group": {
+              return lines([
+                `##### \u{1F4E6} ${this.packageGroupTitle(node.title)}`,
+                ...node.children.map(this.renderNode)
+              ]);
+            }
+            case "change": {
+              if (node.variant === "primary") {
+                return this.defaultPrimaryItem(node.change);
+              }
+              if (node.variant === "refinement-commit") {
+                return this.commitLine(node.change);
+              }
+              return this.linkedRefinementLine(node.change);
+            }
+            case "refinements": {
+              const overflow = node.hiddenCount > 0 ? `${nbspIndent(2, `\u2514 +${node.hiddenCount} more`)}` : "";
+              return lines([
+                node.includeDivider ? "---" : "",
+                "### \u{1F527} INTERNAL CHANGES",
+                "",
+                ...node.children.map(this.renderRefinementChange),
+                overflow
+              ]);
+            }
+            case "empty":
+              return node.message;
+          }
         };
-        this.hasCustomLayout = () => Boolean(this.api.config.changelog?.templates?.item || this.api.config.changelog?.templates?.section);
-        this.emptyState = (header) => lines([header, "_No user-facing changes since the last tag._"], 2);
+        this.renderRefinementChange = (node) => {
+          if (node.variant === "refinement-commit") {
+            return this.commitLine(node.change);
+          }
+          return this.linkedRefinementLine(node.change);
+        };
+        this.renderDocument = (document) => {
+          const rendered = document.children.map(this.renderNode);
+          if (rendered.length === 0)
+            return "";
+          return rendered.slice(1).reduce((acc, current, index) => {
+            const previousNode = document.children[index];
+            const currentNode = document.children[index + 1];
+            const compactListSeparator = previousNode?.type === "change" && currentNode?.type === "change" && previousNode.variant === "primary" && currentNode.variant === "primary";
+            return `${acc}${newLine(compactListSeparator ? 1 : 2)}${current}`;
+          }, rendered[0]);
+        };
+      }
+    };
+    exports2.MarkdownFormatter = MarkdownFormatter;
+  }
+});
+
+// ../../packages/core/dist/lib/changelog/plan.js
+var require_plan = __commonJS({
+  "../../packages/core/dist/lib/changelog/plan.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.ChangelogPlanner = void 0;
+    var ramda_1 = require_src();
+    var git_1 = require_git();
+    var utils_1 = require_utils2();
+    var maxInternalChangesToShow = 5;
+    var normalizedPkgs = (pkgs) => [...new Set(pkgs)].sort();
+    var packageGroupKey = (pkgs) => {
+      const normalized = normalizedPkgs(pkgs);
+      return normalized.length ? normalized.join(",") : "general";
+    };
+    var detectBump = (api, changes) => {
+      const rank = { patch: 0, minor: 1, major: 2 };
+      return changes.reduce((current, change) => {
+        const bump = api.config.changeTypeBumps?.[change.type] ?? (change.type === "breaking" ? "major" : change.type === "feature" ? "minor" : "patch");
+        return rank[bump] > rank[current] ? bump : current;
+      }, "patch");
+    };
+    var isReleasePrTitle = (title) => /^publish release\s+v?\d+\.\d+\.\d+(?:[-+][\w.-]+)?\s*$/i.test(title);
+    var isIgnoredRefinement = (change) => {
+      const title = change.title?.trim() || "";
+      const body = change.body?.trim() || "";
+      const markedReleasePr = body.includes("<!-- relasy:release-pr -->");
+      const legacyReleasePrTitle = isReleasePrTitle(title);
+      return change.number > 0 && !change.sourceCommit && (markedReleasePr || legacyReleasePrTitle);
+    };
+    var visibleRefinements = (changes) => changes.filter((change) => !isIgnoredRefinement(change));
+    var refinementNode = (change) => ({
+      type: "change",
+      variant: change.sourceCommit ? "refinement-commit" : "refinement-link",
+      change
+    });
+    var refinementSection = (changes, includeDivider) => {
+      const visible = visibleRefinements(changes);
+      if (visible.length === 0)
+        return void 0;
+      const shown = visible.slice(0, maxInternalChangesToShow).map(refinementNode);
+      const hidden = visible.slice(maxInternalChangesToShow);
+      return {
+        type: "refinements",
+        includeDivider,
+        children: shown,
+        hiddenCount: hidden.length
+      };
+    };
+    var isCommitOnlyChange = (change) => Boolean(change.sourceCommit && change.number <= 0);
+    var primaryChangeNode = (change) => ({
+      type: "change",
+      variant: isCommitOnlyChange(change) ? "refinement-commit" : "primary",
+      change
+    });
+    var buildPrimaryNodes = (api, primaryChanges) => {
+      const grouping = api.config.changelog?.grouping ?? "none";
+      if (grouping === "none") {
+        return primaryChanges.map(primaryChangeNode);
+      }
+      const groups = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
+      const sectionTitles = { ...api.config.changeTypes };
+      return Object.entries(sectionTitles).flatMap(([changeType, label]) => {
+        if (!(0, utils_1.isKey)(groups, changeType))
+          return [];
+        if (grouping === "package") {
+          const byPkg = (0, ramda_1.groupBy)((change) => packageGroupKey(change.pkgs), groups[changeType]);
+          const grouped = Object.entries(byPkg).map(([key, changes]) => ({
+            type: "group",
+            key,
+            title: key,
+            children: changes.map(primaryChangeNode)
+          }));
+          return {
+            type: "section",
+            changeType,
+            label,
+            children: grouped
+          };
+        }
+        return {
+          type: "section",
+          changeType,
+          label,
+          children: groups[changeType].map(primaryChangeNode)
+        };
+      });
+    };
+    var ChangelogPlanner = class {
+      constructor(api) {
+        this.api = api;
+      }
+      build(tag, changes, previousTag, releaseDate) {
+        const primaryChanges = changes.filter((x) => !x.isRefinement);
+        const refinements = changes.filter((x) => x.isRefinement);
+        const header = {
+          type: "header",
+          version: tag.toString(),
+          previousTag,
+          releaseDate: releaseDate || (0, git_1.getDate)()
+        };
+        if (primaryChanges.length === 0 && refinements.length === 0) {
+          return {
+            type: "document",
+            children: [
+              header,
+              {
+                type: "empty",
+                message: "_No user-facing changes since the last tag._"
+              }
+            ]
+          };
+        }
+        if (primaryChanges.length === 0 && refinements.length > 0) {
+          const refinementsNode2 = refinementSection(refinements, false);
+          if (!refinementsNode2) {
+            return {
+              type: "document",
+              children: [
+                header,
+                {
+                  type: "empty",
+                  message: "_No user-facing changes since the last tag._"
+                }
+              ]
+            };
+          }
+          return {
+            type: "document",
+            children: [header, refinementsNode2]
+          };
+        }
+        const nodes = [
+          header,
+          {
+            type: "summary",
+            bump: detectBump(this.api, primaryChanges),
+            changeCount: primaryChanges.length,
+            packageCount: new Set(primaryChanges.flatMap((change) => change.pkgs)).size
+          },
+          { type: "divider" },
+          ...buildPrimaryNodes(this.api, primaryChanges)
+        ];
+        const refinementsNode = refinementSection(refinements, true);
+        if (refinementsNode) {
+          nodes.push(refinementsNode);
+        }
+        return { type: "document", children: nodes };
+      }
+    };
+    exports2.ChangelogPlanner = ChangelogPlanner;
+  }
+});
+
+// ../../packages/core/dist/lib/changelog/render.js
+var require_render = __commonJS({
+  "../../packages/core/dist/lib/changelog/render.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.RenderAPI = void 0;
+    var markdown_1 = require_markdown();
+    var plan_1 = require_plan();
+    var RenderAPI = class {
+      constructor(api) {
+        this.api = api;
         this.changes = (tag, changes, previousTag, releaseDate) => {
-          const primaryChanges = changes.filter((x) => !x.isRefinement);
-          const refinements = changes.filter((x) => x.isRefinement);
-          const header = this.header(tag, previousTag, releaseDate);
-          if (primaryChanges.length === 0 && refinements.length === 0) {
-            return this.emptyState(header);
-          }
-          if (primaryChanges.length === 0 && refinements.length > 0) {
-            const refinementOnly = this.refinementsSection(refinements, false);
-            return refinementOnly ? lines([header, refinementOnly], 2) : this.emptyState(header);
-          }
-          const sections = this.sections(primaryChanges);
-          const summary2 = this.hasCustomLayout() ? "" : this.summary(primaryChanges);
-          const divider = this.hasCustomLayout() ? "" : "---";
-          const refinementsSection = this.refinementsSection(refinements);
-          return lines([header, summary2, divider, ...sections, refinementsSection], 2);
+          const ast = new plan_1.ChangelogPlanner(this.api).build(tag, changes, previousTag, releaseDate);
+          return new markdown_1.MarkdownFormatter(this.api).renderDocument(ast);
         };
       }
     };
@@ -44234,7 +44261,7 @@ var require_package_scopes = __commonJS({
 });
 
 // ../../packages/core/dist/app/plan.js
-var require_plan = __commonJS({
+var require_plan2 = __commonJS({
   "../../packages/core/dist/app/plan.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -44301,7 +44328,7 @@ var require_app = __commonJS({
     __exportStar(require_draft_release(), exports2);
     __exportStar(require_labels_check(), exports2);
     __exportStar(require_package_scopes(), exports2);
-    __exportStar(require_plan(), exports2);
+    __exportStar(require_plan2(), exports2);
     __exportStar(require_result(), exports2);
     __exportStar(require_validate_config(), exports2);
   }
@@ -44328,7 +44355,7 @@ var require_dist = __commonJS({
       for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m, p);
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = exports2.validateChangelogTemplates = exports2.normalizeConfigInputKeys = exports2.normalizeConfig = void 0;
+    exports2.loadRelasy = exports2.Relasy = exports2.exit = exports2.withRetry = exports2.normalizeConfigInputKeys = exports2.normalizeConfig = void 0;
     var types_1 = require_types();
     var gh_1 = require_gh();
     var config_1 = require_config();
@@ -44338,9 +44365,6 @@ var require_dist = __commonJS({
     } });
     Object.defineProperty(exports2, "normalizeConfigInputKeys", { enumerable: true, get: function() {
       return config_2.normalizeConfigInputKeys;
-    } });
-    Object.defineProperty(exports2, "validateChangelogTemplates", { enumerable: true, get: function() {
-      return config_2.validateChangelogTemplates;
     } });
     var utils_1 = require_utils2();
     var project_1 = require_project();

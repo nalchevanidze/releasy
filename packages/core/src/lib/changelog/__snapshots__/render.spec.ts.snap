@@ -10,21 +10,6 @@ exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no 
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/acme/demo/commit/abcdef1234567890) Standalone commit  "
 `;
 
-exports[`RenderAPI snapshots > custom item template skips default visual summary 1`] = `
-"# 🚀 v4.0.8 &nbsp; • &nbsp; April 05, 2026
-
-### 📚 DOCUMENTATION
-- Add style guide
-<br>"
-`;
-
-exports[`RenderAPI snapshots > custom section/item templates 1`] = `
-"# 🚀 v4.0.0 &nbsp; • &nbsp; April 05, 2026
-
-### Features
-- [#40](https://github.com/acme/demo/issues/40) | Template driven entry | [@author](https://example.com/author) | [core](https://npmjs.com/package/@acme/core)"
-`;
-
 exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
 "# 🚀 v2.0.0 &nbsp; • &nbsp; April 05, 2026
 
@@ -87,18 +72,6 @@ exports[`RenderAPI snapshots > grouping none renders a flat list without section
 * **#51** — Handle null session  
 &nbsp; &nbsp; 📦 **Scope:** \`core\`  
 &nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)"
-`;
-
-exports[`RenderAPI snapshots > item template can consume DETAILS and STATS placeholders 1`] = `
-"# 🚀 v4.0.4 &nbsp; • &nbsp; April 05, 2026
-
-### 📚 DOCUMENTATION
-* Add migration guide
-  source=[#55](https://github.com/acme/demo/issues/55)
-  stats=  - 📦 Packages (2): [cli](https://npmjs.com/package/@acme/cli), [core](https://npmjs.com/package/@acme/core)
-  - 🧑‍💻 [@author](https://example.com/author)
-  details=
-<br>"
 `;
 
 exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
@@ -202,43 +175,6 @@ exports[`RenderAPI snapshots > section icons come from user config changeTypeEmo
 * **#62** — Handle stale cache  
 &nbsp; &nbsp; 📦 **Scope:** \`core\`  
 &nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
-<br>"
-`;
-
-exports[`RenderAPI snapshots > section templates are ignored when grouping is none 1`] = `
-"# 🚀 v4.0.6 &nbsp; • &nbsp; April 05, 2026
-
-* **#56** — Increase coverage for renderer  
-&nbsp; &nbsp; 📦 **Scope:** \`core\`  
-&nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)"
-`;
-
-exports[`RenderAPI snapshots > template + package grouping + multiline body 1`] = `
-"## Release v1.2.3 on 2026-04-05
-
-![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-3-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
-
----
-
-### ✨ FEATURES
-##### 📦 [core](https://npmjs.com/package/@acme/core)
-* **#1** — Add dark mode  
-&nbsp; &nbsp; 📦 **Scope:** \`core\`  
-&nbsp; &nbsp; ✍️ **By:** [@alice](https://example.com/alice)
-<br>
-
-### 🐛 FIXES
-##### 📦 [cli](https://npmjs.com/package/@acme/cli)
-* **#2** — Fix login  
-&nbsp; &nbsp; 📦 **Scope:** \`cli\`  
-&nbsp; &nbsp; ✍️ **By:** [@bob](https://example.com/bob)
-<br>
-
-### 🧹 CHORES
-##### 📦 General
-* **#3** — Minor cleanup  
-&nbsp; &nbsp; 📦 **Scope:** general  
-&nbsp; &nbsp; ✍️ **By:** [@chris](https://example.com/chris)
 <br>"
 `;
 

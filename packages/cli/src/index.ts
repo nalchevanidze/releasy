@@ -7,7 +7,6 @@ import {
   loadRelasy,
   normalizeConfig,
   normalizeConfigInputKeys,
-  validateChangelogTemplates,
   validateConfig,
 } from "@relasy/core";
 import { access, readFile, writeFile } from "fs/promises";
@@ -68,12 +67,6 @@ const writeRelasyConfig = async (config: unknown) => {
   );
 };
 
-const applyTemplate = (template: string, values: Record<string, string>) =>
-  Object.entries(values).reduce(
-    (acc, [key, value]) => acc.split(`{{${key}}}`).join(value),
-    template,
-  );
-
 export const main = async () => {
   dotenv.config();
 
@@ -120,9 +113,6 @@ export const main = async () => {
         },
       },
       changelog: {
-        templates: {
-          header: "## {{VERSION}} ({{DATE}})",
-        },
         grouping: "package",
       },
     };
@@ -211,7 +201,6 @@ export const main = async () => {
         ]),
       ),
       changelog: {
-        templates: migrated.changelog?.templates,
         grouping: migrated.changelog?.grouping,
       },
     });
@@ -219,58 +208,6 @@ export const main = async () => {
     console.log(
       "[relasy] Config migrated to latest schema shape (kebab-case + canonical policy keys).",
     );
-  });
-
-  cli.command("template-lint").action(async () => {
-    const raw = normalizeConfigInputKeys(await readRelasyConfig()) as {
-      changelog?: {
-        templates?: { header?: string; section?: string; item?: string };
-      };
-    };
-    validateChangelogTemplates(raw.changelog);
-    console.log("[relasy] Changelog templates are valid.");
-  });
-
-  cli.command("template-preview").action(async () => {
-    const raw = normalizeConfigInputKeys(await readRelasyConfig()) as {
-      changelog?: {
-        templates?: { header?: string; section?: string; item?: string };
-      };
-    };
-    validateChangelogTemplates(raw.changelog);
-
-    const header = raw.changelog?.templates?.header
-      ? applyTemplate(raw.changelog.templates.header, {
-          VERSION: "v1.2.3",
-          DATE: "2026-04-05",
-        })
-      : "## v1.2.3 (2026-04-05)";
-
-    const section = raw.changelog?.templates?.section
-      ? applyTemplate(raw.changelog.templates.section, {
-          LABEL: "Features",
-          CHANGES: "* #123: Add preview support",
-        })
-      : "#### Features\n* #123: Add preview support";
-
-    const item = raw.changelog?.templates?.item
-      ? applyTemplate(raw.changelog.templates.item, {
-          REF: "#123",
-          TITLE: "Add preview support",
-          AUTHOR: "@dev",
-          PACKAGES: "core",
-          BODY: "details",
-          DETAILS: "",
-          STATS: "",
-        })
-      : "* #123: Add preview support";
-
-    console.log("[relasy] Template preview\n");
-    console.log(header);
-    console.log("\n");
-    console.log(section);
-    console.log("\n");
-    console.log(item);
   });
 
   cli
