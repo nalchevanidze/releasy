@@ -40,9 +40,11 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/522d46986c097b23e6e3c1a29cbeec5c5693a99c) resolvePostBumpCommand  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/e7448d105e380a8c3edf687851379c94dc01331a) improvements  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/12e5ab28fbe480e5955ab20c1636af44f07d6474) typeSummary  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/d9d76460e72cc6ae871b78f412a5faad5f8595b7) build  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/ffa6ffca1f3199eaba1c3ee9fbbfcdea3d4b4983) changelogs  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/ff8d2d4008ceef2ee657e0904b917f9a0f7ba715) udpate  
+<details><summary>&nbsp; &nbsp; and 3 more</summary>
+d9d7646: build  
+ffa6ffc: changelogs  
+ff8d2d4: udpate  
+</details>
 
 # 🚀 [v1.1.1](https://github.com/nalchevanidze/rel-easy/compare/v1.1.0...v1.1.1) &nbsp; • &nbsp; January 25, 2026
 
@@ -78,10 +80,17 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/04fb85a9b70c842c93239b45f71b8bf5f8d5534c) commitsAfterVersion  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/ef161956e4b412ac03e427f368a246e2c23fa810) update versions  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/a620370bba27668eb803cbf9a07d97b10a19d117) update examples  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/57948596411971cf0e579529d630ad2fd3bd76e0) bump  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/9b65acc07cd1b1da78116129ba6c6c03abbf92b9) build  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/93a0e1f7f325e4678154409e3867f421eafccfcf) postBump  
-&nbsp; &nbsp; …and 6 more internal changes
+<details><summary>&nbsp; &nbsp; and 9 more</summary>
+5794859: bump  
+9b65acc: build  
+93a0e1f: postBump  
+7bcb477: postBump  
+5834ab5: custom  
+d291bba: bump  
+fa7e511: bump  
+65cc55b: update docs  
+4864f7c: relasy  
+</details>
 
 # 🚀 [v0.3.0](https://github.com/nalchevanidze/rel-easy/compare/v0.2.1...v0.3.0) &nbsp; • &nbsp; January 19, 2026
 
@@ -147,10 +156,13 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/5611de03d20ef26cf695a1908d4b21e1bd70ce1f) Relasy  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/bb77ccfb6d4c7d9c16015f18d437ff0bf1af737a) index  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/3c5822f64a3c0314b1de2de1b9bc0dda5523ae7b) Label  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/a6941172d74b89556ac8ea4d751add3d25055a47) inlineSnapshots  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/d08b61f041b1b7b2f0e2dbaa888f7584daade917) update changeTypes  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/c95b72b23438eb99a3e30472b40434970ab4feb5) colors  
-&nbsp; &nbsp; …and 2 more internal changes
+<details><summary>&nbsp; &nbsp; and 5 more</summary>
+a694117: inlineSnapshots  
+d08b61f: update changeTypes  
+c95b72b: colors  
+e6847d5: colors  
+3bc6a6a: orange  
+</details>
 
 # 🚀 [v0.1.14](https://github.com/nalchevanidze/rel-easy/compare/v0.1.13...v0.1.14) &nbsp; • &nbsp; January 17, 2026
 
@@ -166,10 +178,25 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/bb34200077c4657a6ee865b32710e4a160114550) parseLabels  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/13a2c590931b9a4f327504bb31434fd1e9df0c3c) parseLabel  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/787d19294fd1ecd88757305695cb270c9354af38) toThrow  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/027a8f41e17506254e5cf522ce20b179d7ec2a0a) custom  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/b0c752e4ad2860011a80f1bb7d44c99baaddb4a7) createLabel  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/25959f779d60504f2f7bc36d7a4f08f1125c0d97) createLabels  
-&nbsp; &nbsp; …and 14 more internal changes
+<details><summary>&nbsp; &nbsp; and 17 more</summary>
+027a8f4: custom  
+b0c752e: createLabel  
+25959f7: createLabels  
+64a6faf: createLabels  
+4d0f5b4: update labels  
+40fc59e: fetched labels  
+2bf1ad7: labels  
+02b8ab8: labels  
+cd8336e: labels  
+f95e781: parseLabels  
+3ce3c2f: index  
+9117ffa: references  
+57645d7: labels  
+92748ea: tests  
+77e2ae8: labels  
+3e26547: chnageTypes  
+67468f7: update  
+</details>
 
 # 🚀 [v0.1.12](https://github.com/nalchevanidze/rel-easy/compare/v0.1.11...v0.1.12) &nbsp; • &nbsp; January 16, 2026
 
@@ -179,10 +206,37 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/da6f41361b53d7a9907cd47bb03d5fe7408423a4) parseLabelId  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/d4f567e835af2152418166eac826e24cac5ada27) changeTypes  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/81c0d4aa437aa456d16cf97f2a958050a5c65ef2) parseLabels  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/10de39e4ae28cb4474a5a41ccde0cc6d923e8cfc) update Label  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/3c37b820c36c75988b6763a863f3ce73dcc4f9dd) labels  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/c75f36f42f90b73dec7e9669644ac17852e2ded2) types  
-&nbsp; &nbsp; …and 26 more internal changes
+<details><summary>&nbsp; &nbsp; and 29 more</summary>
+10de39e: update Label  
+3c37b82: labels  
+c75f36f: types  
+d60182b: labels  
+c057e08: packages  
+200bc27: update  
+c7ccfdf: build  
+9b0f072: l.set  
+fed40a7: add  
+b536a32: name  
+e3a1b6e: parseNames  
+dbfeaba: keys  
+7a7da3e: keys  
+c89ccbb: stringify  
+ae90119: build  
+3c8e079: updte  
+04111ed: build  
+5c76873: build  
+4f9b964: build  
+615c62b: fix  
+bade516: colors  
+5e3bed9: colors  
+1839bd5: update  
+c1acd3d: update  
+74e1fe0: labels  
+3e8c200: build  
+ff9245b: update  
+9448f3d: build  
+e8df402: pnpm run build  
+</details>
 
 # 🚀 [v0.1.11](https://github.com/nalchevanidze/rel-easy/compare/v0.1.10...v0.1.11) &nbsp; • &nbsp; January 15, 2026
 
@@ -211,8 +265,10 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/0a6264dec92d5f8ce0dac6d23005d027f8acd323) direnv  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/2c96978e4de675444e8e9c42e2fd73713395b0da) dorent  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/2b41fc3f5795f4107ca9d073765b3dcbdb6c8c7a) project  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/fd352b58544cb36685b685792eda25735a654087) project  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/d55622600b16453d25d3e3af04aabcbd21181153) project  
+<details><summary>&nbsp; &nbsp; and 2 more</summary>
+fd352b5: project  
+d556226: project  
+</details>
 
 # 🚀 [v0.1.9](https://github.com/nalchevanidze/rel-easy/compare/v0.1.8...v0.1.9) &nbsp; • &nbsp; January 11, 2026
 
@@ -222,7 +278,9 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/a02ab3e9f0af43be5e4552b06a466d27afbf9e97) update module  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/5293bba8cef6ab016e0a67ea1214d639c87036ad) changelog  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/f11fba02a88534950aee6d8f9494095bf9df93af) update scripts  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/e1f2e1e4ad9bc67069abff814146aa5f36438cc0) clean up  
+<details><summary>&nbsp; &nbsp; and 1 more</summary>
+e1f2e1e: clean up  
+</details>
 
 # 🚀 [v0.1.8](https://github.com/nalchevanidze/rel-easy/compare/v0.1.7...v0.1.8) &nbsp; • &nbsp; January 11, 2026
 
@@ -239,10 +297,18 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/d87a99c9d9aa1424c24019557dc04ca640d4dd35) config  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/9ef847c15abb43b0469eedda3b6142f39bd29e24) manager  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/e296cea2664127de4efeecbaea33fbca62856893) add npm module  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/f6cd2aa0a3fa8e0e3eda3fc911bf0926c19c6448) readJson  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/a4cbf81ac5b2be0c838ecac46ce0e870a51ba356) update  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/fc250d00e1f023953790a85221eb0528c4f61b43) build  
-&nbsp; &nbsp; …and 7 more internal changes
+<details><summary>&nbsp; &nbsp; and 10 more</summary>
+f6cd2aa: readJson  
+a4cbf81: update  
+fc250d0: build  
+fa6d388: "manager": "npm"  
+fe53b2c: update  
+06eaf1f: "gh": "nalchevanidze/relasy"  
+48c8dad: initialVersion  
+40e5c07: build npm  
+2b381b0: pnpm run build  
+260b475: build cli  
+</details>
 
 # 🚀 [v0.1.6](https://github.com/nalchevanidze/rel-easy/compare/v0.1.5...v0.1.6) &nbsp; • &nbsp; January 10, 2026
 
@@ -252,8 +318,10 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/1362173d1fea82cd4f5675e424c086e191919650) update workflow  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/0f501a3cddf8cbf8574b07761689e6ea06661dbb) pnpm  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/506678c106e10734a5c5f417590c3aa2f6e7655c) format  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/25096e17e24fe0ce30af1cc835bcc6f229fa7aa0) pnpm/action-setup@v4  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/cdc64ce3a5ca77c38858f88caed7b7acde0b7989) update actoins  
+<details><summary>&nbsp; &nbsp; and 2 more</summary>
+25096e1: pnpm/action-setup@v4  
+cdc64ce: update actoins  
+</details>
 
 # 🚀 [v0.1.5](https://github.com/nalchevanidze/rel-easy/compare/v0.1.4...v0.1.5) &nbsp; • &nbsp; January 10, 2026
 
@@ -268,7 +336,9 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/0f61e69d55fbea84c1ecfd4bd2df0dd1e75c4d69) update  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/ac86573aae644d573d60e0063b701d1e7210e468) update release script  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/6c4068323ccac9c9a76ffd92d8c770ccabdce35e) publish-release/0.1.4  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/8f0cdadc7a368bedcdd931afc7b16252a74b6b82) pnpm  
+<details><summary>&nbsp; &nbsp; and 1 more</summary>
+8f0cdad: pnpm  
+</details>
 
 # 🚀 [v0.1.3](https://github.com/nalchevanidze/rel-easy/compare/v0.1.2...v0.1.3) &nbsp; • &nbsp; January 10, 2026
 
@@ -284,10 +354,31 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/412cb64c8036bc059536b33d8588d5eb346994d8) only in comparison  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/f6e1caccc482805dab0909745ca6723848373707) drop  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/04ea35d9f71e9345db470645037a2064847e3b3d) remove open  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/56f5edb03f7f396b3d731c02e8b8295ec7281cf6) relasy  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/cb64a56b0f498a858855c8665e8746d157228919) update  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/330a60e783def6ee61ac529842e9ea657431f8f6) cli  
-&nbsp; &nbsp; …and 20 more internal changes
+<details><summary>&nbsp; &nbsp; and 23 more</summary>
+56f5edb: relasy  
+cb64a56: update  
+330a60e: cli  
+76dd9bb: update version  
+1677ce9: workspace  
+9399d7b: update  
+405d083: publish release action  
+f2f33a2: update core  
+fc41375: relasy  
+625e3bb: relasy  
+272cf45: draft release  
+a6886c5: update workflows  
+2096766: update  
+6db5dae: update  
+ade4fea: "setup": "echoe setup"  
+ede65ac: echo setup  
+3b01487: update  
+739e69a: permisions  
+830e820: 4. Enable Allow GitHub Actions to create and approve pull requests  
+babb6af: update  
+560663b: update package  
+aeded3f: --no-git-tag-version  
+d2ad683: publish-release/0.1.2  
+</details>
 
 # 🚀 [v0.1.1](https://github.com/nalchevanidze/rel-easy/compare/v0.1...v0.1.1) &nbsp; • &nbsp; January 09, 2026
 
@@ -297,7 +388,9 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/8c01ee92713eb3ca879e8b12894a2dda9677e58f) releasy  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/3f0eba4f894330855255a63a7702a04548d06c9e) Relasy  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/fb62bb49f7ba17cdb686d7fb5df73a04ac176909) 0.1.1  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/e190c066123385c7660e29946064188243674eb1) comit dist  
+<details><summary>&nbsp; &nbsp; and 1 more</summary>
+e190c06: comit dist  
+</details>
 
 # 🚀 v0.1 &nbsp; • &nbsp; January 09, 2026
 
@@ -307,7 +400,60 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/67b46901a9ebf9a2cc39b3451aa34aad499519d9) repo  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/5c925660f9938f87a7b0fe28df5a7eb9554183f2) gh-rel-easy  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/5ba59ccbaeb2d0b9c11d3b1696c0913b43959a5a) update  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/29c9f4cd1e65a31b6ba57f14aa43a409618a0da3) update  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/42a84aabeaac4cdd5a61f857868058533fc99e09) dist  
-&nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/2e0635ddf797f49f5eabbcba2ad81b06f01a819d) Config  
-&nbsp; &nbsp; …and 52 more internal changes
+<details><summary>&nbsp; &nbsp; and 55 more</summary>
+29c9f4c: update  
+42a84aa: dist  
+2e0635d: Config  
+09c9da1: gh-rel-easy  
+c48e15b: FetchApi  
+a035a03: 0.5.0  
+c4b8f83: build  
+ec4ecb2: build  
+aa738d3: name  
+3681334: 0.6.0  
+8af1b37: update  
+c82ed1b: 0.7.0  
+9829f49: runCLI  
+1fdfee0: releasy  
+5b19153: 0.9.0  
+99a8f1b: 0.10.0  
+9a6d93b: 0.11.0  
+f6a5560: changelog  
+e7d08e2: 0.12.0  
+7422b0a: CLI  
+52fada2: 0.13.0  
+c44167e: cli-class  
+6ba915e: void  
+190d8e0: cli-actions  
+75e8eb8: releasy 0.16.0  
+8be8a6f: 0.17.0  
+ba53d0c: version 0.18.0  
+37be386: update  
+be47459: 0.19.0  
+0081008: releasy 20  
+0adf6e1: releasy config json  
+f3d8a85: make statyc calls  
+9ef6520: releays cli  
+263b6ee: releasy cli  
+d973353: gh-setup  
+ad78e62: cli  
+f8b0b59: build  
+ea42a98: releasy  
+1695bdb: update  
+da3f1e0: clean up  
+301fb61: next  
+3c41ba5: Releasy  
+32dedac: void  
+aa90b41: releasy  
+6fb138a: values  
+5229cbf: 0.27.0  
+47c0f05: 28  
+9cc230f: fix bug  
+5a07b55: 29  
+e81e2d5: fix git user  
+1464ca2: isUserSet  
+08ab4c8: fix versioning  
+822ccf4: packages  
+1dff9ba: actions  
+600a193: update  
+</details>

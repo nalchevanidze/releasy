@@ -499,7 +499,9 @@ describe("RenderAPI snapshots", () => {
     expect(markdown).toContain("### 🔧 INTERNAL CHANGES");
     expect(markdown).toContain("internal 0");
     expect(markdown).toContain("internal 4");
-    expect(markdown).toContain("<details><summary>and 5 more</summary>");
+    expect(markdown).toContain(
+      "<details><summary>&nbsp; &nbsp; and 5 more</summary>",
+    );
     expect(markdown).toContain("internal 9");
   });
 });

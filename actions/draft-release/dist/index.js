@@ -43148,13 +43148,18 @@ var require_render = __commonJS({
           return change.number > 0 && !change.sourceCommit && (markedReleasePr || legacyReleasePrTitle);
         };
         this.visibleRefinements = (changes) => changes.filter((change) => !this.isIgnoredRefinement(change));
+        this.hiddenRefinementLine = (change) => {
+          if (change.sourceCommit) {
+            return `${this.shortCommit(change)}: ${this.changeTitle(change)}  `;
+          }
+          return this.changeTitle(change);
+        };
         this.refinementsOverflowDetails = (hidden) => {
           if (hidden.length === 0)
             return "";
           return lines([
-            `<details><summary>and ${hidden.length} more</summary>`,
-            "",
-            ...hidden.map(this.refinementItem),
+            `<details><summary>${nbspIndent(1, `and ${hidden.length} more`)}</summary>`,
+            ...hidden.map(this.hiddenRefinementLine),
             "</details>"
           ]);
         };

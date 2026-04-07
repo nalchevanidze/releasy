@@ -293,13 +293,20 @@ export class RenderAPI {
   private visibleRefinements = (changes: Change[]) =>
     changes.filter((change) => !this.isIgnoredRefinement(change));
 
+  private hiddenRefinementLine = (change: Change) => {
+    if (change.sourceCommit) {
+      return `${this.shortCommit(change)}: ${this.changeTitle(change)}  `;
+    }
+
+    return this.changeTitle(change);
+  };
+
   private refinementsOverflowDetails = (hidden: Change[]) => {
     if (hidden.length === 0) return "";
 
     return lines([
-      `<details><summary>and ${hidden.length} more</summary>`,
-      "",
-      ...hidden.map(this.refinementItem),
+      `<details><summary>${nbspIndent(1, `and ${hidden.length} more`)}</summary>`,
+      ...hidden.map(this.hiddenRefinementLine),
       "</details>",
     ]);
   };
