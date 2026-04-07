@@ -89,13 +89,11 @@
 
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#27** — update Config  
-&nbsp; &nbsp; 📦 **Scope:** general  
 &nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
 <br>
 
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **#28** — readme  
-&nbsp; &nbsp; 📦 **Scope:** general  
 &nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
 <br>
 
@@ -111,7 +109,6 @@
 
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **#25** — docs  
-&nbsp; &nbsp; 📦 **Scope:** general  
 &nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
 <br>
 
@@ -188,7 +185,6 @@
 
 ### ✨ NEW FEATURE (MINOR BUMP)
 * **#16** — Validate Labels per Pull Request  
-&nbsp; &nbsp; 📦 **Scope:** general  
 &nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
 * **#17** — Bootstrap Labels Action  
 &nbsp; &nbsp; 📦 **Scope:** `bootstrap`  
