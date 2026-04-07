@@ -42925,7 +42925,7 @@ var require_markdown = __commonJS({
     var itemStyle = (type, txt) => {
       switch (type) {
         case "tree":
-          return `&nbsp; &nbsp; \u2514 ${txt}`;
+          return `&nbsp; &nbsp; \u2514 ${txt}  `;
         case "bullet":
           return `* ${txt}`;
         default:
