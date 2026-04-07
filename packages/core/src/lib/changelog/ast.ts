@@ -27,7 +27,9 @@ export type ChangelogHeaderNode = {
 
 export type ChangelogSummaryNode = {
   type: "summary";
-  text: string;
+  bump: "major" | "minor" | "patch";
+  changeCount: number;
+  packageCount: number;
 };
 
 export type ChangelogDividerNode = {
@@ -46,8 +48,7 @@ export type ChangelogSectionNode = {
 
 export type ChangelogGroupNode = {
   type: "group";
-  prefix: string;
-  parts: InlinePart[];
+  labelParts: InlinePart[];
   children: ChangelogItemNode[];
 };
 
@@ -56,12 +57,25 @@ export type ChangelogListNode = {
   children: ChangelogItemNode[];
 };
 
-export type ChangelogItemNode = {
+export type PrimaryItemNode = {
   type: "item";
-  lines: Array<{ parts: InlinePart[]; indentLevel?: number; trailingBreak?: boolean }>;
+  kind: "primary";
+  ref: string;
+  title: string;
+  scope: string[];
+  author: InlinePart[];
 };
+
+export type InternalItemNode = {
+  type: "item";
+  kind: "internal";
+  url: string;
+  title: string;
+};
+
+export type ChangelogItemNode = PrimaryItemNode | InternalItemNode;
 
 export type ChangelogEmptyNode = {
   type: "empty";
-  text: string;
+  message: string;
 };

@@ -62,22 +62,6 @@ const detectBump = (
   }, "patch");
 };
 
-const badge = (label: string, value: string, color: string) =>
-  `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
-
-const summaryText = (bump: "major" | "minor" | "patch", changes: Change[]) => {
-  const bumpLabel = bump.toUpperCase();
-  const bumpColor =
-    bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
-  const packageCount = new Set(changes.flatMap((change) => change.pkgs)).size;
-
-  return [
-    badge("BUMP", bumpLabel, bumpColor),
-    badge("CHANGES", String(changes.length), "blue"),
-    badge("PACKAGES", String(packageCount || 0), "orange"),
-  ].join(" ");
-};
-
 const sectionHeading = (api: Api, type: string, label: string) => ({
   icon: api.config.changeTypeEmojis?.[type] || (type === "internal" ? "🔧" : undefined),
   label,
@@ -116,32 +100,16 @@ const authorParts = (change: Change): InlinePart[] => {
   return url ? [lnk(`@${login}`, url)] : [txt(`@${login}`)];
 };
 
-const scopeInline = (pkgs: string[]) => {
-  const normalized = normalizedPkgs(pkgs);
-  if (normalized.length === 0) return "general";
-  return normalized.map((pkg) => `\`${pkg}\``).join(" • ");
-};
-
 const isCommitOnlyChange = (change: Change) =>
   Boolean(change.sourceCommit && change.number <= 0);
 
 const primaryItem = (change: Change): ChangelogItemNode => ({
   type: "item",
-  lines: [
-    {
-      parts: [txt(`* **${refLabel(change)}** — ${changeTitle(change)}`)],
-      trailingBreak: true,
-    },
-    {
-      parts: [txt(`📦 **Scope:** ${scopeInline(change.pkgs)}`)],
-      indentLevel: 1,
-      trailingBreak: true,
-    },
-    {
-      parts: [txt("✍️ **By:** "), ...authorParts(change)],
-      indentLevel: 1,
-    },
-  ],
+  kind: "primary",
+  ref: refLabel(change),
+  title: changeTitle(change),
+  scope: normalizedPkgs(change.pkgs),
+  author: authorParts(change),
 });
 
 const refinementUrl = (api: Api, change: Change) => {
@@ -158,13 +126,9 @@ const refinementUrl = (api: Api, change: Change) => {
 
 const internalItem = (api: Api, change: Change): ChangelogItemNode => ({
   type: "item",
-  lines: [
-    {
-      parts: [lnk("└", refinementUrl(api, change)), txt(` ${changeTitle(change)}`)],
-      indentLevel: 2,
-      trailingBreak: true,
-    },
-  ],
+  kind: "internal",
+  url: refinementUrl(api, change),
+  title: changeTitle(change),
 });
 
 const primaryResolvedItem = (api: Api, change: Change) =>
@@ -194,8 +158,7 @@ const buildPrimaryNodes = (api: Api, primaryChanges: Change[]): ChangelogNode[] 
 
       const groups: ChangelogGroupNode[] = Object.entries(byPkg).map(([key, changes]) => ({
         type: "group",
-        prefix: "##### 📦 ",
-        parts: packageGroupParts(api, key),
+        labelParts: packageGroupParts(api, key),
         children: changes.map((change) => primaryResolvedItem(api, change)),
       }));
 
@@ -273,10 +236,7 @@ export class ChangelogPlanner {
     if (primaryChanges.length === 0 && refinements.length === 0) {
       return {
         type: "document",
-        children: [
-          header,
-          { type: "empty", text: "_No user-facing changes since the last tag._" },
-        ],
+        children: [header, { type: "empty", message: "No user-facing changes since the last tag." }],
       };
     }
 
@@ -286,7 +246,7 @@ export class ChangelogPlanner {
         type: "document",
         children: internal
           ? [header, internal]
-          : [header, { type: "empty", text: "_No user-facing changes since the last tag._" }],
+          : [header, { type: "empty", message: "No user-facing changes since the last tag." }],
       };
     }
 
@@ -294,7 +254,9 @@ export class ChangelogPlanner {
       header,
       {
         type: "summary",
-        text: summaryText(detectBump(this.api, primaryChanges), primaryChanges),
+        bump: detectBump(this.api, primaryChanges),
+        changeCount: primaryChanges.length,
+        packageCount: new Set(primaryChanges.flatMap((change) => change.pkgs)).size,
       },
       { type: "divider" },
       ...buildPrimaryNodes(this.api, primaryChanges),

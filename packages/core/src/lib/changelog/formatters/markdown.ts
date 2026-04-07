@@ -31,6 +31,9 @@ const formatDateLong = (date: string) => {
 const normalizeVersionLabel = (version: string) =>
   version.startsWith("v") ? version : `v${version}`;
 
+const badge = (label: string, value: string, color: string) =>
+  `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
+
 export class MarkdownFormatter {
   private renderParts = (parts: InlinePart[]) =>
     parts
@@ -49,24 +52,38 @@ export class MarkdownFormatter {
         const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
         return `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
       }
-      case "summary":
+      case "summary": {
+        const bumpLabel = node.bump.toUpperCase();
+        const bumpColor =
+          bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
+
+        return [
+          badge("BUMP", bumpLabel, bumpColor),
+          badge("CHANGES", String(node.changeCount), "blue"),
+          badge("PACKAGES", String(node.packageCount || 0), "orange"),
+        ].join(" ");
+      }
       case "empty":
-        return node.text;
+        return `_${node.message}_`;
       case "divider":
         return "---";
-      case "item":
-        return node.lines
-          .map((line) => {
-            const raw = this.renderParts(line.parts);
-            const base = line.indentLevel ? nbspIndent(line.indentLevel, raw) : raw;
-            return line.trailingBreak ? `${base}  ` : base;
-          })
-          .join("\n");
+      case "item": {
+        if (node.kind === "internal") {
+          return `${nbspIndent(2, `${link("└", node.url)} ${node.title}`)}  `;
+        }
+
+        const scope = node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" • ");
+        return lines([
+          `* **${node.ref}** — ${node.title}  `,
+          `${nbspIndent(1, `📦 **Scope:** ${scope}`)}  `,
+          nbspIndent(1, `✍️ **By:** ${this.renderParts(node.author)}`),
+        ]);
+      }
       case "list":
         return lines(node.children.map(this.renderNode));
       case "group":
         return lines([
-          `${node.prefix}${this.renderParts(node.parts)}`,
+          `##### 📦 ${this.renderParts(node.labelParts)}`,
           ...node.children.map(this.renderNode),
         ]);
       case "section": {
