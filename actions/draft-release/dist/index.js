@@ -43157,7 +43157,7 @@ var require_render = __commonJS({
         this.refinementsOverflowDetails = (hidden) => {
           if (hidden.length === 0)
             return "";
-          return `${nbspIndent(2, `\u2514 and ${hidden.length} more`)}`;
+          return `${nbspIndent(2, `\u2514 +${hidden.length} more`)}`;
         };
         this.refinementsSection = (changes, includeDivider = false) => {
           const visible = this.visibleRefinements(changes);
