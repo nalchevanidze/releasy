@@ -1,6 +1,6 @@
 import { range } from "ramda";
 import { InlinePart } from "../ast";
-import { ChangelogRenderer } from "./renderer";
+import { ChangelogRenderer, isSummaryBlock } from "./renderer";
 
 const newLine = (size: number) =>
   range(0, size)
@@ -41,13 +41,28 @@ const renderParts = (parts: InlinePart[]) =>
     .join("");
 
 export const markdownFormatter: ChangelogRenderer<string> = {
-  document: (node, render) => lines(node.children.map(render), 2),
+  doc: (node, render) => {
+    const version = normalizeVersionLabel(node.meta.versionLabel);
+    const date = formatDateLong(node.meta.releaseDate);
+    const versionText = node.meta.compareUrl
+      ? link(version, node.meta.compareUrl)
+      : version;
+    const header = `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
 
-  header: (node) => {
-    const version = normalizeVersionLabel(node.versionLabel);
-    const date = formatDateLong(node.releaseDate);
-    const versionText = node.compareUrl ? link(version, node.compareUrl) : version;
-    return `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
+    if (node.blocks.length === 0) return header;
+
+    const renderedBlocks = node.blocks.map(render);
+
+    if (node.blocks.length > 1 && isSummaryBlock(node.blocks[0])) {
+      return lines([
+        header,
+        renderedBlocks[0],
+        "---",
+        ...renderedBlocks.slice(1),
+      ], 2);
+    }
+
+    return lines([header, ...renderedBlocks], 2);
   },
 
   summary: (node) => {
@@ -62,44 +77,43 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     ].join(" ");
   },
 
-  divider: () => "---",
+  section: (node, render) => {
+    const body = lines(node.groups.map(render));
+    const overflow =
+      node.overflowHiddenCount && node.overflowHiddenCount > 0
+        ? nbspIndent(2, `└ +${node.overflowHiddenCount} more`)
+        : "";
 
-  item: (node) => {
-    if (node.kind === "internal") {
-      return `${nbspIndent(2, `${link("└", node.url)} ${node.title}`)}  `;
-    }
+    const label = node.label.toUpperCase();
+    const heading = node.icon ? `### ${node.icon} ${label}` : `### ${label}`;
 
+    return lines([heading, body, overflow, "<br>"]);
+  },
+
+  list: (node, render) => lines(node.items.map(render)),
+
+  group: (node, render) => {
+    const heading =
+      node.kind === "package" ? `##### 📦 ${renderParts(node.label || [])}` : "";
+
+    return lines([heading, ...node.items.map(render)]);
+  },
+
+  primaryChange: (node) => {
     const scope =
       node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" • ");
 
     return lines([
-      `* **${node.ref}** — ${node.title}  `,
+      `* **${node.ref.label}** — ${node.title}  `,
       `${nbspIndent(1, `📦 **Scope:** ${scope}`)}  `,
       nbspIndent(1, `✍️ **By:** ${renderParts(node.author)}`),
     ]);
   },
 
-  list: (node, render) => lines(node.children.map(render)),
-
-  group: (node, render) =>
-    lines([
-      `##### 📦 ${renderParts(node.labelParts)}`,
-      ...node.children.map(render),
-    ]),
-
-  section: (node, render) => {
-    const body = lines(node.children.map(render));
-    const overflow =
-      node.overflowCount && node.overflowCount > 0
-        ? nbspIndent(2, `└ +${node.overflowCount} more`)
-        : "";
-    const label = node.heading.label.toUpperCase();
-    const heading = node.heading.icon
-      ? `### ${node.heading.icon} ${label}`
-      : `### ${label}`;
-
-    return lines([heading, body, overflow, "<br>"]);
+  internalChange: (node) => {
+    const ref = node.url ? link("└", node.url) : "└";
+    return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
   },
 
-  empty: (node) => `_${node.message}_`,
+  empty: () => "_No user-facing changes since the last tag._",
 };

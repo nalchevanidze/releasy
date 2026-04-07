@@ -43686,16 +43686,52 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
   }
 });
 
+// ../../packages/core/dist/lib/changelog/formatters/renderer.js
+var require_renderer = __commonJS({
+  "../../packages/core/dist/lib/changelog/formatters/renderer.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.isSummaryBlock = exports2.renderAst = void 0;
+    var renderAst = (root, renderer) => {
+      const render = (node) => {
+        switch (node.type) {
+          case "doc":
+            return renderer.doc(node, render);
+          case "summary":
+            return renderer.summary(node, render);
+          case "section":
+            return renderer.section(node, render);
+          case "list":
+            return renderer.list(node, render);
+          case "group":
+            return renderer.group(node, render);
+          case "primaryChange":
+            return renderer.primaryChange(node, render);
+          case "internalChange":
+            return renderer.internalChange(node, render);
+          case "empty":
+            return renderer.empty(node, render);
+        }
+      };
+      return render(root);
+    };
+    exports2.renderAst = renderAst;
+    var isSummaryBlock = (block) => block.type === "summary";
+    exports2.isSummaryBlock = isSummaryBlock;
+  }
+});
+
 // ../../packages/core/dist/lib/changelog/formatters/markdown.js
 var require_markdown = __commonJS({
   "../../packages/core/dist/lib/changelog/formatters/markdown.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.MarkdownFormatter = void 0;
+    exports2.markdownFormatter = void 0;
     var ramda_1 = require_src();
-    var link = (name, url) => `[${name}](${url})`;
+    var renderer_1 = require_renderer();
     var newLine = (size) => (0, ramda_1.range)(0, size).map(() => "\n").join("");
     var lines = (xs, size = 1) => xs.filter(Boolean).join(newLine(size));
+    var link = (name, url) => `[${name}](${url})`;
     var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
     var formatDateLong = (date) => {
       const parsed = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
@@ -43709,142 +43745,62 @@ var require_markdown = __commonJS({
       });
     };
     var normalizeVersionLabel = (version) => version.startsWith("v") ? version : `v${version}`;
-    var MarkdownFormatter = class {
-      constructor(api) {
-        this.api = api;
-        this.pkg = (labelName) => {
-          const pkg = this.api.config.pkgs[labelName];
-          const longName = pkg?.name || labelName;
-          const url = this.api.module.pkg(longName);
-          return url ? link(labelName, url) : longName;
-        };
-        this.normalizedPkgs = (pkgs) => [...new Set(pkgs)].sort();
-        this.packageLinks = (pkgs) => this.normalizedPkgs(pkgs).map(this.pkg);
-        this.scopeInline = (pkgs) => {
-          const normalized = this.normalizedPkgs(pkgs);
-          if (normalized.length === 0)
-            return "general";
-          return normalized.map((pkg) => `\`${pkg}\``).join(" \u2022 ");
-        };
-        this.packageGroupTitle = (pkgKey) => {
-          if (pkgKey === "general")
-            return "General";
-          return this.packageLinks(pkgKey.split(",")).join(" \xB7 ");
-        };
-        this.shortCommit = (change) => change.sourceCommit?.slice(0, 7) || "unknown";
-        this.refLabel = (change) => {
-          if (change.number > 0)
-            return `#${change.number}`;
-          if (change.sourceCommit)
-            return this.shortCommit(change);
-          return "unknown";
-        };
-        this.author = ({ author }) => author.url ? link(`@${author.login}`, author.url) : `@${author.login}`;
-        this.changeTitle = (change) => change.title?.trim() || "Untitled change";
-        this.defaultPrimaryItem = (change) => lines([
-          `* **${this.refLabel(change)}** \u2014 ${this.changeTitle(change)}  `,
-          `${nbspIndent(1, `\u{1F4E6} **Scope:** ${this.scopeInline(change.pkgs)}`)}  `,
-          nbspIndent(1, `\u270D\uFE0F **By:** ${this.author(change)}`)
+    var badge = (label, value, color) => `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
+    var renderParts = (parts) => parts.map((part) => part.type === "link" ? link(part.label, part.url) : part.value).join("");
+    exports2.markdownFormatter = {
+      doc: (node, render) => {
+        const version = normalizeVersionLabel(node.meta.versionLabel);
+        const date = formatDateLong(node.meta.releaseDate);
+        const versionText = node.meta.compareUrl ? link(version, node.meta.compareUrl) : version;
+        const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
+        if (node.blocks.length === 0)
+          return header;
+        const renderedBlocks = node.blocks.map(render);
+        if (node.blocks.length > 1 && (0, renderer_1.isSummaryBlock)(node.blocks[0])) {
+          return lines([
+            header,
+            renderedBlocks[0],
+            "---",
+            ...renderedBlocks.slice(1)
+          ], 2);
+        }
+        return lines([header, ...renderedBlocks], 2);
+      },
+      summary: (node) => {
+        const bumpLabel = node.bump.toUpperCase();
+        const bumpColor = bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
+        return [
+          badge("BUMP", bumpLabel, bumpColor),
+          badge("CHANGES", String(node.changeCount), "blue"),
+          badge("PACKAGES", String(node.packageCount || 0), "orange")
+        ].join(" ");
+      },
+      section: (node, render) => {
+        const body = lines(node.groups.map(render));
+        const overflow = node.overflowHiddenCount && node.overflowHiddenCount > 0 ? nbspIndent(2, `\u2514 +${node.overflowHiddenCount} more`) : "";
+        const label = node.label.toUpperCase();
+        const heading = node.icon ? `### ${node.icon} ${label}` : `### ${label}`;
+        return lines([heading, body, overflow, "<br>"]);
+      },
+      list: (node, render) => lines(node.items.map(render)),
+      group: (node, render) => {
+        const heading = node.kind === "package" ? `##### \u{1F4E6} ${renderParts(node.label || [])}` : "";
+        return lines([heading, ...node.items.map(render)]);
+      },
+      primaryChange: (node) => {
+        const scope = node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" \u2022 ");
+        return lines([
+          `* **${node.ref.label}** \u2014 ${node.title}  `,
+          `${nbspIndent(1, `\u{1F4E6} **Scope:** ${scope}`)}  `,
+          nbspIndent(1, `\u270D\uFE0F **By:** ${renderParts(node.author)}`)
         ]);
-        this.refinementLink = (change) => {
-          if (change.sourceCommit) {
-            return `https://github.com/${this.api.config.gh}/commit/${change.sourceCommit}`;
-          }
-          if (change.number > 0) {
-            return this.api.github.issue(change.number);
-          }
-          return `https://github.com/${this.api.config.gh}`;
-        };
-        this.commitLine = (change) => `${nbspIndent(2, `${link("\u2514", this.refinementLink(change))} ${this.changeTitle(change)}`)}  `;
-        this.linkedRefinementLine = (change) => `${nbspIndent(1, `[\u{1F517}](${this.refinementLink(change)}) &nbsp; ${this.changeTitle(change)}`)}  `;
-        this.badge = (label, value, color) => `![${label}](https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(value)}-${color}?style=flat-square)`;
-        this.sectionHeading = (type, label) => {
-          const icon = this.api.config.changeTypeEmojis?.[type] || "";
-          const headerLabel = label.toUpperCase();
-          return icon ? `### ${icon} ${headerLabel}` : `### ${headerLabel}`;
-        };
-        this.renderNode = (node) => {
-          switch (node.type) {
-            case "document":
-              return this.renderDocument(node);
-            case "header": {
-              const date = formatDateLong(node.releaseDate);
-              const current = normalizeVersionLabel(node.version);
-              if (node.previousTag) {
-                const previous = normalizeVersionLabel(node.previousTag);
-                const compareUrl = `https://github.com/${this.api.config.gh}/compare/${previous}...${current}`;
-                return `# \u{1F680} ${link(current, compareUrl)} &nbsp; \u2022 &nbsp; ${date}`;
-              }
-              return `# \u{1F680} ${current} &nbsp; \u2022 &nbsp; ${date}`;
-            }
-            case "summary": {
-              const bump = node.bump.toUpperCase();
-              const bumpColor = bump === "MAJOR" ? "red" : bump === "MINOR" ? "yellow" : "green";
-              return [
-                this.badge("BUMP", bump, bumpColor),
-                this.badge("CHANGES", String(node.changeCount), "blue"),
-                this.badge("PACKAGES", String(node.packageCount || 0), "orange")
-              ].join(" ");
-            }
-            case "divider":
-              return "---";
-            case "section": {
-              const renderedChildren = lines(node.children.map(this.renderNode));
-              return lines([
-                this.sectionHeading(node.changeType, node.label),
-                renderedChildren,
-                "<br>"
-              ]);
-            }
-            case "group": {
-              return lines([
-                `##### \u{1F4E6} ${this.packageGroupTitle(node.title)}`,
-                ...node.children.map(this.renderNode)
-              ]);
-            }
-            case "change": {
-              if (node.variant === "primary") {
-                return this.defaultPrimaryItem(node.change);
-              }
-              if (node.variant === "refinement-commit") {
-                return this.commitLine(node.change);
-              }
-              return this.linkedRefinementLine(node.change);
-            }
-            case "refinements": {
-              const overflow = node.hiddenCount > 0 ? `${nbspIndent(2, `\u2514 +${node.hiddenCount} more`)}` : "";
-              return lines([
-                node.includeDivider ? "---" : "",
-                "### \u{1F527} INTERNAL CHANGES",
-                "",
-                ...node.children.map(this.renderRefinementChange),
-                overflow
-              ]);
-            }
-            case "empty":
-              return node.message;
-          }
-        };
-        this.renderRefinementChange = (node) => {
-          if (node.variant === "refinement-commit") {
-            return this.commitLine(node.change);
-          }
-          return this.linkedRefinementLine(node.change);
-        };
-        this.renderDocument = (document) => {
-          const rendered = document.children.map(this.renderNode);
-          if (rendered.length === 0)
-            return "";
-          return rendered.slice(1).reduce((acc, current, index) => {
-            const previousNode = document.children[index];
-            const currentNode = document.children[index + 1];
-            const compactListSeparator = previousNode?.type === "change" && currentNode?.type === "change" && previousNode.variant === "primary" && currentNode.variant === "primary";
-            return `${acc}${newLine(compactListSeparator ? 1 : 2)}${current}`;
-          }, rendered[0]);
-        };
-      }
+      },
+      internalChange: (node) => {
+        const ref = node.url ? link("\u2514", node.url) : "\u2514";
+        return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+      },
+      empty: () => "_No user-facing changes since the last tag._"
     };
-    exports2.MarkdownFormatter = MarkdownFormatter;
   }
 });
 
@@ -43858,10 +43814,26 @@ var require_plan = __commonJS({
     var git_1 = require_git();
     var utils_1 = require_utils2();
     var maxInternalChangesToShow = 5;
+    var txt = (value) => ({ type: "text", value });
+    var lnk = (label, url) => ({ type: "link", label, url });
     var normalizedPkgs = (pkgs) => [...new Set(pkgs)].sort();
     var packageGroupKey = (pkgs) => {
       const normalized = normalizedPkgs(pkgs);
       return normalized.length ? normalized.join(",") : "general";
+    };
+    var packagePart = (api, labelName) => {
+      const pkg = api.config.pkgs[labelName];
+      const longName = pkg?.name || labelName;
+      const url = api.module.pkg(longName);
+      return url ? lnk(labelName, url) : txt(labelName);
+    };
+    var packageGroupParts = (api, key) => {
+      if (key === "general")
+        return [txt("General")];
+      return key.split(",").flatMap((pkg, idx) => [
+        ...idx > 0 ? [txt(" \xB7 ")] : [],
+        packagePart(api, pkg)
+      ]);
     };
     var detectBump = (api, changes) => {
       const rank = { patch: 0, minor: 1, major: 2 };
@@ -43878,64 +43850,112 @@ var require_plan = __commonJS({
       const legacyReleasePrTitle = isReleasePrTitle(title);
       return change.number > 0 && !change.sourceCommit && (markedReleasePr || legacyReleasePrTitle);
     };
-    var visibleRefinements = (changes) => changes.filter((change) => !isIgnoredRefinement(change));
-    var refinementNode = (change) => ({
-      type: "change",
-      variant: change.sourceCommit ? "refinement-commit" : "refinement-link",
-      change
-    });
-    var refinementSection = (changes, includeDivider) => {
-      const visible = visibleRefinements(changes);
-      if (visible.length === 0)
-        return void 0;
-      const shown = visible.slice(0, maxInternalChangesToShow).map(refinementNode);
-      const hidden = visible.slice(maxInternalChangesToShow);
-      return {
-        type: "refinements",
-        includeDivider,
-        children: shown,
-        hiddenCount: hidden.length
-      };
+    var changeTitle = (change) => change.title?.trim() || "Untitled change";
+    var shortCommit = (change) => change.sourceCommit?.slice(0, 7) || "unknown";
+    var refLabel = (change) => {
+      if (change.number > 0)
+        return `#${change.number}`;
+      if (change.sourceCommit)
+        return shortCommit(change);
+      return "unknown";
+    };
+    var authorParts = (change) => {
+      const login = change.author.login;
+      const url = change.author.url;
+      return url ? [lnk(`@${login}`, url)] : [txt(`@${login}`)];
     };
     var isCommitOnlyChange = (change) => Boolean(change.sourceCommit && change.number <= 0);
-    var primaryChangeNode = (change) => ({
-      type: "change",
-      variant: isCommitOnlyChange(change) ? "refinement-commit" : "primary",
-      change
+    var primaryItem = (change) => ({
+      type: "primaryChange",
+      ref: { label: refLabel(change) },
+      title: changeTitle(change),
+      scope: normalizedPkgs(change.pkgs),
+      author: authorParts(change)
     });
-    var buildPrimaryNodes = (api, primaryChanges) => {
+    var refinementUrl = (api, change) => {
+      if (change.sourceCommit) {
+        return `https://github.com/${api.config.gh}/commit/${change.sourceCommit}`;
+      }
+      if (change.number > 0) {
+        return api.github.issue(change.number);
+      }
+      return `https://github.com/${api.config.gh}`;
+    };
+    var internalItem = (api, change) => ({
+      type: "internalChange",
+      url: refinementUrl(api, change),
+      title: changeTitle(change)
+    });
+    var primaryResolvedItem = (api, change) => isCommitOnlyChange(change) ? internalItem(api, change) : primaryItem(change);
+    var sectionMeta = (api, id, label) => ({
+      id,
+      label,
+      icon: api.config.changeTypeEmojis?.[id] || (id === "internal" ? "\u{1F527}" : void 0)
+    });
+    var buildPrimaryBlocks = (api, primaryChanges) => {
       const grouping = api.config.changelog?.grouping ?? "none";
       if (grouping === "none") {
-        return primaryChanges.map(primaryChangeNode);
+        const list = {
+          type: "list",
+          items: primaryChanges.map((change) => primaryResolvedItem(api, change))
+        };
+        return [list];
       }
-      const groups = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
+      const byType = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
       const sectionTitles = { ...api.config.changeTypes };
       return Object.entries(sectionTitles).flatMap(([changeType, label]) => {
-        if (!(0, utils_1.isKey)(groups, changeType))
+        if (!(0, utils_1.isKey)(byType, changeType))
           return [];
+        const typeChanges = byType[changeType];
         if (grouping === "package") {
-          const byPkg = (0, ramda_1.groupBy)((change) => packageGroupKey(change.pkgs), groups[changeType]);
-          const grouped = Object.entries(byPkg).map(([key, changes]) => ({
+          const byPkg = (0, ramda_1.groupBy)((change) => packageGroupKey(change.pkgs), typeChanges);
+          const groups = Object.entries(byPkg).map(([key, changes]) => ({
             type: "group",
-            key,
-            title: key,
-            children: changes.map(primaryChangeNode)
+            kind: "package",
+            label: packageGroupParts(api, key),
+            items: changes.map((change) => primaryResolvedItem(api, change))
           }));
-          return {
+          const section2 = {
             type: "section",
-            changeType,
-            label,
-            children: grouped
+            ...sectionMeta(api, changeType, label),
+            groups
           };
+          return [section2];
         }
-        return {
+        const section = {
           type: "section",
-          changeType,
-          label,
-          children: groups[changeType].map(primaryChangeNode)
+          ...sectionMeta(api, changeType, label),
+          groups: [
+            {
+              type: "group",
+              kind: "flat",
+              items: typeChanges.map((change) => primaryResolvedItem(api, change))
+            }
+          ]
         };
+        return [section];
       });
     };
+    var internalSection = (api, refinements) => {
+      const visible = refinements.filter((change) => !isIgnoredRefinement(change));
+      if (visible.length === 0)
+        return void 0;
+      const shown = visible.slice(0, maxInternalChangesToShow);
+      const hidden = visible.slice(maxInternalChangesToShow);
+      return {
+        type: "section",
+        ...sectionMeta(api, "internal", "Internal Changes"),
+        overflowHiddenCount: hidden.length || void 0,
+        groups: [
+          {
+            type: "group",
+            kind: "flat",
+            items: shown.map((change) => internalItem(api, change))
+          }
+        ]
+      };
+    };
+    var tagRef = (version) => version.startsWith("v") ? version : `v${version}`;
     var ChangelogPlanner = class {
       constructor(api) {
         this.api = api;
@@ -43943,59 +43963,51 @@ var require_plan = __commonJS({
       build(tag, changes, previousTag, releaseDate) {
         const primaryChanges = changes.filter((x) => !x.isRefinement);
         const refinements = changes.filter((x) => x.isRefinement);
-        const header = {
-          type: "header",
-          version: tag.toString(),
-          previousTag,
-          releaseDate: releaseDate || (0, git_1.getDate)()
-        };
+        const current = tag.toString();
         if (primaryChanges.length === 0 && refinements.length === 0) {
           return {
-            type: "document",
-            children: [
-              header,
-              {
-                type: "empty",
-                message: "_No user-facing changes since the last tag._"
-              }
-            ]
+            type: "doc",
+            meta: {
+              versionLabel: current,
+              compareUrl: previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}` : void 0,
+              releaseDate: releaseDate || (0, git_1.getDate)()
+            },
+            blocks: [{ type: "empty", reason: "no-user-facing-changes" }]
           };
         }
-        if (primaryChanges.length === 0 && refinements.length > 0) {
-          const refinementsNode2 = refinementSection(refinements, false);
-          if (!refinementsNode2) {
-            return {
-              type: "document",
-              children: [
-                header,
-                {
-                  type: "empty",
-                  message: "_No user-facing changes since the last tag._"
-                }
-              ]
-            };
-          }
+        if (primaryChanges.length === 0) {
+          const internal2 = internalSection(this.api, refinements);
           return {
-            type: "document",
-            children: [header, refinementsNode2]
+            type: "doc",
+            meta: {
+              versionLabel: current,
+              compareUrl: previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}` : void 0,
+              releaseDate: releaseDate || (0, git_1.getDate)()
+            },
+            blocks: internal2 ? [internal2] : [{ type: "empty", reason: "no-user-facing-changes" }]
           };
         }
-        const nodes = [
-          header,
+        const blocks = [
           {
             type: "summary",
             bump: detectBump(this.api, primaryChanges),
             changeCount: primaryChanges.length,
             packageCount: new Set(primaryChanges.flatMap((change) => change.pkgs)).size
           },
-          { type: "divider" },
-          ...buildPrimaryNodes(this.api, primaryChanges)
+          ...buildPrimaryBlocks(this.api, primaryChanges)
         ];
-        const refinementsNode = refinementSection(refinements, true);
-        if (refinementsNode) {
-          nodes.push(refinementsNode);
-        }
-        return { type: "document", children: nodes };
+        const internal = internalSection(this.api, refinements);
+        if (internal)
+          blocks.push(internal);
+        return {
+          type: "doc",
+          meta: {
+            versionLabel: current,
+            compareUrl: previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(current)}` : void 0,
+            releaseDate: releaseDate || (0, git_1.getDate)()
+          },
+          blocks
+        };
       }
     };
     exports2.ChangelogPlanner = ChangelogPlanner;
@@ -44009,13 +44021,14 @@ var require_render = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.RenderAPI = void 0;
     var markdown_1 = require_markdown();
+    var renderer_1 = require_renderer();
     var plan_1 = require_plan();
     var RenderAPI = class {
       constructor(api) {
         this.api = api;
         this.changes = (tag, changes, previousTag, releaseDate) => {
           const ast = new plan_1.ChangelogPlanner(this.api).build(tag, changes, previousTag, releaseDate);
-          return new markdown_1.MarkdownFormatter(this.api).renderDocument(ast);
+          return (0, renderer_1.renderAst)(ast, markdown_1.markdownFormatter);
         };
       }
     };

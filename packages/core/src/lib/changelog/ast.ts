@@ -2,80 +2,84 @@ export type InlinePart =
   | { type: "text"; value: string }
   | { type: "link"; label: string; url: string };
 
+export type ChangeRef = {
+  label: string;
+  url?: string;
+};
+
 export type ChangelogNode =
-  | ChangelogDocumentNode
-  | ChangelogHeaderNode
-  | ChangelogSummaryNode
-  | ChangelogDividerNode
-  | ChangelogSectionNode
+  | ChangelogDocNode
+  | ChangelogSummaryBlock
+  | ChangelogSectionBlock
+  | ChangelogListBlock
   | ChangelogGroupNode
-  | ChangelogListNode
-  | ChangelogItemNode
-  | ChangelogEmptyNode;
+  | ChangelogPrimaryChangeNode
+  | ChangelogInternalChangeNode
+  | ChangelogEmptyBlock;
 
-export type ChangelogDocumentNode = {
-  type: "document";
-  children: ChangelogNode[];
+export type ChangelogDocNode = {
+  type: "doc";
+  meta: {
+    versionLabel: string;
+    releaseDate: string;
+    compareUrl?: string;
+  };
+  blocks: ChangelogBlock[];
 };
 
-export type ChangelogHeaderNode = {
-  type: "header";
-  versionLabel: string;
-  compareUrl?: string;
-  releaseDate: string;
-};
+export type ChangelogBlock =
+  | ChangelogSummaryBlock
+  | ChangelogSectionBlock
+  | ChangelogListBlock
+  | ChangelogEmptyBlock;
 
-export type ChangelogSummaryNode = {
+export type ChangelogSummaryBlock = {
   type: "summary";
   bump: "major" | "minor" | "patch";
   changeCount: number;
   packageCount: number;
 };
 
-export type ChangelogDividerNode = {
-  type: "divider";
+export type ChangelogSectionBlock = {
+  type: "section";
+  id: string;
+  label: string;
+  icon?: string;
+  groups: ChangelogGroupNode[];
+  overflowHiddenCount?: number;
 };
 
-export type ChangelogSectionNode = {
-  type: "section";
-  heading: {
-    icon?: string;
-    label: string;
-  };
-  overflowCount?: number;
-  children: Array<ChangelogGroupNode | ChangelogListNode | ChangelogItemNode>;
+export type ChangelogListBlock = {
+  type: "list";
+  items: ChangelogItemNode[];
 };
 
 export type ChangelogGroupNode = {
   type: "group";
-  labelParts: InlinePart[];
-  children: ChangelogItemNode[];
+  kind: "package" | "flat";
+  label?: InlinePart[];
+  items: ChangelogItemNode[];
 };
 
-export type ChangelogListNode = {
-  type: "list";
-  children: ChangelogItemNode[];
-};
-
-export type PrimaryItemNode = {
-  type: "item";
-  kind: "primary";
-  ref: string;
+export type ChangelogPrimaryChangeNode = {
+  type: "primaryChange";
+  ref: ChangeRef;
   title: string;
   scope: string[];
   author: InlinePart[];
 };
 
-export type InternalItemNode = {
-  type: "item";
-  kind: "internal";
-  url: string;
+export type ChangelogInternalChangeNode = {
+  type: "internalChange";
+  url?: string;
   title: string;
 };
 
-export type ChangelogItemNode = PrimaryItemNode | InternalItemNode;
+export type ChangelogItemNode =
+  | ChangelogPrimaryChangeNode
+  | ChangelogInternalChangeNode;
 
-export type ChangelogEmptyNode = {
+export type ChangelogEmptyBlock = {
   type: "empty";
-  message: string;
+  reason: "no-user-facing-changes";
 };
