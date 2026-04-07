@@ -42942,7 +42942,7 @@ var require_markdown = __commonJS({
           year: "numeric",
           timeZone: "UTC"
         });
-        const versionLink = compareUrl ? render({ type: "link", label: version, url: compareUrl }) : versionText;
+        const versionLink = compareUrl ? render({ type: "link", label: versionText, url: compareUrl }) : versionText;
         const header = `# \u{1F680} ${versionLink} &nbsp; \u2022 &nbsp; ${formattedDate}`;
         return lines(header, stats ? (stats || []).map(render).join(" ") : void 0, children.map(render));
       },
