@@ -3,7 +3,7 @@
 ### 🐛 BUG FIX (PATCH BUMP)
 * **#44** — improve changelog generation  
 &nbsp; └ 📦 - `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 <br>
 
 # 🚀 [v2.0.0](https://github.com/nalchevanidze/rel-easy/compare/v1.1.1...v2.0.0) &nbsp; • &nbsp; April 05, 2026
@@ -11,17 +11,17 @@
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#38** — Add YAML-first config, policy-driven release checks, and workflow/test hardening  
 &nbsp; └ 📦 - `actionsCommon` • `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 <br>
 ### 🐛 BUG FIX (PATCH BUMP)
 * **#39** — Fix/release flow docs rule warn alignment  
 &nbsp; └ 📦 - `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 <br>
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **#40** — improve changelog rendering quality and coverage.  
 &nbsp; └ 📦 - `core`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 * **UNK** — commits missing Conventional Commit format or an associated PR    
 &nbsp; └ 🔘 - [5502c5f](https://github.com/nalchevanidze/rel-easy/commit/5502c5f7eea083f96f5efa769c754ae690d53d06) fix minor issues  
 &nbsp; └ 🔘 - [a4c3984](https://github.com/nalchevanidze/rel-easy/commit/a4c39848e7b1908508130211576111b6ed2c32e0) update clients  
@@ -44,15 +44,15 @@
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#30** — Refactor label system  
 &nbsp; └ 📦 - `bootstrap` • `draft` • `labels` • `publish`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 * **#32** — Fix versioning  
 &nbsp; └ 📦 - `draft` • `publish`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 <br>
 ### ✨ NEW FEATURE (MINOR BUMP)
 * **#34** — optional project fields  
 &nbsp; └ 📦 - `draft` • `publish`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 <br>
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **UNK** — commits missing Conventional Commit format or an associated PR    
@@ -68,11 +68,11 @@
 ![BUMP](https://img.shields.io/badge/BUMP-MAJOR-red?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-0-orange?style=flat-square)
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#27** — update Config  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 <br>
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **#28** — readme  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 * **UNK** — commits missing Conventional Commit format or an associated PR    
 &nbsp; └ 🔘 - [d9ef647](https://github.com/nalchevanidze/rel-easy/commit/d9ef647f3c9b59e1f4b510b97c3bad722645914c) update versions  
 <br>
@@ -81,7 +81,7 @@
 ![BUMP](https://img.shields.io/badge/BUMP-PATCH-green?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-1-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-0-orange?style=flat-square)
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **#25** — docs  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 * **UNK** — commits missing Conventional Commit format or an associated PR    
 &nbsp; └ 🔘 - [5eba990](https://github.com/nalchevanidze/rel-easy/commit/5eba9903e7485a1b0f735c564516807648205f10) prs  
 <br>
@@ -91,7 +91,7 @@
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#23** — change-types  
 &nbsp; └ 📦 - `draft`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 <br>
 
 # 🚀 [v1.0.0](https://github.com/nalchevanidze/rel-easy/compare/v0.1.15...v1.0.0) &nbsp; • &nbsp; January 19, 2026
@@ -147,10 +147,10 @@
 ![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-1-orange?style=flat-square)
 ### ✨ NEW FEATURE (MINOR BUMP)
 * **#16** — Validate Labels per Pull Request  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 * **#17** — Bootstrap Labels Action  
 &nbsp; └ 📦 - `bootstrap`  
-&nbsp; └ ✍️ - [@nalchevanidze](https://github.com/nalchevanidze)    
+&nbsp; └ 🧑‍💻 - [@nalchevanidze](https://github.com/nalchevanidze)    
 <br>
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **UNK** — commits missing Conventional Commit format or an associated PR    

@@ -43705,32 +43705,31 @@ var require_markdown = __commonJS({
     };
     var list = (header, items, marker = "plain") => lines(...[header, ...items.flat().map((item) => withMarker(marker, item))].filter(Boolean).map((value) => `${value}  `));
     exports2.markdownFormatter = {
-      doc: (node, render) => {
-        const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
-        const parsedDate = /* @__PURE__ */ new Date(`${node.date}T00:00:00Z`);
-        const date = Number.isNaN(parsedDate.getTime()) ? node.date : parsedDate.toLocaleDateString("en-US", {
+      doc: ({ version, date, compareUrl, stats, children }, render) => {
+        const versionText = version.startsWith("v") ? version : `v${version}`;
+        const parsedDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+        const formattedDate = Number.isNaN(parsedDate.getTime()) ? date : parsedDate.toLocaleDateString("en-US", {
           month: "long",
           day: "2-digit",
           year: "numeric",
           timeZone: "UTC"
         });
-        const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
-        const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
-        const stats = node.stats ? (node.stats || []).map(render).join(" ") : void 0;
-        return lines(header, stats, node.children.map(render));
+        const versionLink = compareUrl ? render({ type: "link", label: version, url: compareUrl }) : versionText;
+        const header = `# \u{1F680} ${versionLink} &nbsp; \u2022 &nbsp; ${formattedDate}`;
+        return lines(header, stats ? (stats || []).map(render).join(" ") : void 0, children.map(render));
       },
-      section: (node, render) => lines(node.header ? render(node.header) : void 0, node.children.map(render), node.header ? "<br>" : void 0),
+      section: ({ header, children }, render) => lines(header ? render(header) : void 0, children.map(render), header ? "<br>" : void 0),
       cluster: ({ header, children, hiddenCount, marker }, render) => list(header ? render(header) : void 0, [
         children.map(render),
         hiddenCount && hiddenCount > 0 ? `+${hiddenCount} more` : []
       ], marker),
-      item: (node, render) => list(`**${node.refLabel}** \u2014 ${node.title}`, node.meta.map(render), "tree"),
+      item: ({ refLabel, title, meta }, render) => list(`**${refLabel}** \u2014 ${title}`, meta.map(render), "tree"),
       meta: ({ children, kind }, render) => {
         const value = children.map(render).join("");
         if (kind === "scope")
           return `\u{1F4E6} - ${value}`;
         if (kind === "author")
-          return `\u270D\uFE0F - ${value}`;
+          return `\u{1F9D1}\u200D\u{1F4BB} - ${value}`;
         return value;
       },
       commit: ({ ref, title }, render) => {

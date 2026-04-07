@@ -19,12 +19,12 @@ const list = (header: string | undefined, items: (string | string[])[], marker: 
   lines(...[header, ...items.flat().map((item) => withMarker(marker, item))].filter(Boolean).map((value) => `${value}  `));
 
 export const markdownFormatter: ChangelogRenderer<string> = {
-  doc: (node, render) => {
-    const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
+  doc: ({version, date, compareUrl, stats, children}, render) => {
+    const versionText = version.startsWith("v") ? version : `v${version}`;
 
-    const parsedDate = new Date(`${node.date}T00:00:00Z`);
-    const date = Number.isNaN(parsedDate.getTime())
-      ? node.date
+    const parsedDate = new Date(`${date}T00:00:00Z`);
+    const formattedDate = Number.isNaN(parsedDate.getTime())
+      ? date
       : parsedDate.toLocaleDateString("en-US", {
         month: "long",
         day: "2-digit",
@@ -32,15 +32,14 @@ export const markdownFormatter: ChangelogRenderer<string> = {
         timeZone: "UTC",
       });
 
-    const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
-    const header = `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
+    const versionLink = compareUrl ? render({ type: "link", label: versionText, url: compareUrl }) : versionText;
+    const header = `# 🚀 ${versionLink} &nbsp; • &nbsp; ${formattedDate}`;
 
-    const stats = node.stats ? (node.stats || []).map(render).join(" ") : undefined;
 
-    return lines(header, stats, node.children.map(render));
+    return lines(header, stats ? (stats || []).map(render).join(" ") : undefined, children.map(render));
   },
 
-  section: (node, render) => lines(node.header ? render(node.header) : undefined, node.children.map(render), node.header ? "<br>" : undefined),
+  section: ({ header, children }, render) => lines(header ? render(header) : undefined, children.map(render), header ? "<br>" : undefined),
 
   cluster: ({ header, children, hiddenCount, marker }, render) =>
     list(header ? render(header) : undefined, [
@@ -48,9 +47,8 @@ export const markdownFormatter: ChangelogRenderer<string> = {
       hiddenCount && hiddenCount > 0 ? `+${hiddenCount} more` : [],
     ], marker),
 
-  item: (node, render) =>
-    list(`**${node.refLabel}** — ${node.title}`, node.meta.map(render), "tree"),
-
+  item: ({ refLabel, title, meta }, render) =>
+    list(`**${refLabel}** — ${title}`, meta.map(render), "tree"),
 
   meta: ({ children, kind }, render) => {
     const value = children.map(render).join("");
