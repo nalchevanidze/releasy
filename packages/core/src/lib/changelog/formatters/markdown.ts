@@ -94,20 +94,22 @@ export const markdownFormatter: ChangelogRenderer<string> = {
 
   list: (node, render) => lines(node.children.map(render)),
 
-  primaryItem: (node) => {
+  item: (node) => {
+    if (node.isInternal) {
+      const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
+      return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+    }
+
     const scope =
-      node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" • ");
+      (node.scope || []).length === 0
+        ? "general"
+        : (node.scope || []).map((x) => `\`${x}\``).join(" • ");
 
     return lines([
       `* **${node.ref.label}** — ${node.title}  `,
       `${nbspIndent(1, `📦 **Scope:** ${scope}`)}  `,
-      nbspIndent(1, `✍️ **By:** ${renderParts(node.author)}`),
+      nbspIndent(1, `✍️ **By:** ${renderParts(node.author || [])}`),
     ]);
-  },
-
-  internalItem: (node) => {
-    const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
-    return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
   },
 
   empty: () => "_No user-facing changes since the last tag._",

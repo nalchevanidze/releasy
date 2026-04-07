@@ -13,8 +13,7 @@ export type ChangelogNode =
   | ChangelogSectionNode
   | ChangelogGroupNode
   | ChangelogListNode
-  | ChangelogPrimaryItemNode
-  | ChangelogInternalItemNode
+  | ChangelogItemNode
   | ChangelogEmptyNode;
 
 export type ChangelogDocNode = {
@@ -52,24 +51,18 @@ export type ChangelogGroupNode = {
 
 export type ChangelogListNode = {
   type: "list";
-  children: Array<ChangelogPrimaryItemNode | ChangelogInternalItemNode>;
+  children: ChangelogItemNode[];
 };
 
-export type ChangelogPrimaryItemNode = {
-  type: "primaryItem";
+export type ChangelogItemNode = {
+  type: "item";
+  isInternal: boolean;
   ref: ChangeRef;
   title: string;
-  scope: string[];
-  author: InlinePart[];
-};
-
-export type ChangelogInternalItemNode = {
-  type: "internalItem";
-  ref: ChangeRef;
-  title: string;
+  scope?: string[];
+  author?: InlinePart[];
 };
 
 export type ChangelogEmptyNode = {
   type: "empty";
-  reason: "no-user-facing-changes";
 };

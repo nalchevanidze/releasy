@@ -2,9 +2,8 @@ import { groupBy } from "ramda";
 import {
   ChangelogDocNode,
   ChangelogGroupNode,
-  ChangelogInternalItemNode,
+  ChangelogItemNode,
   ChangelogListNode,
-  ChangelogPrimaryItemNode,
   ChangelogSectionNode,
   ChangelogSummaryNode,
   ChangeRef,
@@ -100,8 +99,9 @@ const authorParts = (change: Change): InlinePart[] => {
 const isCommitOnlyChange = (change: Change) =>
   Boolean(change.sourceCommit && change.number <= 0);
 
-const primaryItem = (change: Change): ChangelogPrimaryItemNode => ({
-  type: "primaryItem",
+const primaryItem = (change: Change): ChangelogItemNode => ({
+  type: "item",
+  isInternal: false,
   ref: refForPrimary(change),
   title: changeTitle(change),
   scope: normalizedPkgs(change.pkgs),
@@ -120,8 +120,9 @@ const refinementUrl = (api: Api, change: Change) => {
   return `https://github.com/${api.config.gh}`;
 };
 
-const internalItem = (api: Api, change: Change): ChangelogInternalItemNode => ({
-  type: "internalItem",
+const internalItem = (api: Api, change: Change): ChangelogItemNode => ({
+  type: "item",
+  isInternal: true,
   ref: { label: "└", url: refinementUrl(api, change) },
   title: changeTitle(change),
 });
@@ -260,7 +261,7 @@ export class ChangelogPlanner {
         versionLabel: current,
         releaseDate: releaseDate || getDate(),
         compareUrl,
-        children: [{ type: "empty", reason: "no-user-facing-changes" }],
+        children: [{ type: "empty" }],
       };
     }
 
@@ -273,7 +274,7 @@ export class ChangelogPlanner {
         compareUrl,
         children: internal
           ? [internal]
-          : [{ type: "empty", reason: "no-user-facing-changes" }],
+          : [{ type: "empty" }],
       };
     }
 

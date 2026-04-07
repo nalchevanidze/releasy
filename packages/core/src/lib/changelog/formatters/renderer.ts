@@ -2,10 +2,9 @@ import {
   ChangelogDocNode,
   ChangelogEmptyNode,
   ChangelogGroupNode,
-  ChangelogInternalItemNode,
+  ChangelogItemNode,
   ChangelogListNode,
   ChangelogNode,
-  ChangelogPrimaryItemNode,
   ChangelogSectionNode,
   ChangelogSummaryNode,
 } from "../ast";
@@ -16,8 +15,7 @@ export type ChangelogRenderer<T> = {
   section: (node: ChangelogSectionNode, render: RenderNode<T>) => T;
   group: (node: ChangelogGroupNode, render: RenderNode<T>) => T;
   list: (node: ChangelogListNode, render: RenderNode<T>) => T;
-  primaryItem: (node: ChangelogPrimaryItemNode, render: RenderNode<T>) => T;
-  internalItem: (node: ChangelogInternalItemNode, render: RenderNode<T>) => T;
+  item: (node: ChangelogItemNode, render: RenderNode<T>) => T;
   empty: (node: ChangelogEmptyNode, render: RenderNode<T>) => T;
 };
 
@@ -39,10 +37,8 @@ export const renderAst = <T>(
         return renderer.group(node, render);
       case "list":
         return renderer.list(node, render);
-      case "primaryItem":
-        return renderer.primaryItem(node, render);
-      case "internalItem":
-        return renderer.internalItem(node, render);
+      case "item":
+        return renderer.item(node, render);
       case "empty":
         return renderer.empty(node, render);
     }
