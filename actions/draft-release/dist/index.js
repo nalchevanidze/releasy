@@ -42967,17 +42967,17 @@ var require_markdown = __commonJS({
         return lines([heading, render(node.children)]);
       },
       list: (node, render) => lines(node.children.map(render)),
-      primaryItem: (node) => {
-        const scope = node.scope.length === 0 ? "general" : node.scope.map((x) => `\`${x}\``).join(" \u2022 ");
+      item: (node) => {
+        if (node.isInternal) {
+          const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
+          return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
+        }
+        const scope = (node.scope || []).length === 0 ? "general" : (node.scope || []).map((x) => `\`${x}\``).join(" \u2022 ");
         return lines([
           `* **${node.ref.label}** \u2014 ${node.title}  `,
           `${nbspIndent(1, `\u{1F4E6} **Scope:** ${scope}`)}  `,
-          nbspIndent(1, `\u270D\uFE0F **By:** ${renderParts(node.author)}`)
+          nbspIndent(1, `\u270D\uFE0F **By:** ${renderParts(node.author || [])}`)
         ]);
-      },
-      internalItem: (node) => {
-        const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
-        return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
       },
       empty: () => "_No user-facing changes since the last tag._"
     };
@@ -43003,10 +43003,8 @@ var require_renderer = __commonJS({
             return renderer.group(node, render);
           case "list":
             return renderer.list(node, render);
-          case "primaryItem":
-            return renderer.primaryItem(node, render);
-          case "internalItem":
-            return renderer.internalItem(node, render);
+          case "item":
+            return renderer.item(node, render);
           case "empty":
             return renderer.empty(node, render);
         }
@@ -43079,7 +43077,8 @@ var require_plan = __commonJS({
     };
     var isCommitOnlyChange = (change) => Boolean(change.sourceCommit && change.number <= 0);
     var primaryItem = (change) => ({
-      type: "primaryItem",
+      type: "item",
+      isInternal: false,
       ref: refForPrimary(change),
       title: changeTitle(change),
       scope: normalizedPkgs(change.pkgs),
@@ -43095,7 +43094,8 @@ var require_plan = __commonJS({
       return `https://github.com/${api.config.gh}`;
     };
     var internalItem = (api, change) => ({
-      type: "internalItem",
+      type: "item",
+      isInternal: true,
       ref: { label: "\u2514", url: refinementUrl(api, change) },
       title: changeTitle(change)
     });
@@ -43183,7 +43183,7 @@ var require_plan = __commonJS({
             versionLabel: current,
             releaseDate: releaseDate || (0, git_1.getDate)(),
             compareUrl,
-            children: [{ type: "empty", reason: "no-user-facing-changes" }]
+            children: [{ type: "empty" }]
           };
         }
         if (primaryChanges.length === 0) {
@@ -43193,7 +43193,7 @@ var require_plan = __commonJS({
             versionLabel: current,
             releaseDate: releaseDate || (0, git_1.getDate)(),
             compareUrl,
-            children: internal2 ? [internal2] : [{ type: "empty", reason: "no-user-facing-changes" }]
+            children: internal2 ? [internal2] : [{ type: "empty" }]
           };
         }
         const summary2 = {
