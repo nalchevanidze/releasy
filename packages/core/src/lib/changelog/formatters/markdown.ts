@@ -1,6 +1,6 @@
 import { range } from "ramda";
 import { ChangelogRenderer } from "./renderer";
-import { ItemStyle } from "../ast";
+import { Marker } from "../ast";
 
 const lines = (xs: string[], size: number = 1) =>
   xs
@@ -12,16 +12,22 @@ const lines = (xs: string[], size: number = 1) =>
     );
 
 
-const itemStyle = (type: ItemStyle, txt: string) => {
+const indent = () => "&nbsp; &nbsp;";
+
+const withMarker = (type: Marker, txt: string) => {
   switch (type) {
     case "tree":
-      return `&nbsp; &nbsp; └ ${txt}  `;
+      return `${indent()} └ ${txt}`;
     case "bullet":
       return `* ${txt}`;
     default:
       return txt;
   }
-}
+};
+
+const list = (before: string, items: string[], marker: Marker) =>
+  [before, ...items.map((item) => withMarker(marker, item))].map((value) => `${value}  `)
+
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
@@ -53,33 +59,36 @@ export const markdownFormatter: ChangelogRenderer<string> = {
   section: (node, render) => {
     const heading = node.header ? render(node.header) : "";
     const body = lines(node.children.map(render));
-    const overflow =
-      node.overflowHiddenCount && node.overflowHiddenCount > 0
-        ? itemStyle("tree", `+${node.overflowHiddenCount} more`)
-        : "";
 
-    return lines([heading, body, overflow, heading ? "<br>" : ""]);
+    return lines([heading, body, heading ? "<br>" : ""]);
   },
 
   cluster: (node, render) => {
     const heading = node.header ? render(node.header) : "";
-    const renderedItems = node.children.map(render).map((line) => itemStyle(node.itemsStyle ?? "plain", line));
+    const marker = node.marker ?? "plain";
+
+    const children = [
+      node.children.map(render),
+      node.hiddenCount && node.hiddenCount > 0 ? `+${node.hiddenCount} more` : []
+    ].flat();
+
+
+
+    const items = list(heading, children, marker);
 
     const compact =
-      node.itemsStyle === "bullet" ||
-      (node.itemsStyle !== "tree" &&
-        node.children.every((child) => child.type === "item"));
+      marker === "bullet" ||
+      (marker !== "tree" && node.children.every((child) => child.type === "item"));
 
-    return compact
-      ? lines([heading, ...renderedItems], 1)
-      : lines([heading, ...renderedItems]);
+    return compact ? lines(items, 1) : lines(items);
   },
 
   item: (node, render) => {
-    return lines([
+    return lines(list(
       `**${node.refLabel}** — ${node.title}`,
-      ...(node.meta || []).map(render).map((line) => itemStyle("tree", line)),
-    ]);
+      node.meta.map(render),
+      "tree"
+    ));
   },
 
   meta: (node, render) => {

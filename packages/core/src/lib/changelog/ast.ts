@@ -22,16 +22,16 @@ export type DocNode = {
 export type SectionNode = {
   type: "section";
   header?: HeaderNode;
-  overflowHiddenCount?: number;
   children: ClusterNode[];
 };
 
-export type ItemStyle = "plain" | "tree" | "bullet";
+export type Marker = "plain" | "tree" | "bullet";
 
 export type ClusterNode = {
   type: "cluster";
   header?: HeaderNode;
-  itemsStyle?: ItemStyle;
+  marker?: Marker;
+  hiddenCount?: number;
   children: Array<ItemNode | MetaNode>;
 };
 
@@ -39,7 +39,7 @@ export type ItemNode = {
   type: "item";
   refLabel: string;
   title: string;
-  meta?: MetaNode[];
+  meta: MetaNode[];
 };
 
 export type MetaNode = {

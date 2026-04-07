@@ -122,7 +122,7 @@ const item = (change: Change): ItemNode => {
     type: "item",
     refLabel: primaryRefLabel(change),
     title: changeTitle(change),
-    meta: meta.length ? meta : undefined,
+    meta: meta.length ? meta : [],
   };
 };
 
@@ -186,16 +186,19 @@ const unrecognizedSummary = (): ItemNode => ({
   type: "item",
   refLabel: "UNK",
   title: "commits missing Conventional Commit format or an associated PR",
+  meta: [],
 });
 
 const cluster = (
   children: Array<ItemNode | MetaNode>,
   header?: HeaderNode,
-  itemsStyle?: "plain" | "tree" | "bullet",
+  marker?: "plain" | "tree" | "bullet",
+  hiddenCount?: number,
 ): ClusterNode => ({
   type: "cluster",
   header,
-  itemsStyle,
+  marker,
+  hiddenCount,
   children,
 });
 
@@ -256,20 +259,22 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
 const unrecognizedCluster = (
   api: Api,
   refinements: Change[],
-): { nodes: ClusterNode[]; overflowHiddenCount?: number } | undefined => {
+): ClusterNode[] | undefined => {
   const visible = refinements.filter((change) => !isIgnoredRefinement(change));
   if (visible.length === 0) return undefined;
 
   const shown = visible.slice(0, maxInternalChangesToShow);
   const hidden = visible.slice(maxInternalChangesToShow);
 
-  return {
-    nodes: [
-      cluster([unrecognizedSummary()], undefined, "bullet"),
-      cluster(shown.map((change) => unrecognizedCommitItem(api, change)), undefined, "tree"),
-    ],
-    overflowHiddenCount: hidden.length || undefined,
-  };
+  return [
+    cluster([unrecognizedSummary()], undefined, "bullet"),
+    cluster(
+      shown.map((change) => unrecognizedCommitItem(api, change)),
+      undefined,
+      "tree",
+      hidden.length || undefined,
+    ),
+  ];
 };
 
 const tagRef = (version: string) => (version.startsWith("v") ? version : `v${version}`);
@@ -324,8 +329,7 @@ export class ChangelogPlanner {
           {
             type: "section",
             header: sectionHeader(this.api, maintenance.id, maintenance.label),
-            overflowHiddenCount: unrecognized.overflowHiddenCount,
-            children: unrecognized.nodes,
+            children: unrecognized,
           },
         ],
       };
@@ -351,13 +355,10 @@ export class ChangelogPlanner {
         if (children.length === 0) {
           children.push({
             type: "section",
-            children: unrecognized.nodes,
-            overflowHiddenCount: unrecognized.overflowHiddenCount,
+            children: unrecognized,
           });
         } else {
-          children[0].children.push(...unrecognized.nodes);
-          children[0].overflowHiddenCount =
-            (children[0].overflowHiddenCount || 0) + (unrecognized.overflowHiddenCount || 0) || undefined;
+          children[0].children.push(...unrecognized);
         }
       } else {
         const maintenance = maintenanceSectionInfo(this.api);
@@ -368,15 +369,12 @@ export class ChangelogPlanner {
           const idx = orderedIds.indexOf(maintenance.id);
 
           if (idx >= 0 && children[idx]) {
-            children[idx].children.push(...unrecognized.nodes);
-            children[idx].overflowHiddenCount =
-              (children[idx].overflowHiddenCount || 0) + (unrecognized.overflowHiddenCount || 0) || undefined;
+            children[idx].children.push(...unrecognized);
           } else {
             children.push({
               type: "section",
               header: sectionHeader(this.api, maintenance.id, maintenance.label),
-              overflowHiddenCount: unrecognized.overflowHiddenCount,
-              children: unrecognized.nodes,
+              children: unrecognized,
             });
           }
         }

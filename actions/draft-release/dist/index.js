@@ -42922,16 +42922,18 @@ var require_markdown = __commonJS({
     exports2.markdownFormatter = void 0;
     var ramda_1 = require_src();
     var lines = (xs, size = 1) => xs.filter(Boolean).join((0, ramda_1.range)(0, size).map(() => "\n").join(""));
-    var itemStyle = (type, txt) => {
+    var indent = () => "&nbsp; &nbsp;";
+    var withMarker = (type, txt) => {
       switch (type) {
         case "tree":
-          return `&nbsp; &nbsp; \u2514 ${txt}  `;
+          return `${indent()} \u2514 ${txt}`;
         case "bullet":
           return `* ${txt}`;
         default:
           return txt;
       }
     };
+    var list = (before, items, marker) => [before, ...items.map((item) => withMarker(marker, item))].map((value) => `${value}  `);
     exports2.markdownFormatter = {
       doc: (node, render) => {
         const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
@@ -42954,20 +42956,21 @@ var require_markdown = __commonJS({
       section: (node, render) => {
         const heading = node.header ? render(node.header) : "";
         const body = lines(node.children.map(render));
-        const overflow = node.overflowHiddenCount && node.overflowHiddenCount > 0 ? itemStyle("tree", `+${node.overflowHiddenCount} more`) : "";
-        return lines([heading, body, overflow, heading ? "<br>" : ""]);
+        return lines([heading, body, heading ? "<br>" : ""]);
       },
       cluster: (node, render) => {
         const heading = node.header ? render(node.header) : "";
-        const renderedItems = node.children.map(render).map((line) => itemStyle(node.itemsStyle ?? "plain", line));
-        const compact = node.itemsStyle === "bullet" || node.itemsStyle !== "tree" && node.children.every((child) => child.type === "item");
-        return compact ? lines([heading, ...renderedItems], 1) : lines([heading, ...renderedItems]);
+        const marker = node.marker ?? "plain";
+        const children = [
+          node.children.map(render),
+          node.hiddenCount && node.hiddenCount > 0 ? `+${node.hiddenCount} more` : []
+        ].flat();
+        const items = list(heading, children, marker);
+        const compact = marker === "bullet" || marker !== "tree" && node.children.every((child) => child.type === "item");
+        return compact ? lines(items, 1) : lines(items);
       },
       item: (node, render) => {
-        return lines([
-          `**${node.refLabel}** \u2014 ${node.title}`,
-          ...(node.meta || []).map(render).map((line) => itemStyle("tree", line))
-        ]);
+        return lines(list(`**${node.refLabel}** \u2014 ${node.title}`, node.meta.map(render), "tree"));
       },
       meta: (node, render) => {
         const value = node.children.map(render).join("");
@@ -43115,7 +43118,7 @@ var require_plan = __commonJS({
         type: "item",
         refLabel: primaryRefLabel(change),
         title: changeTitle(change),
-        meta: meta.length ? meta : void 0
+        meta: meta.length ? meta : []
       };
     };
     var refinementUrl = (api, change) => {
@@ -43157,12 +43160,14 @@ var require_plan = __commonJS({
     var unrecognizedSummary = () => ({
       type: "item",
       refLabel: "UNK",
-      title: "commits missing Conventional Commit format or an associated PR"
+      title: "commits missing Conventional Commit format or an associated PR",
+      meta: []
     });
-    var cluster = (children, header, itemsStyle) => ({
+    var cluster = (children, header, marker, hiddenCount) => ({
       type: "cluster",
       header,
-      itemsStyle,
+      marker,
+      hiddenCount,
       children
     });
     var buildPrimarySections = (api, primaryChanges) => {
@@ -43208,13 +43213,10 @@ var require_plan = __commonJS({
         return void 0;
       const shown = visible.slice(0, maxInternalChangesToShow);
       const hidden = visible.slice(maxInternalChangesToShow);
-      return {
-        nodes: [
-          cluster([unrecognizedSummary()], void 0, "bullet"),
-          cluster(shown.map((change) => unrecognizedCommitItem(api, change)), void 0, "tree")
-        ],
-        overflowHiddenCount: hidden.length || void 0
-      };
+      return [
+        cluster([unrecognizedSummary()], void 0, "bullet"),
+        cluster(shown.map((change) => unrecognizedCommitItem(api, change)), void 0, "tree", hidden.length || void 0)
+      ];
     };
     var tagRef = (version) => version.startsWith("v") ? version : `v${version}`;
     var ChangelogPlanner = class {
@@ -43256,8 +43258,7 @@ var require_plan = __commonJS({
               {
                 type: "section",
                 header: sectionHeader(this.api, maintenance.id, maintenance.label),
-                overflowHiddenCount: unrecognized2.overflowHiddenCount,
-                children: unrecognized2.nodes
+                children: unrecognized2
               }
             ]
           };
@@ -43279,12 +43280,10 @@ var require_plan = __commonJS({
             if (children.length === 0) {
               children.push({
                 type: "section",
-                children: unrecognized.nodes,
-                overflowHiddenCount: unrecognized.overflowHiddenCount
+                children: unrecognized
               });
             } else {
-              children[0].children.push(...unrecognized.nodes);
-              children[0].overflowHiddenCount = (children[0].overflowHiddenCount || 0) + (unrecognized.overflowHiddenCount || 0) || void 0;
+              children[0].children.push(...unrecognized);
             }
           } else {
             const maintenance = maintenanceSectionInfo(this.api);
@@ -43293,14 +43292,12 @@ var require_plan = __commonJS({
               const orderedIds = Object.keys(this.api.config.changeTypes).filter((id) => (0, utils_1.isKey)(byType, id));
               const idx = orderedIds.indexOf(maintenance.id);
               if (idx >= 0 && children[idx]) {
-                children[idx].children.push(...unrecognized.nodes);
-                children[idx].overflowHiddenCount = (children[idx].overflowHiddenCount || 0) + (unrecognized.overflowHiddenCount || 0) || void 0;
+                children[idx].children.push(...unrecognized);
               } else {
                 children.push({
                   type: "section",
                   header: sectionHeader(this.api, maintenance.id, maintenance.label),
-                  overflowHiddenCount: unrecognized.overflowHiddenCount,
-                  children: unrecognized.nodes
+                  children: unrecognized
                 });
               }
             }
