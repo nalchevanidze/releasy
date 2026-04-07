@@ -478,4 +478,28 @@ describe("RenderAPI snapshots", () => {
 
     expect(markdown).toContain("Publish Release process docs");
   });
+
+  test("caps internal changes list and collapses overflow in details", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const refinements = Array.from({ length: 10 }).map((_, i) =>
+      c({
+        number: 0,
+        sourceCommit: `${String(i).repeat(8)}abcdef1234567890`,
+        isRefinement: true,
+        title: `internal ${i}`,
+      }),
+    );
+
+    const markdown = new RenderAPI(api).changes(
+      Version.parse("4.1.4"),
+      refinements,
+    );
+
+    expect(markdown).toContain("### 🔧 INTERNAL CHANGES");
+    expect(markdown).toContain("internal 0");
+    expect(markdown).toContain("internal 4");
+    expect(markdown).toContain("<details><summary>and 5 more</summary>");
+    expect(markdown).toContain("internal 9");
+  });
 });

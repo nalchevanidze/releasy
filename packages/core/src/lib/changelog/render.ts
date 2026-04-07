@@ -45,6 +45,8 @@ const formatDateLong = (date: string) => {
 const normalizeVersionLabel = (version: string) =>
   version.startsWith("v") ? version : `v${version}`;
 
+const maxInternalChangesToShow = 5;
+
 export class RenderAPI {
   constructor(private api: Api) {}
 
@@ -291,6 +293,17 @@ export class RenderAPI {
   private visibleRefinements = (changes: Change[]) =>
     changes.filter((change) => !this.isIgnoredRefinement(change));
 
+  private refinementsOverflowDetails = (hidden: Change[]) => {
+    if (hidden.length === 0) return "";
+
+    return lines([
+      `<details><summary>and ${hidden.length} more</summary>`,
+      "",
+      ...hidden.map(this.refinementItem),
+      "</details>",
+    ]);
+  };
+
   private refinementsSection = (
     changes: Change[],
     includeDivider: boolean = false,
@@ -298,11 +311,15 @@ export class RenderAPI {
     const visible = this.visibleRefinements(changes);
     if (visible.length === 0) return "";
 
+    const shown = visible.slice(0, maxInternalChangesToShow);
+    const hidden = visible.slice(maxInternalChangesToShow);
+
     return lines([
       includeDivider ? "---" : "",
       "### 🔧 INTERNAL CHANGES",
       "",
-      ...visible.map(this.refinementItem),
+      ...shown.map(this.refinementItem),
+      this.refinementsOverflowDetails(hidden),
     ]);
   };
 

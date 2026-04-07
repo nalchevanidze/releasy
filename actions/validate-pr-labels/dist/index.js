@@ -43756,6 +43756,7 @@ var require_render = __commonJS({
       });
     };
     var normalizeVersionLabel = (version) => version.startsWith("v") ? version : `v${version}`;
+    var maxInternalChangesToShow = 5;
     var RenderAPI = class {
       constructor(api) {
         this.api = api;
@@ -43919,15 +43920,28 @@ var require_render = __commonJS({
           return change.number > 0 && !change.sourceCommit && (markedReleasePr || legacyReleasePrTitle);
         };
         this.visibleRefinements = (changes) => changes.filter((change) => !this.isIgnoredRefinement(change));
+        this.refinementsOverflowDetails = (hidden) => {
+          if (hidden.length === 0)
+            return "";
+          return lines([
+            `<details><summary>and ${hidden.length} more</summary>`,
+            "",
+            ...hidden.map(this.refinementItem),
+            "</details>"
+          ]);
+        };
         this.refinementsSection = (changes, includeDivider = false) => {
           const visible = this.visibleRefinements(changes);
           if (visible.length === 0)
             return "";
+          const shown = visible.slice(0, maxInternalChangesToShow);
+          const hidden = visible.slice(maxInternalChangesToShow);
           return lines([
             includeDivider ? "---" : "",
             "### \u{1F527} INTERNAL CHANGES",
             "",
-            ...visible.map(this.refinementItem)
+            ...shown.map(this.refinementItem),
+            this.refinementsOverflowDetails(hidden)
           ]);
         };
         this.header = (tag, previousTag, releaseDate) => {
@@ -44045,7 +44059,7 @@ var require_changelog = __commonJS({
         const changes = await fetch2.changesBetweenRefs(previousTag, tag);
         sections.push(renderer.changes(version_1.Version.parse(tag), changes, previousTag, (0, git_1.dateAtRef)(tag)));
       }
-      return sections.reverse().join("\n\n---\n\n");
+      return sections.reverse().join("\n\n");
     };
     var renderChangelog = async (api, options = {}) => {
       const hasCustomStart = Boolean(options.sinceTag || options.sinceCommit);
