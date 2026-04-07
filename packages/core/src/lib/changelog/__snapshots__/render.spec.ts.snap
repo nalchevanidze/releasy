@@ -3,49 +3,39 @@
 exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no author url) 1`] = `
 "# 🚀 v4.1.0 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-PATCH-green?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-1-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-0-orange?style=flat-square)
----
-
-  
-&nbsp; └ 🔘 - [abcdef1](https://github.com/acme/demo/commit/abcdef1234567890) Standalone commit  
-"
+&nbsp; └ 🔘 - [abcdef1](https://github.com/acme/demo/commit/abcdef1234567890) Standalone commit  "
 `;
 
 exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
 "# 🚀 v2.0.0 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
----
 ### ✨ FEATURES
-  
 * **#10** — Ship onboarding  
 &nbsp; └ 📦 - \`core\` • \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>
 ### 🐛 FIXES
-  
 * **#11** — Fix race condition  
 &nbsp; └ 📦 - \`core\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>"
 `;
 
 exports[`RenderAPI snapshots > default layout renders top-level visual summary 1`] = `
 "# 🚀 v4.0.7 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-3-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-3-orange?style=flat-square)
----
 ### ✨ FEATURES
-  
 * **#57** — Ship composer  
 &nbsp; └ 📦 - \`core\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 * **#58** — Ship presets  
 &nbsp; └ 📦 - \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>
 ### 🐛 FIXES
-  
 * **#59** — Fix lint script  
 &nbsp; └ 📦 - \`cli\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>"
 `;
 
@@ -57,114 +47,102 @@ _No user-facing changes since the last tag._"
 exports[`RenderAPI snapshots > grouping none renders a flat list without sections 1`] = `
 "# 🚀 v4.0.1 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
----
-
-  
 * **#50** — Add keyboard shortcuts  
 &nbsp; └ 📦 - \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 * **#51** — Handle null session  
 &nbsp; └ 📦 - \`core\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
-"
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    "
 `;
 
 exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 "# 🚀 v3.4.0 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-MAJOR-red?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-7-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-3-orange?style=flat-square)
----
 ### 💥 BREAKING
 ##### 📦 [core](https://npmjs.com/package/@acme/core)  
 * **#20** — Drop legacy auth  
 &nbsp; └ 📦 - \`core\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>
 ### ✨ FEATURES
 ##### 📦 [core](https://npmjs.com/package/@acme/core)  
 * **#21** — Add cache layer  
 &nbsp; └ 📦 - \`core\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 ##### 📦 [web](https://npmjs.com/package/@acme/web)  
 * **#22** — Add dashboard  
 &nbsp; └ 📦 - \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>
 ### 🐛 FIXES
 ##### 📦 [web](https://npmjs.com/package/@acme/web)  
 * **#23** — Fix pagination  
 &nbsp; └ 📦 - \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 ##### 📦 General  
 * **#24** — Fix typo  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>
 ### 🧹 CHORES
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)  
 * **#25** — Bump deps  
 &nbsp; └ 📦 - \`cli\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 ##### 📦 General  
 * **#26** — Refactor scripts  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>"
 `;
 
 exports[`RenderAPI snapshots > package grouping normalizes multi-package keys 1`] = `
 "# 🚀 v3.4.1 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
----
 ### ✨ FEATURES
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)  
 * **#30** — Ship shared auth layer  
 &nbsp; └ 📦 - \`core\` • \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 * **#31** — Expand auth docs  
 &nbsp; └ 📦 - \`core\` • \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>"
 `;
 
 exports[`RenderAPI snapshots > package grouping renders normalized multi-package sections 1`] = `
 "# 🚀 v4.0.2 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-PATCH-green?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
----
 ### 🐛 FIXES
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)  
 * **#52** — Align package order  
 &nbsp; └ 📦 - \`core\` • \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 * **#53** — Keep grouping stable  
 &nbsp; └ 📦 - \`core\` • \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>"
 `;
 
 exports[`RenderAPI snapshots > section icons come from user config changeTypeEmojis 1`] = `
 "# 🚀 v4.0.9 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-2-orange?style=flat-square)
----
 ### 🚀 FEATURES
-  
 * **#61** — Ship inline editor  
 &nbsp; └ 📦 - \`web\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>
 ### 🛠️ FIXES
-  
 * **#62** — Handle stale cache  
 &nbsp; └ 📦 - \`core\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>"
 `;
 
 exports[`RenderAPI snapshots > unknown package labels fall back to raw names with links when available 1`] = `
 "# 🚀 v4.0.3 &nbsp; • &nbsp; April 05, 2026
 ![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-1-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-1-orange?style=flat-square)
----
 ### ✨ FEATURES
-  
 * **#54** — Wire analytics hook  
 &nbsp; └ 📦 - \`sdk\`  
-&nbsp; └ ✍️ - [@author](https://example.com/author)    
+&nbsp; └ 🧑‍💻 - [@author](https://example.com/author)    
 <br>"
 `;

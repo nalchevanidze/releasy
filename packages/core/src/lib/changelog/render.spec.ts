@@ -366,6 +366,30 @@ describe("RenderAPI snapshots", () => {
     expect(markdown).toContain("Publish Release process docs");
   });
 
+  test("preserves repeated spaces in rendered titles", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.5"), [
+      c({
+        number: 75,
+        type: "feature",
+        title: "Ship  presets",
+        pkgs: ["web"],
+      }),
+      c({
+        number: 0,
+        sourceCommit: "feedfacecafebeef",
+        isRefinement: true,
+        type: "chore",
+        title: "internal  cleanup",
+        pkgs: [],
+      }),
+    ]);
+
+    expect(markdown).toContain("Ship&nbsp;&nbsp;presets");
+    expect(markdown).toContain("internal&nbsp;&nbsp;cleanup");
+  });
+
   test("caps internal changes list and collapses overflow in details", () => {
     const api = baseApi({ grouping: "scope" });
 
