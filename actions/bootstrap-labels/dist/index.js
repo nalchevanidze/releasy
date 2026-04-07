@@ -43728,19 +43728,13 @@ var require_markdown = __commonJS({
         return compact ? lines([heading, ...styledItems], 1) : lines([heading, ...styledItems]);
       },
       primaryItem: (node, render) => {
-        const meta = (node.children || []).map(render);
-        const nestedMeta = meta.map((line, idx) => {
-          const prefixed = nbspIndent(1, `\u2514 ${line}`);
-          return idx < meta.length - 1 ? `${prefixed}  ` : prefixed;
-        });
         return lines([
           `**${node.refLabel}** \u2014 ${node.title}  `,
-          ...nestedMeta
+          ...(node.children || []).map(render).map((line) => nbspIndent(1, `\u2514 ${line} `))
         ]);
       },
       internalItem: (node, render) => {
-        const hash = render(node.tabel).trim();
-        return hash ? `${hash}: ${node.value}` : node.value;
+        return `${render(node.tabel)}: ${node.value}`;
       },
       metaItem: (node, render) => `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`,
       header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,

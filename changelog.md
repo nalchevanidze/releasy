@@ -6,8 +6,8 @@
 
 ### 🐛 BUG FIX (PATCH BUMP)
 * **#44** — improve changelog generation  
-&nbsp; &nbsp; 📦 **Scope:** `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 # 🚀 [v2.0.0](https://github.com/nalchevanidze/rel-easy/compare/v1.1.1...v2.0.0) &nbsp; • &nbsp; April 05, 2026
@@ -18,20 +18,20 @@
 
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#38** — Add YAML-first config, policy-driven release checks, and workflow/test hardening  
-&nbsp; &nbsp; 📦 **Scope:** `actionsCommon` • `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `actionsCommon` • `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### 🐛 BUG FIX (PATCH BUMP)
 * **#39** — Fix/release flow docs rule warn alignment  
-&nbsp; &nbsp; 📦 **Scope:** `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `bootstrap` • `cli` • `core` • `draft` • `labels` • `publish` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **#40** — improve changelog rendering quality and coverage.  
-&nbsp; &nbsp; 📦 **Scope:** `core`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `core` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### 🔧 INTERNAL CHANGES
@@ -59,17 +59,17 @@
 
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#30** — Refactor label system  
-&nbsp; &nbsp; 📦 **Scope:** `bootstrap` • `draft` • `labels` • `publish`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `bootstrap` • `draft` • `labels` • `publish` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 * **#32** — Fix versioning  
-&nbsp; &nbsp; 📦 **Scope:** `draft` • `publish`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `draft` • `publish` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### ✨ NEW FEATURE (MINOR BUMP)
 * **#34** — optional project fields  
-&nbsp; &nbsp; 📦 **Scope:** `draft` • `publish`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `draft` • `publish` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### 🔧 INTERNAL CHANGES
@@ -89,12 +89,12 @@
 
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#27** — update Config  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **#28** — readme  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### 🔧 INTERNAL CHANGES
@@ -109,7 +109,7 @@
 
 ### 🧹 MINOR / MAINTENANCE CHANGE (PATCH BUMP)
 * **#25** — docs  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### 🔧 INTERNAL CHANGES
@@ -124,8 +124,8 @@
 
 ### 💥 BREAKING CHANGE (MAJOR BUMP)
 * **#23** — change-types  
-&nbsp; &nbsp; 📦 **Scope:** `draft`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `draft` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 # 🚀 [v1.0.0](https://github.com/nalchevanidze/rel-easy/compare/v0.1.15...v1.0.0) &nbsp; • &nbsp; January 19, 2026
@@ -185,10 +185,10 @@
 
 ### ✨ NEW FEATURE (MINOR BUMP)
 * **#16** — Validate Labels per Pull Request  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 * **#17** — Bootstrap Labels Action  
-&nbsp; &nbsp; 📦 **Scope:** `bootstrap`  
-&nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
+&nbsp; &nbsp; └ 📦 **Scope:** `bootstrap` 
+&nbsp; &nbsp; └ ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze) 
 <br>
 
 ### 🔧 INTERNAL CHANGES
