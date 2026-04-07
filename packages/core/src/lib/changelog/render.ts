@@ -304,11 +304,7 @@ export class RenderAPI {
   private refinementsOverflowDetails = (hidden: Change[]) => {
     if (hidden.length === 0) return "";
 
-    return lines([
-      `<details><summary>${nbspIndent(1, `and ${hidden.length} more`)}</summary>`,
-      ...hidden.map(this.hiddenRefinementLine),
-      "</details>",
-    ]);
+    return `${nbspIndent(2, `└ and ${hidden.length} more`)}`;
   };
 
   private refinementsSection = (
