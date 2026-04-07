@@ -1,4 +1,6 @@
-import { Change } from "./types";
+export type InlinePart =
+  | { type: "text"; value: string }
+  | { type: "link"; label: string; url: string };
 
 export type ChangelogNode =
   | ChangelogDocumentNode
@@ -7,8 +9,8 @@ export type ChangelogNode =
   | ChangelogDividerNode
   | ChangelogSectionNode
   | ChangelogGroupNode
-  | ChangelogChangeNode
-  | ChangelogRefinementsNode
+  | ChangelogListNode
+  | ChangelogItemNode
   | ChangelogEmptyNode;
 
 export type ChangelogDocumentNode = {
@@ -18,16 +20,14 @@ export type ChangelogDocumentNode = {
 
 export type ChangelogHeaderNode = {
   type: "header";
-  version: string;
-  previousTag?: string;
+  versionLabel: string;
+  compareUrl?: string;
   releaseDate: string;
 };
 
 export type ChangelogSummaryNode = {
   type: "summary";
-  bump: "major" | "minor" | "patch";
-  changeCount: number;
-  packageCount: number;
+  text: string;
 };
 
 export type ChangelogDividerNode = {
@@ -36,32 +36,32 @@ export type ChangelogDividerNode = {
 
 export type ChangelogSectionNode = {
   type: "section";
-  changeType: string;
-  label: string;
-  children: Array<ChangelogGroupNode | ChangelogChangeNode>;
+  heading: {
+    icon?: string;
+    label: string;
+  };
+  overflowCount?: number;
+  children: Array<ChangelogGroupNode | ChangelogListNode | ChangelogItemNode>;
 };
 
 export type ChangelogGroupNode = {
   type: "group";
-  key: string;
-  title: string;
-  children: ChangelogChangeNode[];
+  prefix: string;
+  parts: InlinePart[];
+  children: ChangelogItemNode[];
 };
 
-export type ChangelogChangeNode = {
-  type: "change";
-  variant: "primary" | "refinement-commit" | "refinement-link";
-  change: Change;
+export type ChangelogListNode = {
+  type: "list";
+  children: ChangelogItemNode[];
 };
 
-export type ChangelogRefinementsNode = {
-  type: "refinements";
-  includeDivider: boolean;
-  hiddenCount: number;
-  children: ChangelogChangeNode[];
+export type ChangelogItemNode = {
+  type: "item";
+  lines: Array<{ parts: InlinePart[]; indentLevel?: number; trailingBreak?: boolean }>;
 };
 
 export type ChangelogEmptyNode = {
   type: "empty";
-  message: string;
+  text: string;
 };

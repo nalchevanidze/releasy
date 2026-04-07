@@ -19,16 +19,6 @@ export class RenderAPI {
       releaseDate,
     );
 
-    return new MarkdownFormatter({
-      gh: this.api.config.gh,
-      issueUrl: (number) => this.api.github.issue(number),
-      pkgLink: (labelName) => {
-        const pkg = this.api.config.pkgs[labelName];
-        const longName = pkg?.name || labelName;
-        const url = this.api.module.pkg(longName);
-        return url ? `[${labelName}](${url})` : longName;
-      },
-      changeTypeEmojis: this.api.config.changeTypeEmojis,
-    }).renderDocument(ast);
+    return new MarkdownFormatter().renderDocument(ast);
   };
 }
