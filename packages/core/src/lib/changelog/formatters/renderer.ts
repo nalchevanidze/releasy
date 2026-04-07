@@ -1,5 +1,6 @@
 import {
   ClusterNode,
+  CommitNode,
   DocNode,
   EmptyNode,
   HeaderNode,
@@ -18,6 +19,7 @@ export type ChangelogRenderer<T> = {
   cluster: (node: ClusterNode, render: RenderNode<T>) => T;
   item: (node: ItemNode, render: RenderNode<T>) => T;
   meta: (node: MetaNode, render: RenderNode<T>) => T;
+  commit: (node: CommitNode, render: RenderNode<T>) => T;
   header: (node: HeaderNode, render: RenderNode<T>) => T;
   stat: (node: StatNode, render: RenderNode<T>) => T;
   text: (node: TextNode, render: RenderNode<T>) => T;
@@ -40,6 +42,8 @@ export const renderAst = <T>(root: DocNode, renderer: ChangelogRenderer<T>): T =
         return renderer.item(node, render);
       case "meta":
         return renderer.meta(node, render);
+      case "commit":
+        return renderer.commit(node, render);
       case "header":
         return renderer.header(node, render);
       case "stat":

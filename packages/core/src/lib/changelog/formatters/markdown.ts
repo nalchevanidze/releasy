@@ -11,7 +11,6 @@ const lines = (xs: string[], size: number = 1) =>
         .join(""),
     );
 
-
 const indent = () => "&nbsp; &nbsp;";
 
 const withMarker = (type: Marker, txt: string) => {
@@ -26,8 +25,7 @@ const withMarker = (type: Marker, txt: string) => {
 };
 
 const list = (before: string, items: string[], marker: Marker) =>
-  [before, ...items.map((item) => withMarker(marker, item))].map((value) => `${value}  `)
-
+  [before, ...items.map((item) => withMarker(marker, item))].map((value) => `${value}  `);
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
@@ -69,10 +67,8 @@ export const markdownFormatter: ChangelogRenderer<string> = {
 
     const children = [
       node.children.map(render),
-      node.hiddenCount && node.hiddenCount > 0 ? `+${node.hiddenCount} more` : []
+      node.hiddenCount && node.hiddenCount > 0 ? `+${node.hiddenCount} more` : [],
     ].flat();
-
-
 
     const items = list(heading, children, marker);
 
@@ -84,19 +80,20 @@ export const markdownFormatter: ChangelogRenderer<string> = {
   },
 
   item: (node, render) => {
-    return lines(list(
-      `**${node.refLabel}** — ${node.title}`,
-      node.meta.map(render),
-      "tree"
-    ));
+    return lines(list(`**${node.refLabel}** — ${node.title}`, node.meta.map(render), "tree"));
   },
 
   meta: (node, render) => {
     const value = node.children.map(render).join("");
 
-    if (node.kind === "scope") return `📦 ${value}`;
-    if (node.kind === "author") return `✍️ ${value}`;
+    if (node.kind === "scope") return `📦 - ${value}`;
+    if (node.kind === "author") return `✍️ - ${value}`;
     return value;
+  },
+
+  commit: (node, render) => {
+    if (!node.ref) return node.title;
+    return `🔘 - ${render(node.ref)} ${node.title}`;
   },
 
   header: (node, render) =>

@@ -1,6 +1,7 @@
 import { groupBy } from "ramda";
 import {
   ClusterNode,
+  CommitNode,
   DocNode,
   HeaderNode,
   LinkNode,
@@ -138,21 +139,18 @@ const refinementUrl = (api: Api, change: Change) => {
   return `https://github.com/${api.config.gh}`;
 };
 
-const unrecognizedCommitItem = (api: Api, change: Change): MetaNode => ({
-  type: "meta",
-  kind: "commit",
-  children: change.sourceCommit
-    ? [
-      link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)),
-      text(` — ${changeTitle(change)}`),
-    ]
-    : [text(changeTitle(change))],
+const unrecognizedCommitItem = (api: Api, change: Change): CommitNode => ({
+  type: "commit",
+  ref: change.sourceCommit
+    ? link(change.sourceCommit.slice(0, 7), refinementUrl(api, change))
+    : undefined,
+  title: changeTitle(change),
 });
 
 const resolvedItem = (
   api: Api,
   change: Change,
-): ItemNode | MetaNode =>
+): ItemNode | CommitNode =>
   change.sourceCommit && change.number <= 0
     ? unrecognizedCommitItem(api, change)
     : item(change);
@@ -190,7 +188,7 @@ const unrecognizedSummary = (): ItemNode => ({
 });
 
 const cluster = (
-  children: Array<ItemNode | MetaNode>,
+  children: Array<ItemNode | MetaNode | CommitNode>,
   header?: HeaderNode,
   marker?: "plain" | "tree" | "bullet",
   hiddenCount?: number,
@@ -207,7 +205,7 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
 
   if (grouping === "none") {
     const items = primaryChanges.map((change) => resolvedItem(api, change));
-    const hasInternal = items.some((item) => item.type === "meta");
+    const hasInternal = items.some((item) => item.type === "commit");
 
     return [
       {

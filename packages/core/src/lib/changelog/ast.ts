@@ -4,6 +4,7 @@ export type Node =
   | ClusterNode
   | ItemNode
   | MetaNode
+  | CommitNode
   | HeaderNode
   | StatNode
   | TextNode
@@ -32,7 +33,7 @@ export type ClusterNode = {
   header?: HeaderNode;
   marker?: Marker;
   hiddenCount?: number;
-  children: Array<ItemNode | MetaNode>;
+  children: Array<ItemNode | MetaNode | CommitNode>;
 };
 
 export type ItemNode = {
@@ -44,8 +45,14 @@ export type ItemNode = {
 
 export type MetaNode = {
   type: "meta";
-  kind: "commit" | "author" | "scope";
+  kind: "author" | "scope";
   children: Array<TextNode | LinkNode>;
+};
+
+export type CommitNode = {
+  type: "commit";
+  ref?: LinkNode;
+  title: string;
 };
 
 export type HeaderNode = {

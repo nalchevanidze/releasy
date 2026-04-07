@@ -43747,10 +43747,15 @@ var require_markdown = __commonJS({
       meta: (node, render) => {
         const value = node.children.map(render).join("");
         if (node.kind === "scope")
-          return `\u{1F4E6} ${value}`;
+          return `\u{1F4E6} - ${value}`;
         if (node.kind === "author")
-          return `\u270D\uFE0F ${value}`;
+          return `\u270D\uFE0F - ${value}`;
         return value;
+      },
+      commit: (node, render) => {
+        if (!node.ref)
+          return node.title;
+        return `\u{1F518} - ${render(node.ref)} ${node.title}`;
       },
       header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
       stat: (node) => {
@@ -43790,6 +43795,8 @@ var require_renderer = __commonJS({
             return renderer.item(node, render);
           case "meta":
             return renderer.meta(node, render);
+          case "commit":
+            return renderer.commit(node, render);
           case "header":
             return renderer.header(node, render);
           case "stat":
@@ -43903,12 +43910,9 @@ var require_plan = __commonJS({
       return `https://github.com/${api.config.gh}`;
     };
     var unrecognizedCommitItem = (api, change) => ({
-      type: "meta",
-      kind: "commit",
-      children: change.sourceCommit ? [
-        link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)),
-        text(` \u2014 ${changeTitle(change)}`)
-      ] : [text(changeTitle(change))]
+      type: "commit",
+      ref: change.sourceCommit ? link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)) : void 0,
+      title: changeTitle(change)
     });
     var resolvedItem = (api, change) => change.sourceCommit && change.number <= 0 ? unrecognizedCommitItem(api, change) : item(change);
     var sectionHeader = (api, sectionId, sectionLabel) => ({
@@ -43946,7 +43950,7 @@ var require_plan = __commonJS({
       const grouping = api.config.changelog?.grouping ?? "none";
       if (grouping === "none") {
         const items = primaryChanges.map((change) => resolvedItem(api, change));
-        const hasInternal = items.some((item2) => item2.type === "meta");
+        const hasInternal = items.some((item2) => item2.type === "commit");
         return [
           {
             type: "section",
