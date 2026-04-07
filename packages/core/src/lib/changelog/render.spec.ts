@@ -78,46 +78,6 @@ const c = (overrides: Partial<Change>): Change => ({
 });
 
 describe("RenderAPI snapshots", () => {
-  test("template + package grouping + multiline body", () => {
-    const api = baseApi({
-      templates: {
-        header: "## Release {{VERSION}} on {{DATE}}",
-      },
-      grouping: "package",
-    });
-
-    const changes: Change[] = [
-      c({
-        number: 1,
-        title: "Add dark mode",
-        body: "Detailed note\nSecond line",
-        author: { login: "alice", url: "https://example.com/alice" },
-        type: "feature",
-        pkgs: ["core"],
-      }),
-      c({
-        number: 2,
-        title: "Fix login",
-        author: { login: "bob", url: "https://example.com/bob" },
-        type: "fix",
-        pkgs: ["cli"],
-      }),
-      c({
-        number: 3,
-        title: "Minor cleanup",
-        author: { login: "chris", url: "https://example.com/chris" },
-        type: "chore",
-        pkgs: [],
-      }),
-    ];
-
-    const markdown = new RenderAPI(api).changes(
-      Version.parse("1.2.3"),
-      changes,
-    );
-    expect(markdown).toMatchSnapshot();
-  });
-
   test("default header + scope grouping", () => {
     const api = baseApi({
       grouping: "scope",
@@ -200,27 +160,6 @@ describe("RenderAPI snapshots", () => {
     expect(markdown).toMatchSnapshot();
   });
 
-  test("custom section/item templates", () => {
-    const api = baseApi({
-      templates: {
-        section: "### {{LABEL}}\n{{CHANGES}}",
-        item: "- {{REF}} | {{TITLE}} | {{AUTHOR}} | {{PACKAGES}}",
-      },
-      grouping: "scope",
-    });
-
-    const markdown = new RenderAPI(api).changes(Version.parse("4.0.0"), [
-      c({
-        number: 40,
-        type: "feature",
-        title: "Template driven entry",
-        pkgs: ["core"],
-      }),
-    ]);
-
-    expect(markdown).toMatchSnapshot();
-  });
-
   test("grouping none renders a flat list without sections", () => {
     const api = baseApi({
       grouping: "none",
@@ -284,53 +223,12 @@ describe("RenderAPI snapshots", () => {
     expect(markdown).toMatchSnapshot();
   });
 
-  test("item template can consume DETAILS and STATS placeholders", () => {
-    const api = baseApi({
-      templates: {
-        item: "* {{TITLE}}\n  source={{REF}}\n  stats={{STATS}}\n  details={{DETAILS}}",
-      },
-      grouping: "scope",
-    });
-
-    const markdown = new RenderAPI(api).changes(Version.parse("4.0.4"), [
-      c({
-        number: 55,
-        type: "docs",
-        title: "Add migration guide",
-        body: "Step 1\nStep 2",
-        pkgs: ["cli", "core"],
-      }),
-    ]);
-
-    expect(markdown).toMatchSnapshot();
-  });
-
   test("empty change list renders a friendly empty-state note", () => {
     const api = baseApi({
       grouping: "scope",
     });
 
     const markdown = new RenderAPI(api).changes(Version.parse("4.0.5"), []);
-
-    expect(markdown).toMatchSnapshot();
-  });
-
-  test("section templates are ignored when grouping is none", () => {
-    const api = baseApi({
-      templates: {
-        section: "### {{LABEL}}\n{{CHANGES}}",
-      },
-      grouping: "none",
-    });
-
-    const markdown = new RenderAPI(api).changes(Version.parse("4.0.6"), [
-      c({
-        number: 56,
-        type: "test",
-        title: "Increase coverage for renderer",
-        pkgs: ["core"],
-      }),
-    ]);
 
     expect(markdown).toMatchSnapshot();
   });
@@ -349,21 +247,6 @@ describe("RenderAPI snapshots", () => {
       }),
       c({ number: 58, type: "feature", title: "Ship presets", pkgs: ["web"] }),
       c({ number: 59, type: "fix", title: "Fix lint script", pkgs: ["cli"] }),
-    ]);
-
-    expect(markdown).toMatchSnapshot();
-  });
-
-  test("custom item template skips default visual summary", () => {
-    const api = baseApi({
-      templates: {
-        item: "- {{TITLE}}",
-      },
-      grouping: "scope",
-    });
-
-    const markdown = new RenderAPI(api).changes(Version.parse("4.0.8"), [
-      c({ number: 60, type: "docs", title: "Add style guide", pkgs: ["core"] }),
     ]);
 
     expect(markdown).toMatchSnapshot();
@@ -414,5 +297,123 @@ describe("RenderAPI snapshots", () => {
     ]);
 
     expect(markdown).toMatchSnapshot();
+  });
+
+  test("filters generated release PR refinements (with and without v prefix)", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.1"), [
+      c({
+        number: 71,
+        isRefinement: true,
+        title: "Publish Release 0.2.1",
+        body: "# 🚀 v0.2.1",
+      }),
+      c({
+        number: 72,
+        isRefinement: true,
+        title: "Publish Release v0.2.2",
+        body: "# 🚀 v0.2.2",
+      }),
+      c({
+        number: 0,
+        sourceCommit: "1234567890abcdef",
+        isRefinement: true,
+        title: "internal cleanup",
+        body: "n/a",
+      }),
+    ]);
+
+    expect(markdown).not.toContain("Publish Release 0.2.1");
+    expect(markdown).not.toContain("Publish Release v0.2.2");
+    expect(markdown).toContain("### 🧹 CHORES");
+    expect(markdown).toContain(
+      "* **UNK** — commits missing Conventional Commit format or an associated PR",
+    );
+    expect(markdown).toContain(
+      "[1234567](https://github.com/acme/demo/commit/1234567890abcdef)",
+    );
+    expect(markdown).toContain("internal cleanup");
+  });
+
+  test("filters refinement when relasy release marker is present", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.2"), [
+      c({
+        number: 73,
+        isRefinement: true,
+        title: "Some unrelated title",
+        body: "notes\n\n<!-- relasy:release-pr -->",
+      }),
+    ]);
+
+    expect(markdown).not.toContain("Some unrelated title");
+  });
+
+  test("does not filter non-generated refinements", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.3"), [
+      c({
+        number: 74,
+        isRefinement: true,
+        title: "Publish Release process docs",
+        body: "# docs",
+      }),
+    ]);
+
+    expect(markdown).toContain("Publish Release process docs");
+  });
+
+  test("preserves repeated spaces in rendered titles", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const markdown = new RenderAPI(api).changes(Version.parse("4.1.5"), [
+      c({
+        number: 75,
+        type: "feature",
+        title: "Ship  presets",
+        pkgs: ["web"],
+      }),
+      c({
+        number: 0,
+        sourceCommit: "feedfacecafebeef",
+        isRefinement: true,
+        type: "chore",
+        title: "internal  cleanup",
+        pkgs: [],
+      }),
+    ]);
+
+    expect(markdown).toContain("Ship  presets");
+    expect(markdown).toContain("internal  cleanup");
+  });
+
+  test("caps internal changes list and collapses overflow in details", () => {
+    const api = baseApi({ grouping: "scope" });
+
+    const refinements = Array.from({ length: 10 }).map((_, i) =>
+      c({
+        number: 0,
+        sourceCommit: `${String(i).repeat(8)}abcdef1234567890`,
+        isRefinement: true,
+        title: `internal ${i}`,
+      }),
+    );
+
+    const markdown = new RenderAPI(api).changes(
+      Version.parse("4.1.4"),
+      refinements,
+    );
+
+    expect(markdown).toContain("### 🧹 CHORES");
+    expect(markdown).toContain(
+      "* **UNK** — commits missing Conventional Commit format or an associated PR",
+    );
+    expect(markdown).toContain("internal 0");
+    expect(markdown).toContain("internal 4");
+    expect(markdown).toContain("&nbsp; └ +5 more");
+    expect(markdown).not.toContain("internal 9");
   });
 });

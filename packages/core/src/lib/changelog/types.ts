@@ -19,6 +19,7 @@ export type PR = {
   number: number;
   title: string;
   body: string;
+  headRefName?: string;
   author: { login: string; url: string };
   labels: { nodes: { name: string }[] };
   commits?: {

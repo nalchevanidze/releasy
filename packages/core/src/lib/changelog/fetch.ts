@@ -33,6 +33,37 @@ type CommitResolution =
   | { kind: "pr"; prNumber: number; commit: Commit }
   | { kind: "non-pr"; commit: Commit };
 
+const releaseVersionPattern = "v?\\d+\\.\\d+\\.\\d+(?:[-+][\\w.-]+)?";
+const releasePrTitleRegex = new RegExp(
+  `^publish release\\s+${releaseVersionPattern}\\s*$`,
+  "i",
+);
+const releaseBranchRegex = new RegExp(
+  `^release-${releaseVersionPattern}$`,
+  "i",
+);
+const releaseMergeCommitRegex = new RegExp(
+  `^merge pull request #[0-9]+ from .+\/release-${releaseVersionPattern}\\b`,
+  "i",
+);
+
+export const isReleasePr = (pr: PR): boolean => {
+  const title = pr.title?.trim() || "";
+  const branch = pr.headRefName?.trim() || "";
+
+  return releasePrTitleRegex.test(title) && releaseBranchRegex.test(branch);
+};
+
+export const isReleaseCommit = (commit: Commit): boolean => {
+  const title = (commit.message || "").split("\n")[0].trim();
+
+  return (
+    releasePrTitleRegex.test(title) ||
+    releaseMergeCommitRegex.test(title) ||
+    releaseBranchRegex.test(title)
+  );
+};
+
 const parseConventionalType = (
   text: string,
   availableChangeTypes: string[],
@@ -206,6 +237,7 @@ export class FetchApi {
       number
       title
       body
+      headRefName
       author { login url }
       labels(first: 10) { nodes { name } }
       commits(first: 50) {
@@ -271,9 +303,12 @@ export class FetchApi {
         (r): r is Extract<CommitResolution, { kind: "non-pr" }> =>
           r.kind === "non-pr",
       )
-      .map((r) => r.commit);
+      .map((r) => r.commit)
+      .filter((commit) => !isReleaseCommit(commit));
 
-    const prChanges = (await this.pullRequests(prNumbers)).map(this.toChange);
+    const prChanges = (await this.pullRequests(prNumbers))
+      .filter((pr) => !isReleasePr(pr))
+      .map(this.toChange);
 
     const commitsEnabled = (
       this.api.config.policies?.detectionUse ?? ["labels"]

@@ -10,13 +10,7 @@ import {
   defaultLabelMode,
   defaultRuleLevels,
 } from "./defaults";
-import {
-  ChangeType,
-  ChangelogConfig,
-  ConfigSchema,
-  RawConfig,
-  RulesConfig,
-} from "./schema";
+import { ChangeType, ConfigSchema, RawConfig, RulesConfig } from "./schema";
 
 type ExtraConfig = {
   gh: string;
@@ -34,72 +28,6 @@ type ExtraConfig = {
 };
 
 export type Config = Omit<RawConfig, "pkgs" | "policies"> & ExtraConfig;
-
-const readPlaceholders = (template: string): string[] => {
-  const out: string[] = [];
-  const re = /{{([A-Z_]+)}}/g;
-  let match: RegExpExecArray | null = null;
-
-  while ((match = re.exec(template))) {
-    out.push(match[1]);
-  }
-
-  return out;
-};
-
-const validateTemplate = (
-  label: string,
-  template: string,
-  required: string[],
-  allowed: string[],
-) => {
-  const placeholders = readPlaceholders(template);
-
-  const missing = required.filter((x) => !placeholders.includes(x));
-  if (missing.length > 0) {
-    throw new Error(
-      `${label} is missing required placeholders: ${missing.join(", ")}`,
-    );
-  }
-
-  const unknown = placeholders.filter((x) => !allowed.includes(x));
-  if (unknown.length > 0) {
-    throw new Error(
-      `${label} contains unknown placeholders: ${unknown.join(", ")}`,
-    );
-  }
-};
-
-export const validateChangelogTemplates = (changelog?: ChangelogConfig) => {
-  if (!changelog) return;
-
-  if (changelog.templates?.header) {
-    validateTemplate(
-      "changelog.templates.header",
-      changelog.templates.header,
-      ["VERSION", "DATE"],
-      ["VERSION", "DATE"],
-    );
-  }
-
-  if (changelog.templates?.section) {
-    validateTemplate(
-      "changelog.templates.section",
-      changelog.templates.section,
-      ["LABEL", "CHANGES"],
-      ["LABEL", "CHANGES"],
-    );
-  }
-
-  if (changelog.templates?.item) {
-    validateTemplate(
-      "changelog.templates.item",
-      changelog.templates.item,
-      ["REF", "TITLE"],
-      ["REF", "TITLE", "AUTHOR", "PACKAGES", "BODY", "DETAILS", "STATS"],
-    );
-  }
-};
 
 const toPathList = (paths?: string | string[]) => {
   if (!paths) return undefined;
@@ -204,8 +132,7 @@ const hasNewFields = (cfg: Record<string, unknown>) => {
   const topNew = ["policies", "changes", "changelog"].some((key) => key in cfg);
 
   const changelogNew =
-    isPlainObject(cfg.changelog) &&
-    ("templates" in cfg.changelog || "grouping" in cfg.changelog);
+    isPlainObject(cfg.changelog) && "grouping" in cfg.changelog;
 
   return topNew || changelogNew;
 };
@@ -226,8 +153,6 @@ const parseConfigInput = (input: unknown): RawConfig => {
 };
 
 export const normalizeConfig = (config: RawConfig, gh: string): Config => {
-  validateChangelogTemplates(config.changelog);
-
   const normalizedPkgs = normalizePkgs(config.pkgs);
   const normalizedChanges = normalizeChanges(config.changes);
 

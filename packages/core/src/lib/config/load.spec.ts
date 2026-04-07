@@ -3,7 +3,6 @@ import {
   loadRawConfig,
   normalizeConfig,
   normalizeConfigInputKeys,
-  validateChangelogTemplates,
 } from "./load";
 
 describe("config normalization", () => {
@@ -103,39 +102,5 @@ describe("config file loading", () => {
     ).rejects.toThrow(
       "Missing configuration file. Expected relasy.yaml or relasy.yml.",
     );
-  });
-});
-
-describe("template guardrails", () => {
-  test("accepts valid templates", () => {
-    expect(() =>
-      validateChangelogTemplates({
-        templates: {
-          header: "## {{VERSION}} ({{DATE}})",
-          section: "#### {{LABEL}}\n{{CHANGES}}",
-          item: "* {{REF}} {{TITLE}} {{AUTHOR}} {{PACKAGES}}",
-        },
-      }),
-    ).not.toThrow();
-  });
-
-  test("rejects missing required placeholders", () => {
-    expect(() =>
-      validateChangelogTemplates({
-        templates: {
-          section: "#### {{LABEL}}",
-        },
-      }),
-    ).toThrow("missing required placeholders");
-  });
-
-  test("rejects unknown placeholders", () => {
-    expect(() =>
-      validateChangelogTemplates({
-        templates: {
-          item: "* {{REF}} {{TITLE}} {{WHATEVER}}",
-        },
-      }),
-    ).toThrow("unknown placeholders");
   });
 });

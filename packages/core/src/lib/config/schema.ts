@@ -10,11 +10,6 @@ export type DetectionInput = "labels" | "commits";
 export type BumpLevel = "major" | "minor" | "patch";
 
 export type ChangelogConfig = {
-  templates?: {
-    header?: string;
-    section?: string;
-    item?: string;
-  };
   grouping?: "package" | "scope" | "none";
 };
 
@@ -49,13 +44,6 @@ export type ChangesConfig = Record<string, ChangeDefinition>;
 
 export const ChangelogConfigSchema = z
   .object({
-    templates: z
-      .object({
-        header: z.string().optional(),
-        section: z.string().optional(),
-        item: z.string().optional(),
-      })
-      .optional(),
     grouping: z.enum(["package", "scope", "none"]).optional(),
   })
   .optional();

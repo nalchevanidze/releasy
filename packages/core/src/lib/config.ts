@@ -30,5 +30,4 @@ export {
   loadRawConfig,
   normalizeConfig,
   normalizeConfigInputKeys,
-  validateChangelogTemplates,
 } from "./config/load";
