@@ -15,7 +15,7 @@ const lines = (xs: string[], size: number = 1) =>
 const itemStyle = (type: ItemStyle, txt: string) => {
   switch (type) {
     case "tree":
-      return `&nbsp; &nbsp; └ ${txt}`;
+      return `&nbsp; &nbsp; └ ${txt}  `;
     case "bullet":
       return `* ${txt}`;
     default:
@@ -63,14 +63,7 @@ export const markdownFormatter: ChangelogRenderer<string> = {
 
   cluster: (node, render) => {
     const heading = node.header ? render(node.header) : "";
-    const renderedItems = node.children.map(render);
-
-    const styledItems =
-      node.itemsStyle === "tree"
-        ? renderedItems.map((line) => itemStyle("tree", line))
-        : node.itemsStyle === "bullet"
-          ? renderedItems.map((line) => itemStyle("bullet", line))
-          : renderedItems;
+    const renderedItems = node.children.map(render).map((line) => itemStyle(node.itemsStyle ?? "plain", line));
 
     const compact =
       node.itemsStyle === "bullet" ||
@@ -78,8 +71,8 @@ export const markdownFormatter: ChangelogRenderer<string> = {
         node.children.every((child) => child.type === "item"));
 
     return compact
-      ? lines([heading, ...styledItems], 1)
-      : lines([heading, ...styledItems]);
+      ? lines([heading, ...renderedItems], 1)
+      : lines([heading, ...renderedItems]);
   },
 
   item: (node, render) => {

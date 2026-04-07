@@ -42959,10 +42959,9 @@ var require_markdown = __commonJS({
       },
       cluster: (node, render) => {
         const heading = node.header ? render(node.header) : "";
-        const renderedItems = node.children.map(render);
-        const styledItems = node.itemsStyle === "tree" ? renderedItems.map((line) => itemStyle("tree", line)) : node.itemsStyle === "bullet" ? renderedItems.map((line) => itemStyle("bullet", line)) : renderedItems;
+        const renderedItems = node.children.map(render).map((line) => itemStyle(node.itemsStyle ?? "plain", line));
         const compact = node.itemsStyle === "bullet" || node.itemsStyle !== "tree" && node.children.every((child) => child.type === "item");
-        return compact ? lines([heading, ...styledItems], 1) : lines([heading, ...styledItems]);
+        return compact ? lines([heading, ...renderedItems], 1) : lines([heading, ...renderedItems]);
       },
       item: (node, render) => {
         return lines([
