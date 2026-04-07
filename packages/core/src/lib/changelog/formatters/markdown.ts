@@ -56,7 +56,7 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     const value = children.map(render).join("");
 
     if (kind === "scope") return `📦 - ${value}`;
-    if (kind === "author") return `✍️ - ${value}`;
+    if (kind === "author") return `🧑‍💻 - ${value}`;
     return value;
   },
 
