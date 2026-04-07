@@ -43703,7 +43703,7 @@ var require_markdown = __commonJS({
           return txt;
       }
     };
-    var list = (header, items, marker = "plain") => lines(header, items.map((item) => withMarker(marker, item)).map((value) => `${value}  `));
+    var list = (header, items, marker = "plain") => lines(header, items.flat().map((item) => withMarker(marker, item)).map((value) => `${value}  `));
     exports2.markdownFormatter = {
       doc: (node, render) => {
         const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
@@ -43716,33 +43716,27 @@ var require_markdown = __commonJS({
         });
         const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
         const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
-        const stats = node.stats ? [(node.stats || []).map(render).join(" ")] : [];
+        const stats = node.stats ? (node.stats || []).map(render).join(" ") : void 0;
         return lines(header, stats, node.children.map(render));
       },
-      section: (node, render) => {
-        const heading = node.header ? render(node.header) : "";
-        const body = lines(node.children.map(render));
-        return lines([heading, body, heading ? "<br>" : ""]);
-      },
-      cluster: (node, render) => {
-        return list(node.header ? [render(node.header)] : [], [
-          node.children.map(render),
-          node.hiddenCount && node.hiddenCount > 0 ? `+${node.hiddenCount} more` : []
-        ].flat(), node.marker);
-      },
-      item: (node, render) => list([`**${node.refLabel}** \u2014 ${node.title}`], node.meta.map(render), "tree"),
-      meta: (node, render) => {
-        const value = node.children.map(render).join("");
-        if (node.kind === "scope")
+      section: (node, render) => lines(node.header ? render(node.header) : void 0, node.children.map(render), node.header ? "<br>" : void 0),
+      cluster: ({ header, children, hiddenCount, marker }, render) => list(header ? render(header) : void 0, [
+        children.map(render),
+        hiddenCount && hiddenCount > 0 ? `+${hiddenCount} more` : []
+      ], marker),
+      item: (node, render) => list(`**${node.refLabel}** \u2014 ${node.title}`, node.meta.map(render), "tree"),
+      meta: ({ children, kind }, render) => {
+        const value = children.map(render).join("");
+        if (kind === "scope")
           return `\u{1F4E6} - ${value}`;
-        if (node.kind === "author")
+        if (kind === "author")
           return `\u270D\uFE0F - ${value}`;
         return value;
       },
-      commit: (node, render) => {
-        if (!node.ref)
-          return node.title;
-        return `\u{1F518} - ${render(node.ref)} ${node.title}`;
+      commit: ({ ref, title }, render) => {
+        if (!ref)
+          return title;
+        return `\u{1F518} - ${render(ref)} ${title}`;
       },
       header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
       stat: (node) => {

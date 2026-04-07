@@ -15,8 +15,8 @@ const withMarker = (type: Marker, txt: string) => {
   }
 };
 
-const list = (header: string[], items: string[], marker: Marker = "plain") =>
-  lines(header, items.map((item) => withMarker(marker, item)).map((value) => `${value}  `));
+const list = (header: string | undefined, items: (string | string[])[], marker: Marker = "plain") =>
+  lines(header, items.flat().map((item) => withMarker(marker, item)).map((value) => `${value}  `));
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
@@ -35,42 +35,34 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
     const header = `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
 
-    const stats = node.stats ? [(node.stats || []).map(render).join(" ")] : [];
+    const stats = node.stats ? (node.stats || []).map(render).join(" ") : undefined;
 
     return lines(header, stats, node.children.map(render));
   },
 
-  section: (node, render) => {
-    const heading = node.header ? render(node.header) : "";
-    const body = lines(node.children.map(render));
+  section: (node, render) => lines(node.header ? render(node.header) : undefined, node.children.map(render), node.header ? "<br>" : undefined),
 
-    return lines([heading, body, heading ? "<br>" : ""]);
-  },
-
-  cluster: (node, render) => {
-
-    return list(node.header ? [render(node.header)] : [], [
-      node.children.map(render),
-      node.hiddenCount && node.hiddenCount > 0 ? `+${node.hiddenCount} more` : [],
-    ].flat(), node.marker);
-
-  },
+  cluster: ({ header, children, hiddenCount, marker }, render) =>
+    list(header ? render(header) : undefined, [
+      children.map(render),
+      hiddenCount && hiddenCount > 0 ? `+${hiddenCount} more` : [],
+    ], marker),
 
   item: (node, render) =>
-    list([`**${node.refLabel}** — ${node.title}`], node.meta.map(render), "tree"),
+    list(`**${node.refLabel}** — ${node.title}`, node.meta.map(render), "tree"),
 
 
-  meta: (node, render) => {
-    const value = node.children.map(render).join("");
+  meta: ({ children, kind }, render) => {
+    const value = children.map(render).join("");
 
-    if (node.kind === "scope") return `📦 - ${value}`;
-    if (node.kind === "author") return `✍️ - ${value}`;
+    if (kind === "scope") return `📦 - ${value}`;
+    if (kind === "author") return `✍️ - ${value}`;
     return value;
   },
 
-  commit: (node, render) => {
-    if (!node.ref) return node.title;
-    return `🔘 - ${render(node.ref)} ${node.title}`;
+  commit: ({ ref, title }, render) => {
+    if (!ref) return title;
+    return `🔘 - ${render(ref)} ${title}`;
   },
 
   header: (node, render) =>
