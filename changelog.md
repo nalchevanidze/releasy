@@ -51,7 +51,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/290d63383b5de147d6e4a89df4d08615140396bf) update build  
 <br>
 
-# 🚀 [v1.1.0](https://github.com/nalchevanidze/rel-easy/compare/0.3.0...v1.1.0) &nbsp; • &nbsp; January 20, 2026
+# 🚀 [v1.1.0](https://github.com/nalchevanidze/rel-easy/compare/v0.3.0...v1.1.0) &nbsp; • &nbsp; January 20, 2026
 
 ![BUMP](https://img.shields.io/badge/BUMP-MAJOR-red?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-3-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-4-orange?style=flat-square)
 
@@ -81,7 +81,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +9 more
 <br>
 
-# 🚀 [v0.3.0](https://github.com/nalchevanidze/rel-easy/compare/0.2.1...v0.3.0) &nbsp; • &nbsp; January 19, 2026
+# 🚀 [v0.3.0](https://github.com/nalchevanidze/rel-easy/compare/v0.2.1...v0.3.0) &nbsp; • &nbsp; January 19, 2026
 
 ![BUMP](https://img.shields.io/badge/BUMP-MAJOR-red?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-0-orange?style=flat-square)
 
@@ -103,7 +103,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/d9ef647f3c9b59e1f4b510b97c3bad722645914c) update versions  
 <br>
 
-# 🚀 [v0.2.1](https://github.com/nalchevanidze/rel-easy/compare/0.2.0...v0.2.1) &nbsp; • &nbsp; January 19, 2026
+# 🚀 [v0.2.1](https://github.com/nalchevanidze/rel-easy/compare/v0.2.0...v0.2.1) &nbsp; • &nbsp; January 19, 2026
 
 ![BUMP](https://img.shields.io/badge/BUMP-PATCH-green?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-1-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-0-orange?style=flat-square)
 
@@ -131,7 +131,7 @@
 &nbsp; &nbsp; ✍️ **By:** [@nalchevanidze](https://github.com/nalchevanidze)
 <br>
 
-# 🚀 [v1.0.0](https://github.com/nalchevanidze/rel-easy/compare/0.1.15...v1.0.0) &nbsp; • &nbsp; January 19, 2026
+# 🚀 [v1.0.0](https://github.com/nalchevanidze/rel-easy/compare/v0.1.15...v1.0.0) &nbsp; • &nbsp; January 19, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/fac0a0afd21bbe4d6149754d54dd2a7946e87a08) add validate and bootstrap  
@@ -140,7 +140,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/0c2f772ea12d0c5e6424e437cc1f183a418e3ec4) labels  
 <br>
 
-# 🚀 [v0.1.15](https://github.com/nalchevanidze/rel-easy/compare/0.1.14...v0.1.15) &nbsp; • &nbsp; January 18, 2026
+# 🚀 [v0.1.15](https://github.com/nalchevanidze/rel-easy/compare/v0.1.14...v0.1.15) &nbsp; • &nbsp; January 18, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/0997d0cbf5a73c736cdc917001cc7ae3eb3e9434) renderChangelog  
@@ -151,14 +151,14 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +5 more
 <br>
 
-# 🚀 [v0.1.14](https://github.com/nalchevanidze/rel-easy/compare/0.1.13...v0.1.14) &nbsp; • &nbsp; January 17, 2026
+# 🚀 [v0.1.14](https://github.com/nalchevanidze/rel-easy/compare/v0.1.13...v0.1.14) &nbsp; • &nbsp; January 17, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/1046235859bf898aa1d1653735adf731973a72e7) changeTypes  
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/3396a895bfba88508d3cf5822834ed9a13bfefbb) update  
 <br>
 
-# 🚀 [v0.1.13](https://github.com/nalchevanidze/rel-easy/compare/0.1.12...v0.1.13) &nbsp; • &nbsp; January 17, 2026
+# 🚀 [v0.1.13](https://github.com/nalchevanidze/rel-easy/compare/v0.1.12...v0.1.13) &nbsp; • &nbsp; January 17, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/59720bb4aa6079649944ec0a8c3316ff452a1ab7) update  
@@ -169,7 +169,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +17 more
 <br>
 
-# 🚀 [v0.1.12](https://github.com/nalchevanidze/rel-easy/compare/0.1.11...v0.1.12) &nbsp; • &nbsp; January 16, 2026
+# 🚀 [v0.1.12](https://github.com/nalchevanidze/rel-easy/compare/v0.1.11...v0.1.12) &nbsp; • &nbsp; January 16, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/359b83b1a561f1a8f6abb95cede5bafcc6fedfa5) update Names  
@@ -180,7 +180,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +29 more
 <br>
 
-# 🚀 [v0.1.11](https://github.com/nalchevanidze/rel-easy/compare/0.1.10...v0.1.11) &nbsp; • &nbsp; January 15, 2026
+# 🚀 [v0.1.11](https://github.com/nalchevanidze/rel-easy/compare/v0.1.10...v0.1.11) &nbsp; • &nbsp; January 15, 2026
 
 ![BUMP](https://img.shields.io/badge/BUMP-MINOR-yellow?style=flat-square) ![CHANGES](https://img.shields.io/badge/CHANGES-2-blue?style=flat-square) ![PACKAGES](https://img.shields.io/badge/PACKAGES-1-orange?style=flat-square)
 
@@ -200,7 +200,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/93f90f12b05ffaa1ba1c542e1cac17987365ea0d) updaste lock  
 <br>
 
-# 🚀 [v0.1.10](https://github.com/nalchevanidze/rel-easy/compare/0.1.9...v0.1.10) &nbsp; • &nbsp; January 11, 2026
+# 🚀 [v0.1.10](https://github.com/nalchevanidze/rel-easy/compare/v0.1.9...v0.1.10) &nbsp; • &nbsp; January 11, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/76d0c0f901a054a15593511dcf96fa879615df60) update config  
@@ -211,7 +211,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +2 more
 <br>
 
-# 🚀 [v0.1.9](https://github.com/nalchevanidze/rel-easy/compare/0.1.8...v0.1.9) &nbsp; • &nbsp; January 11, 2026
+# 🚀 [v0.1.9](https://github.com/nalchevanidze/rel-easy/compare/v0.1.8...v0.1.9) &nbsp; • &nbsp; January 11, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/eb5a3fd604a8b988be1978d05657bd597d664da2) build releasy  
@@ -222,7 +222,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +1 more
 <br>
 
-# 🚀 [v0.1.8](https://github.com/nalchevanidze/rel-easy/compare/0.1.7...v0.1.8) &nbsp; • &nbsp; January 11, 2026
+# 🚀 [v0.1.8](https://github.com/nalchevanidze/rel-easy/compare/v0.1.7...v0.1.8) &nbsp; • &nbsp; January 11, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/19b0866e123cebdde8b0eaf3a411211e296f2568) public version = () => this.module.version();  
@@ -230,7 +230,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/6e1aaaba4fecdd486d53cd0ad4043188d9ae9f0e) update  
 <br>
 
-# 🚀 [v0.1.7](https://github.com/nalchevanidze/rel-easy/compare/0.1.6...v0.1.7) &nbsp; • &nbsp; January 11, 2026
+# 🚀 [v0.1.7](https://github.com/nalchevanidze/rel-easy/compare/v0.1.6...v0.1.7) &nbsp; • &nbsp; January 11, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/ca93fdfb56fe697e554887164776d42ae2766e13) update setup script  
@@ -241,7 +241,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +10 more
 <br>
 
-# 🚀 [v0.1.6](https://github.com/nalchevanidze/rel-easy/compare/0.1.5...v0.1.6) &nbsp; • &nbsp; January 10, 2026
+# 🚀 [v0.1.6](https://github.com/nalchevanidze/rel-easy/compare/v0.1.5...v0.1.6) &nbsp; • &nbsp; January 10, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/a511ed2d184caccc4c01cdc55167e4b2b4543b77) update verions  
@@ -252,13 +252,13 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +2 more
 <br>
 
-# 🚀 [v0.1.5](https://github.com/nalchevanidze/rel-easy/compare/0.1.4...v0.1.5) &nbsp; • &nbsp; January 10, 2026
+# 🚀 [v0.1.5](https://github.com/nalchevanidze/rel-easy/compare/v0.1.4...v0.1.5) &nbsp; • &nbsp; January 10, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/895cc2a85f4a389336cd826ae826bd197349252b) release-  
 <br>
 
-# 🚀 [v0.1.4](https://github.com/nalchevanidze/rel-easy/compare/0.1.3...v0.1.4) &nbsp; • &nbsp; January 10, 2026
+# 🚀 [v0.1.4](https://github.com/nalchevanidze/rel-easy/compare/v0.1.3...v0.1.4) &nbsp; • &nbsp; January 10, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/issues/6) update release script  
@@ -269,7 +269,7 @@
 &nbsp; &nbsp; &nbsp; &nbsp; └ +1 more
 <br>
 
-# 🚀 [v0.1.3](https://github.com/nalchevanidze/rel-easy/compare/0.1.2...v0.1.3) &nbsp; • &nbsp; January 10, 2026
+# 🚀 [v0.1.3](https://github.com/nalchevanidze/rel-easy/compare/v0.1.2...v0.1.3) &nbsp; • &nbsp; January 10, 2026
 
 ### 🔧 INTERNAL CHANGES
 &nbsp; &nbsp; &nbsp; &nbsp; [└](https://github.com/nalchevanidze/rel-easy/commit/c8a399fd99622063afe4e87e938556d1e96b3ffd) "version": "0.1.2"  
