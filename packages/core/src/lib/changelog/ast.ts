@@ -7,8 +7,7 @@ export type ChangelogNode =
   | ChangelogGroupNode
   | ChangelogListNode
   | ChangelogItemNode
-  | ChangelogScopeNode
-  | ChangelogAuthorNode
+  | ChangelogSubitemNode
   | ChangelogTextNode
   | ChangelogLinkNode
   | ChangelogEmptyNode;
@@ -59,16 +58,14 @@ export type ChangelogItemNode = {
   isInternal: boolean;
   ref: ChangeRef;
   title: string;
-  children?: Array<ChangelogNode>;
+  children?: ChangelogSubitemNode[];
 };
 
-export type ChangelogScopeNode = {
-  type: "scope";
-  values: string[];
-};
 
-export type ChangelogAuthorNode = {
-  type: "author";
+export type ChangelogSubitemNode = {
+  type: "subitem";
+  icon: string;
+  label: string;
   children: ChangelogNode[];
 };
 

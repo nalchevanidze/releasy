@@ -1,5 +1,4 @@
 import {
-  ChangelogAuthorNode,
   ChangelogDocNode,
   ChangelogEmptyNode,
   ChangelogGroupNode,
@@ -7,8 +6,8 @@ import {
   ChangelogLinkNode,
   ChangelogListNode,
   ChangelogNode,
-  ChangelogScopeNode,
   ChangelogSectionNode,
+  ChangelogSubitemNode,
   ChangelogSummaryNode,
   ChangelogTextNode,
 } from "../ast";
@@ -20,8 +19,7 @@ export type ChangelogRenderer<T> = {
   group: (node: ChangelogGroupNode, render: RenderNode<T>) => T;
   list: (node: ChangelogListNode, render: RenderNode<T>) => T;
   item: (node: ChangelogItemNode, render: RenderNode<T>) => T;
-  scope: (node: ChangelogScopeNode, render: RenderNode<T>) => T;
-  author: (node: ChangelogAuthorNode, render: RenderNode<T>) => T;
+  subitem: (node: ChangelogSubitemNode, render: RenderNode<T>) => T;
   text: (node: ChangelogTextNode, render: RenderNode<T>) => T;
   link: (node: ChangelogLinkNode, render: RenderNode<T>) => T;
   empty: (node: ChangelogEmptyNode, render: RenderNode<T>) => T;
@@ -47,10 +45,8 @@ export const renderAst = <T>(
         return renderer.list(node, render);
       case "item":
         return renderer.item(node, render);
-      case "scope":
-        return renderer.scope(node, render);
-      case "author":
-        return renderer.author(node, render);
+      case "subitem":
+        return renderer.subitem(node, render);
       case "text":
         return renderer.text(node, render);
       case "link":

@@ -43696,7 +43696,6 @@ var require_markdown = __commonJS({
     var lines = (xs, size = 1) => xs.filter(Boolean).join((0, ramda_1.range)(0, size).map(() => "\n").join(""));
     var link = (name, url) => `[${name}](${url})`;
     var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
-    var renderParts = (parts) => parts.map((part) => part.type === "link" ? link(part.label, part.url) : part.value).join("");
     exports2.markdownFormatter = {
       doc: (node, render) => {
         const version = node.versionLabel.startsWith("v") ? node.versionLabel : `v${node.versionLabel}`;
@@ -43735,22 +43734,22 @@ var require_markdown = __commonJS({
         return lines([heading, body, overflow, "<br>"]);
       },
       group: (node, render) => {
-        const heading = node.groupKind === "package" ? `##### \u{1F4E6} ${renderParts(node.groupLabel || [])}` : "";
+        const heading = node.groupKind === "package" ? `##### \u{1F4E6} ${(node.groupLabel || []).map(render).join("")}` : "";
         return lines([heading, render(node.children)]);
       },
       list: (node, render) => lines(node.children.map(render)),
-      item: (node) => {
+      item: (node, render) => {
         if (node.isInternal) {
           const ref = node.ref.url ? link(node.ref.label, node.ref.url) : node.ref.label;
           return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
         }
-        const scope = (node.scope || []).length === 0 ? "general" : (node.scope || []).map((x) => `\`${x}\``).join(" \u2022 ");
-        return lines([
-          `* **${node.ref.label}** \u2014 ${node.title}  `,
-          `${nbspIndent(1, `\u{1F4E6} **Scope:** ${scope}`)}  `,
-          nbspIndent(1, `\u270D\uFE0F **By:** ${renderParts(node.author || [])}`)
-        ]);
+        const renderedChildren = (node.children || []).map(render);
+        const childLines = renderedChildren.map((line, idx) => idx < renderedChildren.length - 1 ? `${line}  ` : line);
+        return lines([`* **${node.ref.label}** \u2014 ${node.title}  `, ...childLines]);
       },
+      subitem: (node, render) => nbspIndent(1, `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`),
+      text: (node) => node.value,
+      link: (node) => link(node.label, node.url),
       empty: () => "_No user-facing changes since the last tag._"
     };
   }
@@ -43777,6 +43776,12 @@ var require_renderer = __commonJS({
             return renderer.list(node, render);
           case "item":
             return renderer.item(node, render);
+          case "subitem":
+            return renderer.subitem(node, render);
+          case "text":
+            return renderer.text(node, render);
+          case "link":
+            return renderer.link(node, render);
           case "empty":
             return renderer.empty(node, render);
         }
@@ -43798,7 +43803,11 @@ var require_plan = __commonJS({
     var utils_1 = require_utils2();
     var maxInternalChangesToShow = 5;
     var txt = (value) => ({ type: "text", value });
-    var lnk = (label, url) => ({ type: "link", label, url });
+    var lnk = (label, url) => ({
+      type: "link",
+      label,
+      url
+    });
     var normalizedPkgs = (pkgs) => [...new Set(pkgs)].sort();
     var packageGroupKey = (pkgs) => {
       const normalized = normalizedPkgs(pkgs);
@@ -43843,19 +43852,41 @@ var require_plan = __commonJS({
       return { label: "unknown" };
     };
     var authorParts = (change) => {
-      const login = change.author.login;
+      const login = change.author.login?.trim();
+      if (!login || login.toLowerCase() === "unknown")
+        return [];
       const url = change.author.url;
       return url ? [lnk(`@${login}`, url)] : [txt(`@${login}`)];
     };
     var isCommitOnlyChange = (change) => Boolean(change.sourceCommit && change.number <= 0);
-    var primaryItem = (change) => ({
-      type: "item",
-      isInternal: false,
-      ref: refForPrimary(change),
-      title: changeTitle(change),
-      scope: normalizedPkgs(change.pkgs),
-      author: authorParts(change)
-    });
+    var primaryItem = (change) => {
+      const children = [];
+      const scopeValues = normalizedPkgs(change.pkgs);
+      if (scopeValues.length > 0) {
+        children.push({
+          type: "subitem",
+          icon: "\u{1F4E6}",
+          label: "Scope",
+          children: [txt(scopeValues.map((x) => `\`${x}\``).join(" \u2022 "))]
+        });
+      }
+      const authorInline = authorParts(change);
+      if (authorInline.length > 0) {
+        children.push({
+          type: "subitem",
+          icon: "\u270D\uFE0F",
+          label: "By",
+          children: authorInline
+        });
+      }
+      return {
+        type: "item",
+        isInternal: false,
+        ref: refForPrimary(change),
+        title: changeTitle(change),
+        children
+      };
+    };
     var refinementUrl = (api, change) => {
       if (change.sourceCommit) {
         return `https://github.com/${api.config.gh}/commit/${change.sourceCommit}`;

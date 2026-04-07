@@ -1,14 +1,15 @@
 import { groupBy } from "ramda";
 import {
-  ChangelogAuthorNode,
   ChangelogDocNode,
   ChangelogGroupNode,
-  ChangelogInlineNode,
   ChangelogItemNode,
+  ChangelogLinkNode,
   ChangelogListNode,
-  ChangelogScopeNode,
+  ChangelogNode,
   ChangelogSectionNode,
+  ChangelogSubitemNode,
   ChangelogSummaryNode,
+  ChangelogTextNode,
   ChangeRef,
 } from "./ast";
 import { getDate } from "../git";
@@ -18,8 +19,8 @@ import { Api, Change } from "./types";
 
 const maxInternalChangesToShow = 5;
 
-const txt = (value: string): ChangelogInlineNode => ({ type: "text", value });
-const lnk = (label: string, url: string): ChangelogInlineNode => ({
+const txt = (value: string): ChangelogTextNode => ({ type: "text", value });
+const lnk = (label: string, url: string): ChangelogLinkNode => ({
   type: "link",
   label,
   url,
@@ -32,14 +33,20 @@ const packageGroupKey = (pkgs: string[]) => {
   return normalized.length ? normalized.join(",") : "general";
 };
 
-const packagePart = (api: Api, labelName: string): ChangelogInlineNode => {
+const packagePart = (
+  api: Api,
+  labelName: string,
+): ChangelogTextNode | ChangelogLinkNode => {
   const pkg = api.config.pkgs[labelName];
   const longName = pkg?.name || labelName;
   const url = api.module.pkg(longName);
   return url ? lnk(labelName, url) : txt(labelName);
 };
 
-const packageGroupParts = (api: Api, key: string): ChangelogInlineNode[] => {
+const packageGroupParts = (
+  api: Api,
+  key: string,
+): Array<ChangelogTextNode | ChangelogLinkNode> => {
   if (key === "general") return [txt("General")];
 
   return key
@@ -96,8 +103,10 @@ const refForPrimary = (change: Change): ChangeRef => {
   return { label: "unknown" };
 };
 
-const authorParts = (change: Change): ChangelogInlineNode[] => {
-  const login = change.author.login;
+const authorParts = (change: Change): Array<ChangelogTextNode | ChangelogLinkNode> => {
+  const login = change.author.login?.trim();
+  if (!login || login.toLowerCase() === "unknown") return [];
+
   const url = change.author.url;
   return url ? [lnk(`@${login}`, url)] : [txt(`@${login}`)];
 };
@@ -106,22 +115,34 @@ const isCommitOnlyChange = (change: Change) =>
   Boolean(change.sourceCommit && change.number <= 0);
 
 const primaryItem = (change: Change): ChangelogItemNode => {
-  const scopeNode: ChangelogScopeNode = {
-    type: "scope",
-    values: normalizedPkgs(change.pkgs),
-  };
+  const children: ChangelogSubitemNode[] = [];
 
-  const authorNode: ChangelogAuthorNode = {
-    type: "author",
-    children: authorParts(change),
-  };
+  const scopeValues = normalizedPkgs(change.pkgs);
+  if (scopeValues.length > 0) {
+    children.push({
+      type: "subitem",
+      icon: "📦",
+      label: "Scope",
+      children: [txt(scopeValues.map((x) => `\`${x}\``).join(" • "))],
+    });
+  }
+
+  const authorInline = authorParts(change);
+  if (authorInline.length > 0) {
+    children.push({
+      type: "subitem",
+      icon: "✍️",
+      label: "By",
+      children: authorInline,
+    });
+  }
 
   return {
     type: "item",
     isInternal: false,
     ref: refForPrimary(change),
     title: changeTitle(change),
-    children: [scopeNode, authorNode],
+    children,
   };
 };
 
@@ -158,7 +179,7 @@ const sectionMeta = (api: Api, sectionId: string, sectionLabel: string) => ({
 const makeGroup = (
   groupKind: "package" | "flat",
   items: ReturnType<typeof resolvedItem>[],
-  groupLabel?: ChangelogInlineNode[],
+  groupLabel?: Array<ChangelogTextNode | ChangelogLinkNode>,
 ): ChangelogGroupNode => ({
   type: "group",
   groupKind,

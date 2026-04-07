@@ -106,7 +106,6 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 &nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
 ##### 📦 General
 * **#24** — Fix typo  
-&nbsp; &nbsp; 📦 **Scope:** general  
 &nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
 <br>
 
@@ -117,7 +116,6 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 &nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
 ##### 📦 General
 * **#26** — Refactor scripts  
-&nbsp; &nbsp; 📦 **Scope:** general  
 &nbsp; &nbsp; ✍️ **By:** [@author](https://example.com/author)
 <br>"
 `;

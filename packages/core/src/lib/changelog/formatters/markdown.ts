@@ -94,23 +94,16 @@ export const markdownFormatter: ChangelogRenderer<string> = {
       return `${nbspIndent(2, `${ref} ${node.title}`)}  `;
     }
 
-    const children = node.children || [];
-    const scopeLine = children.find((child) => child.type === "scope");
-    const authorLine = children.find((child) => child.type === "author");
+    const renderedChildren = (node.children || []).map(render);
+    const childLines = renderedChildren.map((line, idx) =>
+      idx < renderedChildren.length - 1 ? `${line}  ` : line,
+    );
 
-    return lines([
-      `* **${node.ref.label}** — ${node.title}  `,
-      `${nbspIndent(1, `📦 **Scope:** ${scopeLine ? render(scopeLine) : "general"}`)}  `,
-      nbspIndent(1, `✍️ **By:** ${authorLine ? render(authorLine) : "@unknown"}`),
-    ]);
+    return lines([`* **${node.ref.label}** — ${node.title}  `, ...childLines]);
   },
 
-  scope: (node) =>
-    node.values.length === 0
-      ? "general"
-      : node.values.map((x) => `\`${x}\``).join(" • "),
-
-  author: (node, render) => node.children.map(render).join(""),
+  subitem: (node, render) =>
+    nbspIndent(1, `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`),
 
   text: (node) => node.value,
 
