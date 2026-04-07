@@ -16,7 +16,7 @@ const withMarker = (type: Marker, txt: string) => {
 };
 
 const list = (header: string | undefined, items: (string | string[])[], marker: Marker = "plain") =>
-  lines(header, items.flat().map((item) => withMarker(marker, item)).map((value) => `${value}  `));
+  lines(...[header, ...items.flat().map((item) => withMarker(marker, item))].filter(Boolean).map((value) => `${value}  `));
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
@@ -68,24 +68,24 @@ export const markdownFormatter: ChangelogRenderer<string> = {
   header: (node, render) =>
     `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
 
-  stat: (node) => {
-    if (node.name === "bump") {
-      const bumpLabel = node.value.toUpperCase();
+  stat: ({ value, name }) => {
+    if (name === "bump") {
+      const bumpLabel = value.toUpperCase();
       const color =
         bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
       return `![BUMP](https://img.shields.io/badge/BUMP-${encodeURIComponent(bumpLabel)}-${color}?style=flat-square)`;
     }
 
-    if (node.name === "changes") {
-      return `![CHANGES](https://img.shields.io/badge/CHANGES-${encodeURIComponent(node.value)}-blue?style=flat-square)`;
+    if (name === "changes") {
+      return `![CHANGES](https://img.shields.io/badge/CHANGES-${encodeURIComponent(value)}-blue?style=flat-square)`;
     }
 
-    return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(node.value)}-orange?style=flat-square)`;
+    return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(value)}-orange?style=flat-square)`;
   },
 
-  text: (node) => node.value,
+  text: ({ value }) => value,
 
-  link: (node) => `[${node.label}](${node.url})`,
+  link: ({ label, url }) => `[${label}](${url})`,
 
   empty: () => "_No user-facing changes since the last tag._",
 };

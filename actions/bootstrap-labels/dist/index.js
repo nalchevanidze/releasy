@@ -43703,7 +43703,7 @@ var require_markdown = __commonJS({
           return txt;
       }
     };
-    var list = (header, items, marker = "plain") => lines(header, items.flat().map((item) => withMarker(marker, item)).map((value) => `${value}  `));
+    var list = (header, items, marker = "plain") => lines(...[header, ...items.flat().map((item) => withMarker(marker, item))].filter(Boolean).map((value) => `${value}  `));
     exports2.markdownFormatter = {
       doc: (node, render) => {
         const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
@@ -43739,19 +43739,19 @@ var require_markdown = __commonJS({
         return `\u{1F518} - ${render(ref)} ${title}`;
       },
       header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
-      stat: (node) => {
-        if (node.name === "bump") {
-          const bumpLabel = node.value.toUpperCase();
+      stat: ({ value, name }) => {
+        if (name === "bump") {
+          const bumpLabel = value.toUpperCase();
           const color = bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
           return `![BUMP](https://img.shields.io/badge/BUMP-${encodeURIComponent(bumpLabel)}-${color}?style=flat-square)`;
         }
-        if (node.name === "changes") {
-          return `![CHANGES](https://img.shields.io/badge/CHANGES-${encodeURIComponent(node.value)}-blue?style=flat-square)`;
+        if (name === "changes") {
+          return `![CHANGES](https://img.shields.io/badge/CHANGES-${encodeURIComponent(value)}-blue?style=flat-square)`;
         }
-        return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(node.value)}-orange?style=flat-square)`;
+        return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(value)}-orange?style=flat-square)`;
       },
-      text: (node) => node.value,
-      link: (node) => `[${node.label}](${node.url})`,
+      text: ({ value }) => value,
+      link: ({ label, url }) => `[${label}](${url})`,
       empty: () => "_No user-facing changes since the last tag._"
     };
   }
