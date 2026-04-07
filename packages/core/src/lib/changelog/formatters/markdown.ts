@@ -1,22 +1,13 @@
-import { range } from "ramda";
 import { ChangelogRenderer } from "./renderer";
 import { Marker } from "../ast";
 
-const lines = (xs: string[], size: number = 1) =>
-  xs
-    .filter(Boolean)
-    .join(
-      range(0, size)
-        .map(() => "\n")
-        .join(""),
-    );
+const lines = (...xs: (string[] | string | undefined)[]) => xs.filter(Boolean).join("\n");
 
-const indent = () => "&nbsp; &nbsp;";
 
 const withMarker = (type: Marker, txt: string) => {
   switch (type) {
     case "tree":
-      return `${indent()} └ ${txt}`;
+      return `&nbsp; └ ${txt}`;
     case "bullet":
       return `* ${txt}`;
     default:
@@ -24,8 +15,8 @@ const withMarker = (type: Marker, txt: string) => {
   }
 };
 
-const list = (before: string, items: string[], marker: Marker) =>
-  [before, ...items.map((item) => withMarker(marker, item))].map((value) => `${value}  `);
+const list = (header: string[], items: string[], marker: Marker = "plain") =>
+  lines(header, items.map((item) => withMarker(marker, item)).map((value) => `${value}  `));
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
@@ -44,14 +35,9 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
     const header = `# 🚀 ${versionText} &nbsp; • &nbsp; ${date}`;
 
-    const statsLine = (node.stats || []).map(render).join(" ");
-    const body = lines(node.children.map(render), 2);
+    const stats = node.stats ? [(node.stats || []).map(render).join(" ")] : [];
 
-    if (statsLine) {
-      return lines([header, statsLine, "---", body], 2);
-    }
-
-    return lines([header, body], 2);
+    return lines(header, stats, node.children.map(render));
   },
 
   section: (node, render) => {
@@ -62,26 +48,17 @@ export const markdownFormatter: ChangelogRenderer<string> = {
   },
 
   cluster: (node, render) => {
-    const heading = node.header ? render(node.header) : "";
-    const marker = node.marker ?? "plain";
 
-    const children = [
+    return list(node.header ? [render(node.header)] : [], [
       node.children.map(render),
       node.hiddenCount && node.hiddenCount > 0 ? `+${node.hiddenCount} more` : [],
-    ].flat();
+    ].flat(), node.marker);
 
-    const items = list(heading, children, marker);
-
-    const compact =
-      marker === "bullet" ||
-      (marker !== "tree" && node.children.every((child) => child.type === "item"));
-
-    return compact ? lines(items, 1) : lines(items);
   },
 
-  item: (node, render) => {
-    return lines(list(`**${node.refLabel}** — ${node.title}`, node.meta.map(render), "tree"));
-  },
+  item: (node, render) =>
+    list([`**${node.refLabel}** — ${node.title}`], node.meta.map(render), "tree"),
+
 
   meta: (node, render) => {
     const value = node.children.map(render).join("");

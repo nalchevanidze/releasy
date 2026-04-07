@@ -43692,20 +43692,18 @@ var require_markdown = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.markdownFormatter = void 0;
-    var ramda_1 = require_src();
-    var lines = (xs, size = 1) => xs.filter(Boolean).join((0, ramda_1.range)(0, size).map(() => "\n").join(""));
-    var indent = () => "&nbsp; &nbsp;";
+    var lines = (xs) => xs.join("\n");
     var withMarker = (type, txt) => {
       switch (type) {
         case "tree":
-          return `${indent()} \u2514 ${txt}`;
+          return `&nbsp; \u2514 ${txt}`;
         case "bullet":
           return `* ${txt}`;
         default:
           return txt;
       }
     };
-    var list = (before, items, marker) => [before, ...items.map((item) => withMarker(marker, item))].map((value) => `${value}  `);
+    var list = (header, items, marker = "plain") => lines([...header, ...items.map((item) => withMarker(marker, item))].map((value) => `${value}  `));
     exports2.markdownFormatter = {
       doc: (node, render) => {
         const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
@@ -43718,12 +43716,8 @@ var require_markdown = __commonJS({
         });
         const versionText = node.compareUrl ? render({ type: "link", label: version, url: node.compareUrl }) : version;
         const header = `# \u{1F680} ${versionText} &nbsp; \u2022 &nbsp; ${date}`;
-        const statsLine = (node.stats || []).map(render).join(" ");
-        const body = lines(node.children.map(render), 2);
-        if (statsLine) {
-          return lines([header, statsLine, "---", body], 2);
-        }
-        return lines([header, body], 2);
+        const stats = node.stats ? [(node.stats || []).map(render).join(" ")] : [];
+        return lines([header, ...stats, ...node.children.map(render)]);
       },
       section: (node, render) => {
         const heading = node.header ? render(node.header) : "";
@@ -43731,19 +43725,12 @@ var require_markdown = __commonJS({
         return lines([heading, body, heading ? "<br>" : ""]);
       },
       cluster: (node, render) => {
-        const heading = node.header ? render(node.header) : "";
-        const marker = node.marker ?? "plain";
-        const children = [
+        return list(node.header ? [render(node.header)] : [], [
           node.children.map(render),
           node.hiddenCount && node.hiddenCount > 0 ? `+${node.hiddenCount} more` : []
-        ].flat();
-        const items = list(heading, children, marker);
-        const compact = marker === "bullet" || marker !== "tree" && node.children.every((child) => child.type === "item");
-        return compact ? lines(items, 1) : lines(items);
+        ].flat(), node.marker);
       },
-      item: (node, render) => {
-        return lines(list(`**${node.refLabel}** \u2014 ${node.title}`, node.meta.map(render), "tree"));
-      },
+      item: (node, render) => list([`**${node.refLabel}** \u2014 ${node.title}`], node.meta.map(render), "tree"),
       meta: (node, render) => {
         const value = node.children.map(render).join("");
         if (node.kind === "scope")
