@@ -3,7 +3,6 @@ export type Node =
   | SectionNode
   | ClusterNode
   | PrimaryItemNode
-  | InternalItemNode
   | MetaItemNode
   | HeaderNode
   | StatNode
@@ -31,27 +30,19 @@ export type ClusterNode = {
   type: "cluster";
   header?: HeaderNode;
   childrenStyle?: "plain" | "tree" | "bullet";
-  children: Array<PrimaryItemNode | InternalItemNode>;
+  children: Array<PrimaryItemNode | MetaItemNode>;
 };
 
 export type PrimaryItemNode = {
   type: "primaryItem";
   refLabel: string;
-  refUrl?: string;
   title: string;
   children?: MetaItemNode[];
-};
-
-export type InternalItemNode = {
-  type: "internalItem";
-  tabel: LinkNode | TextNode;
-  value: string;
 };
 
 export type MetaItemNode = {
   type: "metaItem";
   icon: string;
-  label: string;
   children: Array<TextNode | LinkNode>;
 };
 

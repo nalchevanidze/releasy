@@ -3,7 +3,6 @@ import {
   DocNode,
   EmptyNode,
   HeaderNode,
-  InternalItemNode,
   LinkNode,
   MetaItemNode,
   Node,
@@ -18,7 +17,6 @@ export type ChangelogRenderer<T> = {
   section: (node: SectionNode, render: RenderNode<T>) => T;
   cluster: (node: ClusterNode, render: RenderNode<T>) => T;
   primaryItem: (node: PrimaryItemNode, render: RenderNode<T>) => T;
-  internalItem: (node: InternalItemNode, render: RenderNode<T>) => T;
   metaItem: (node: MetaItemNode, render: RenderNode<T>) => T;
   header: (node: HeaderNode, render: RenderNode<T>) => T;
   stat: (node: StatNode, render: RenderNode<T>) => T;
@@ -40,8 +38,6 @@ export const renderAst = <T>(root: DocNode, renderer: ChangelogRenderer<T>): T =
         return renderer.cluster(node, render);
       case "primaryItem":
         return renderer.primaryItem(node, render);
-      case "internalItem":
-        return renderer.internalItem(node, render);
       case "metaItem":
         return renderer.metaItem(node, render);
       case "header":

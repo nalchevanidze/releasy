@@ -3,7 +3,6 @@ import {
   ClusterNode,
   DocNode,
   HeaderNode,
-  InternalItemNode,
   LinkNode,
   MetaItemNode,
   PrimaryItemNode,
@@ -106,7 +105,6 @@ const primaryItem = (change: Change): PrimaryItemNode => {
     children.push({
       type: "metaItem",
       icon: "📦",
-      label: "Scope",
       children: [text(scope.map((x) => `\`${x}\``).join(" • "))],
     });
   }
@@ -116,7 +114,6 @@ const primaryItem = (change: Change): PrimaryItemNode => {
     children.push({
       type: "metaItem",
       icon: "✍️",
-      label: "By",
       children: author,
     });
   }
@@ -141,31 +138,47 @@ const refinementUrl = (api: Api, change: Change) => {
   return `https://github.com/${api.config.gh}`;
 };
 
-const internalItem = (api: Api, change: Change): InternalItemNode => ({
-  type: "internalItem",
-  tabel: change.sourceCommit
-    ? link(change.sourceCommit.slice(0, 7), refinementUrl(api, change))
-    : text(""),
-  value: changeTitle(change),
+const unrecognizedCommitItem = (api: Api, change: Change): MetaItemNode => ({
+  type: "metaItem",
+  icon: "",
+  children: change.sourceCommit
+    ? [
+      link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)),
+      text(` - ${changeTitle(change)}`),
+    ]
+    : [text(changeTitle(change))],
 });
 
 const resolvedItem = (
   api: Api,
   change: Change,
-): PrimaryItemNode | InternalItemNode =>
+): PrimaryItemNode | MetaItemNode =>
   change.sourceCommit && change.number <= 0
-    ? internalItem(api, change)
+    ? unrecognizedCommitItem(api, change)
     : primaryItem(change);
 
 const sectionHeader = (api: Api, sectionId: string, sectionLabel: string): HeaderNode => ({
   type: "header",
   level: 3,
-  icon: api.config.changeTypeEmojis?.[sectionId] || (sectionId === "internal" ? "🔧" : undefined),
+  icon: api.config.changeTypeEmojis?.[sectionId],
   children: [text(sectionLabel.toUpperCase())],
 });
 
+const maintenanceHeader = (): HeaderNode => ({
+  type: "header",
+  level: 3,
+  icon: "🧹",
+  children: [text("MAINTENANCE CHANGES")],
+});
+
+const unrecognizedHeader = (): HeaderNode => ({
+  type: "header",
+  level: 5,
+  children: [text("Unrecognized commits")],
+});
+
 const cluster = (
-  children: Array<PrimaryItemNode | InternalItemNode>,
+  children: Array<PrimaryItemNode | MetaItemNode>,
   header?: HeaderNode,
   childrenStyle?: "plain" | "tree" | "bullet",
 ): ClusterNode => ({
@@ -180,7 +193,7 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
 
   if (grouping === "none") {
     const items = primaryChanges.map((change) => resolvedItem(api, change));
-    const hasInternal = items.some((item) => item.type === "internalItem");
+    const hasInternal = items.some((item) => item.type === "metaItem");
 
     return [
       {
@@ -229,7 +242,7 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
   });
 };
 
-const internalSection = (api: Api, refinements: Change[]): SectionNode | undefined => {
+const unrecognizedSection = (api: Api, refinements: Change[]): SectionNode | undefined => {
   const visible = refinements.filter((change) => !isIgnoredRefinement(change));
   if (visible.length === 0) return undefined;
 
@@ -238,9 +251,15 @@ const internalSection = (api: Api, refinements: Change[]): SectionNode | undefin
 
   return {
     type: "section",
-    header: sectionHeader(api, "internal", "Internal Changes"),
+    header: maintenanceHeader(),
     overflowHiddenCount: hidden.length || undefined,
-    children: [cluster(shown.map((change) => internalItem(api, change)), undefined, "tree")],
+    children: [
+      cluster(
+        shown.map((change) => unrecognizedCommitItem(api, change)),
+        unrecognizedHeader(),
+        "tree",
+      ),
+    ],
   };
 };
 
@@ -274,13 +293,13 @@ export class ChangelogPlanner {
     }
 
     if (primaryChanges.length === 0) {
-      const internal = internalSection(this.api, refinements);
+      const unrecognized = unrecognizedSection(this.api, refinements);
       return {
         type: "doc",
         version,
         date: releaseDate || getDate(),
         compareUrl,
-        children: internal ? [internal] : [{ type: "empty" }],
+        children: unrecognized ? [unrecognized] : [{ type: "empty" }],
       };
     }
 
@@ -296,8 +315,8 @@ export class ChangelogPlanner {
 
     const children = buildPrimarySections(this.api, primaryChanges);
 
-    const internal = internalSection(this.api, refinements);
-    if (internal) children.push(internal);
+    const unrecognized = unrecognizedSection(this.api, refinements);
+    if (unrecognized) children.push(unrecognized);
 
     return {
       type: "doc",

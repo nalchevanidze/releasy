@@ -78,16 +78,12 @@ export const markdownFormatter: ChangelogRenderer<string> = {
   primaryItem: (node, render) => {
     return lines([
       `**${node.refLabel}** — ${node.title}  `,
-      ...(node.children || []).map(render).map((line) => nbspIndent(1, `└ ${line} `))
+      ...(node.children || []).map(render).map((line) => nbspIndent(1, `└ ${line}  `))
     ]);
   },
 
-  internalItem: (node, render) => {
-    return `${render(node.tabel)}: ${node.value}`;
-  },
-
   metaItem: (node, render) =>
-    `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`,
+    `${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
 
   header: (node, render) =>
     `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,

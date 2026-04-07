@@ -42958,13 +42958,10 @@ var require_markdown = __commonJS({
       primaryItem: (node, render) => {
         return lines([
           `**${node.refLabel}** \u2014 ${node.title}  `,
-          ...(node.children || []).map(render).map((line) => nbspIndent(1, `\u2514 ${line} `))
+          ...(node.children || []).map(render).map((line) => nbspIndent(1, `\u2514 ${line}  `))
         ]);
       },
-      internalItem: (node, render) => {
-        return `${render(node.tabel)}: ${node.value}`;
-      },
-      metaItem: (node, render) => `${node.icon} **${node.label}:** ${node.children.map(render).join("")}`,
+      metaItem: (node, render) => `${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
       header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
       stat: (node) => {
         if (node.name === "bump") {
@@ -43001,8 +42998,6 @@ var require_renderer = __commonJS({
             return renderer.cluster(node, render);
           case "primaryItem":
             return renderer.primaryItem(node, render);
-          case "internalItem":
-            return renderer.internalItem(node, render);
           case "metaItem":
             return renderer.metaItem(node, render);
           case "header":
@@ -43090,7 +43085,6 @@ var require_plan = __commonJS({
         children.push({
           type: "metaItem",
           icon: "\u{1F4E6}",
-          label: "Scope",
           children: [text(scope.map((x) => `\`${x}\``).join(" \u2022 "))]
         });
       }
@@ -43099,7 +43093,6 @@ var require_plan = __commonJS({
         children.push({
           type: "metaItem",
           icon: "\u270D\uFE0F",
-          label: "By",
           children: author
         });
       }
@@ -43119,17 +43112,31 @@ var require_plan = __commonJS({
       }
       return `https://github.com/${api.config.gh}`;
     };
-    var internalItem = (api, change) => ({
-      type: "internalItem",
-      tabel: change.sourceCommit ? link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)) : text(""),
-      value: changeTitle(change)
+    var unrecognizedCommitItem = (api, change) => ({
+      type: "metaItem",
+      icon: "",
+      children: change.sourceCommit ? [
+        link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)),
+        text(` - ${changeTitle(change)}`)
+      ] : [text(changeTitle(change))]
     });
-    var resolvedItem = (api, change) => change.sourceCommit && change.number <= 0 ? internalItem(api, change) : primaryItem(change);
+    var resolvedItem = (api, change) => change.sourceCommit && change.number <= 0 ? unrecognizedCommitItem(api, change) : primaryItem(change);
     var sectionHeader = (api, sectionId, sectionLabel) => ({
       type: "header",
       level: 3,
-      icon: api.config.changeTypeEmojis?.[sectionId] || (sectionId === "internal" ? "\u{1F527}" : void 0),
+      icon: api.config.changeTypeEmojis?.[sectionId],
       children: [text(sectionLabel.toUpperCase())]
+    });
+    var maintenanceHeader = () => ({
+      type: "header",
+      level: 3,
+      icon: "\u{1F9F9}",
+      children: [text("MAINTENANCE CHANGES")]
+    });
+    var unrecognizedHeader = () => ({
+      type: "header",
+      level: 5,
+      children: [text("Unrecognized commits")]
     });
     var cluster = (children, header, childrenStyle) => ({
       type: "cluster",
@@ -43141,7 +43148,7 @@ var require_plan = __commonJS({
       const grouping = api.config.changelog?.grouping ?? "none";
       if (grouping === "none") {
         const items = primaryChanges.map((change) => resolvedItem(api, change));
-        const hasInternal = items.some((item) => item.type === "internalItem");
+        const hasInternal = items.some((item) => item.type === "metaItem");
         return [
           {
             type: "section",
@@ -43174,7 +43181,7 @@ var require_plan = __commonJS({
         ];
       });
     };
-    var internalSection = (api, refinements) => {
+    var unrecognizedSection = (api, refinements) => {
       const visible = refinements.filter((change) => !isIgnoredRefinement(change));
       if (visible.length === 0)
         return void 0;
@@ -43182,9 +43189,11 @@ var require_plan = __commonJS({
       const hidden = visible.slice(maxInternalChangesToShow);
       return {
         type: "section",
-        header: sectionHeader(api, "internal", "Internal Changes"),
+        header: maintenanceHeader(),
         overflowHiddenCount: hidden.length || void 0,
-        children: [cluster(shown.map((change) => internalItem(api, change)), void 0, "tree")]
+        children: [
+          cluster(shown.map((change) => unrecognizedCommitItem(api, change)), unrecognizedHeader(), "tree")
+        ]
       };
     };
     var tagRef = (version) => version.startsWith("v") ? version : `v${version}`;
@@ -43207,13 +43216,13 @@ var require_plan = __commonJS({
           };
         }
         if (primaryChanges.length === 0) {
-          const internal2 = internalSection(this.api, refinements);
+          const unrecognized2 = unrecognizedSection(this.api, refinements);
           return {
             type: "doc",
             version,
             date: releaseDate || (0, git_1.getDate)(),
             compareUrl,
-            children: internal2 ? [internal2] : [{ type: "empty" }]
+            children: unrecognized2 ? [unrecognized2] : [{ type: "empty" }]
           };
         }
         const stats = [
@@ -43226,9 +43235,9 @@ var require_plan = __commonJS({
           }
         ];
         const children = buildPrimarySections(this.api, primaryChanges);
-        const internal = internalSection(this.api, refinements);
-        if (internal)
-          children.push(internal);
+        const unrecognized = unrecognizedSection(this.api, refinements);
+        if (unrecognized)
+          children.push(unrecognized);
         return {
           type: "doc",
           version,
