@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { loadRawConfig, normalizeConfig, normalizeConfigInputKeys } from "./load";
+import {
+  loadRawConfig,
+  normalizeConfig,
+  normalizeConfigInputKeys,
+} from "./load";
 
 describe("config normalization", () => {
   test("defaults policy fields", () => {
@@ -100,4 +104,3 @@ describe("config file loading", () => {
     );
   });
 });
-

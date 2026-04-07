@@ -29,7 +29,10 @@ export type ChangelogRenderer<T> = {
 
 export type RenderNode<T> = (node: Node) => T;
 
-export const renderAst = <T>(root: DocNode, renderer: ChangelogRenderer<T>): T => {
+export const renderAst = <T>(
+  root: DocNode,
+  renderer: ChangelogRenderer<T>,
+): T => {
   const render: RenderNode<T> = (node) => {
     switch (node.type) {
       case "doc":

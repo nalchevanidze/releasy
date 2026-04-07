@@ -19,7 +19,11 @@ import { Api, Change } from "./types";
 const maxInternalChangesToShow = 5;
 
 const text = (value: string): TextNode => ({ type: "text", value });
-const link = (label: string, url: string): LinkNode => ({ type: "link", label, url });
+const link = (label: string, url: string): LinkNode => ({
+  type: "link",
+  label,
+  url,
+});
 
 const normalizedPkgs = (pkgs: string[]) => [...new Set(pkgs)].sort();
 
@@ -30,21 +34,24 @@ const packageGroupKey = (pkgs: string[]) => {
 
 const packageHeader = (api: Api, key: string): HeaderNode => {
   if (key === "general") {
-    return { type: "header", level: 5, icon: "📦", children: [text("General")] };
+    return {
+      type: "header",
+      level: 5,
+      icon: "📦",
+      children: [text("General")],
+    };
   }
 
-  const children = key
-    .split(",")
-    .flatMap((pkg, idx) => {
-      const conf = api.config.pkgs[pkg];
-      const longName = conf?.name || pkg;
-      const url = api.module.pkg(longName);
+  const children = key.split(",").flatMap((pkg, idx) => {
+    const conf = api.config.pkgs[pkg];
+    const longName = conf?.name || pkg;
+    const url = api.module.pkg(longName);
 
-      return [
-        ...(idx > 0 ? [text(" · ")] : []),
-        url ? link(pkg, url) : text(pkg),
-      ];
-    });
+    return [
+      ...(idx > 0 ? [text(" · ")] : []),
+      url ? link(pkg, url) : text(pkg),
+    ];
+  });
 
   return { type: "header", level: 5, icon: "📦", children };
 };
@@ -82,9 +89,11 @@ const isIgnoredRefinement = (change: Change) => {
   );
 };
 
-const changeTitle = (change: Change) => change.title?.trim() || "Untitled change";
+const changeTitle = (change: Change) =>
+  change.title?.trim() || "Untitled change";
 
-const shortCommit = (change: Change) => change.sourceCommit?.slice(0, 7) || "unknown";
+const shortCommit = (change: Change) =>
+  change.sourceCommit?.slice(0, 7) || "unknown";
 
 const primaryRefLabel = (change: Change) => {
   if (change.number > 0) return `#${change.number}`;
@@ -95,7 +104,9 @@ const primaryRefLabel = (change: Change) => {
 const authorInline = (change: Change): Array<TextNode | LinkNode> => {
   const login = change.author.login?.trim();
   if (!login || login.toLowerCase() === "unknown") return [];
-  return change.author.url ? [link(`@${login}`, change.author.url)] : [text(`@${login}`)];
+  return change.author.url
+    ? [link(`@${login}`, change.author.url)]
+    : [text(`@${login}`)];
 };
 
 const item = (change: Change): ItemNode => {
@@ -147,15 +158,16 @@ const unrecognizedCommitItem = (api: Api, change: Change): CommitNode => ({
   title: changeTitle(change),
 });
 
-const resolvedItem = (
-  api: Api,
-  change: Change,
-): ItemNode | CommitNode =>
+const resolvedItem = (api: Api, change: Change): ItemNode | CommitNode =>
   change.sourceCommit && change.number <= 0
     ? unrecognizedCommitItem(api, change)
     : item(change);
 
-const sectionHeader = (api: Api, sectionId: string, sectionLabel: string): HeaderNode => ({
+const sectionHeader = (
+  api: Api,
+  sectionId: string,
+  sectionLabel: string,
+): HeaderNode => ({
   type: "header",
   level: 3,
   icon: api.config.changeTypeEmojis?.[sectionId],
@@ -166,7 +178,9 @@ const bumpForType = (api: Api, type: string): "major" | "minor" | "patch" =>
   api.config.changeTypeBumps?.[type] ??
   (type === "breaking" ? "major" : type === "feature" ? "minor" : "patch");
 
-const maintenanceSectionInfo = (api: Api): { id: string; label: string } | undefined => {
+const maintenanceSectionInfo = (
+  api: Api,
+): { id: string; label: string } | undefined => {
   if (isKey(api.config.changeTypes, "chore")) {
     return { id: "chore", label: api.config.changeTypes.chore };
   }
@@ -200,7 +214,10 @@ const cluster = (
   children,
 });
 
-const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[] => {
+const buildPrimarySections = (
+  api: Api,
+  primaryChanges: Change[],
+): SectionNode[] => {
   const grouping = api.config.changelog?.grouping ?? "none";
 
   if (grouping === "none") {
@@ -248,7 +265,13 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
       {
         type: "section",
         header: sectionHeader(api, sectionId, sectionLabel),
-        children: [cluster(typeChanges.map((change) => resolvedItem(api, change)), undefined, "bullet")],
+        children: [
+          cluster(
+            typeChanges.map((change) => resolvedItem(api, change)),
+            undefined,
+            "bullet",
+          ),
+        ],
       },
     ];
   });
@@ -275,7 +298,8 @@ const unrecognizedCluster = (
   ];
 };
 
-const tagRef = (version: string) => (version.startsWith("v") ? version : `v${version}`);
+const tagRef = (version: string) =>
+  version.startsWith("v") ? version : `v${version}`;
 
 export class ChangelogPlanner {
   constructor(private api: Api) {}
@@ -334,12 +358,18 @@ export class ChangelogPlanner {
     }
 
     const stats: StatNode[] = [
-      { type: "stat", name: "bump", value: detectBump(this.api, primaryChanges) },
+      {
+        type: "stat",
+        name: "bump",
+        value: detectBump(this.api, primaryChanges),
+      },
       { type: "stat", name: "changes", value: String(primaryChanges.length) },
       {
         type: "stat",
         name: "packages",
-        value: String(new Set(primaryChanges.flatMap((change) => change.pkgs)).size),
+        value: String(
+          new Set(primaryChanges.flatMap((change) => change.pkgs)).size,
+        ),
       },
     ];
 
@@ -363,7 +393,9 @@ export class ChangelogPlanner {
 
         if (maintenance) {
           const byType = groupBy(({ type }) => type, primaryChanges);
-          const orderedIds = Object.keys(this.api.config.changeTypes).filter((id) => isKey(byType, id));
+          const orderedIds = Object.keys(this.api.config.changeTypes).filter(
+            (id) => isKey(byType, id),
+          );
           const idx = orderedIds.indexOf(maintenance.id);
 
           if (idx >= 0 && children[idx]) {
@@ -371,7 +403,11 @@ export class ChangelogPlanner {
           } else {
             children.push({
               type: "section",
-              header: sectionHeader(this.api, maintenance.id, maintenance.label),
+              header: sectionHeader(
+                this.api,
+                maintenance.id,
+                maintenance.label,
+              ),
               children: unrecognized,
             });
           }
