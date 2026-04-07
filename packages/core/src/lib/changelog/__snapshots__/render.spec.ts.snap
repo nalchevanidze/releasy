@@ -7,7 +7,7 @@ exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no 
 
 ---
 
-&nbsp; &nbsp; &nbsp; &nbsp; └ [abcdef1](https://github.com/acme/demo/commit/abcdef1234567890) - Standalone commit  "
+&nbsp; &nbsp; └ [abcdef1](https://github.com/acme/demo/commit/abcdef1234567890) — Standalone commit"
 `;
 
 exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
@@ -18,15 +18,15 @@ exports[`RenderAPI snapshots > default header + scope grouping 1`] = `
 ---
 
 ### ✨ FEATURES
-* **#10** — Ship onboarding  
-&nbsp; &nbsp; └ 📦 \`core\` • \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#10** — Ship onboarding
+&nbsp; &nbsp; └ 📦 \`core\` • \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>
 
 ### 🐛 FIXES
-* **#11** — Fix race condition  
-&nbsp; &nbsp; └ 📦 \`core\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#11** — Fix race condition
+&nbsp; &nbsp; └ 📦 \`core\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>"
 `;
 
@@ -38,18 +38,18 @@ exports[`RenderAPI snapshots > default layout renders top-level visual summary 1
 ---
 
 ### ✨ FEATURES
-* **#57** — Ship composer  
-&nbsp; &nbsp; └ 📦 \`core\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
-* **#58** — Ship presets  
-&nbsp; &nbsp; └ 📦 \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#57** — Ship composer
+&nbsp; &nbsp; └ 📦 \`core\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
+* **#58** — Ship presets
+&nbsp; &nbsp; └ 📦 \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>
 
 ### 🐛 FIXES
-* **#59** — Fix lint script  
-&nbsp; &nbsp; └ 📦 \`cli\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#59** — Fix lint script
+&nbsp; &nbsp; └ 📦 \`cli\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>"
 `;
 
@@ -66,12 +66,12 @@ exports[`RenderAPI snapshots > grouping none renders a flat list without section
 
 ---
 
-* **#50** — Add keyboard shortcuts  
-&nbsp; &nbsp; └ 📦 \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
-* **#51** — Handle null session  
-&nbsp; &nbsp; └ 📦 \`core\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  "
+* **#50** — Add keyboard shortcuts
+&nbsp; &nbsp; └ 📦 \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
+* **#51** — Handle null session
+&nbsp; &nbsp; └ 📦 \`core\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)"
 `;
 
 exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
@@ -83,40 +83,40 @@ exports[`RenderAPI snapshots > large mixed release snapshot 1`] = `
 
 ### 💥 BREAKING
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
-* **#20** — Drop legacy auth  
-&nbsp; &nbsp; └ 📦 \`core\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#20** — Drop legacy auth
+&nbsp; &nbsp; └ 📦 \`core\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>
 
 ### ✨ FEATURES
 ##### 📦 [core](https://npmjs.com/package/@acme/core)
-* **#21** — Add cache layer  
-&nbsp; &nbsp; └ 📦 \`core\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#21** — Add cache layer
+&nbsp; &nbsp; └ 📦 \`core\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 ##### 📦 [web](https://npmjs.com/package/@acme/web)
-* **#22** — Add dashboard  
-&nbsp; &nbsp; └ 📦 \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#22** — Add dashboard
+&nbsp; &nbsp; └ 📦 \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>
 
 ### 🐛 FIXES
 ##### 📦 [web](https://npmjs.com/package/@acme/web)
-* **#23** — Fix pagination  
-&nbsp; &nbsp; └ 📦 \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#23** — Fix pagination
+&nbsp; &nbsp; └ 📦 \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 ##### 📦 General
-* **#24** — Fix typo  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#24** — Fix typo
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>
 
 ### 🧹 CHORES
 ##### 📦 [cli](https://npmjs.com/package/@acme/cli)
-* **#25** — Bump deps  
-&nbsp; &nbsp; └ 📦 \`cli\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#25** — Bump deps
+&nbsp; &nbsp; └ 📦 \`cli\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 ##### 📦 General
-* **#26** — Refactor scripts  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#26** — Refactor scripts
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>"
 `;
 
@@ -129,12 +129,12 @@ exports[`RenderAPI snapshots > package grouping normalizes multi-package keys 1`
 
 ### ✨ FEATURES
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)
-* **#30** — Ship shared auth layer  
-&nbsp; &nbsp; └ 📦 \`core\` • \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
-* **#31** — Expand auth docs  
-&nbsp; &nbsp; └ 📦 \`core\` • \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#30** — Ship shared auth layer
+&nbsp; &nbsp; └ 📦 \`core\` • \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
+* **#31** — Expand auth docs
+&nbsp; &nbsp; └ 📦 \`core\` • \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>"
 `;
 
@@ -147,12 +147,12 @@ exports[`RenderAPI snapshots > package grouping renders normalized multi-package
 
 ### 🐛 FIXES
 ##### 📦 [core](https://npmjs.com/package/@acme/core) · [web](https://npmjs.com/package/@acme/web)
-* **#52** — Align package order  
-&nbsp; &nbsp; └ 📦 \`core\` • \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
-* **#53** — Keep grouping stable  
-&nbsp; &nbsp; └ 📦 \`core\` • \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#52** — Align package order
+&nbsp; &nbsp; └ 📦 \`core\` • \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
+* **#53** — Keep grouping stable
+&nbsp; &nbsp; └ 📦 \`core\` • \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>"
 `;
 
@@ -164,15 +164,15 @@ exports[`RenderAPI snapshots > section icons come from user config changeTypeEmo
 ---
 
 ### 🚀 FEATURES
-* **#61** — Ship inline editor  
-&nbsp; &nbsp; └ 📦 \`web\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#61** — Ship inline editor
+&nbsp; &nbsp; └ 📦 \`web\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>
 
 ### 🛠️ FIXES
-* **#62** — Handle stale cache  
-&nbsp; &nbsp; └ 📦 \`core\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#62** — Handle stale cache
+&nbsp; &nbsp; └ 📦 \`core\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>"
 `;
 
@@ -184,8 +184,8 @@ exports[`RenderAPI snapshots > unknown package labels fall back to raw names wit
 ---
 
 ### ✨ FEATURES
-* **#54** — Wire analytics hook  
-&nbsp; &nbsp; └ 📦 \`sdk\`  
-&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)  
+* **#54** — Wire analytics hook
+&nbsp; &nbsp; └ 📦 \`sdk\`
+&nbsp; &nbsp; └ ✍️ [@author](https://example.com/author)
 <br>"
 `;

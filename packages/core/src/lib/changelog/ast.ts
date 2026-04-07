@@ -2,8 +2,8 @@ export type Node =
   | DocNode
   | SectionNode
   | ClusterNode
-  | PrimaryItemNode
-  | MetaItemNode
+  | ItemNode
+  | MetaNode
   | HeaderNode
   | StatNode
   | TextNode
@@ -26,22 +26,24 @@ export type SectionNode = {
   children: ClusterNode[];
 };
 
+export type ItemStyle = "plain" | "tree" | "bullet";
+
 export type ClusterNode = {
   type: "cluster";
   header?: HeaderNode;
-  itemsStyle?: "plain" | "tree" | "bullet";
-  children: Array<PrimaryItemNode | MetaItemNode>;
+  itemsStyle?: ItemStyle;
+  children: Array<ItemNode | MetaNode>;
 };
 
-export type PrimaryItemNode = {
-  type: "primaryItem";
+export type ItemNode = {
+  type: "item";
   refLabel: string;
   title: string;
-  meta?: MetaItemNode[];
+  meta?: MetaNode[];
 };
 
-export type MetaItemNode = {
-  type: "metaItem";
+export type MetaNode = {
+  type: "meta";
   kind: "commit" | "author" | "scope";
   children: Array<TextNode | LinkNode>;
 };

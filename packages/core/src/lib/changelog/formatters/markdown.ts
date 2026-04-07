@@ -1,5 +1,6 @@
 import { range } from "ramda";
 import { ChangelogRenderer } from "./renderer";
+import { ItemStyle } from "../ast";
 
 const lines = (xs: string[], size: number = 1) =>
   xs
@@ -11,10 +12,16 @@ const lines = (xs: string[], size: number = 1) =>
     );
 
 
-const nbspIndent = (level: number, txt: string = "") =>
-  `${range(0, level)
-    .map(() => "&nbsp; &nbsp; ")
-    .join("")}${txt}`;
+const itemStyle = (type: ItemStyle, txt: string) => {
+  switch (type) {
+    case "tree":
+      return `&nbsp; &nbsp; └ ${txt}`;
+    case "bullet":
+      return `* ${txt}`;
+    default:
+      return txt;
+  }
+}
 
 export const markdownFormatter: ChangelogRenderer<string> = {
   doc: (node, render) => {
@@ -48,7 +55,7 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     const body = lines(node.children.map(render));
     const overflow =
       node.overflowHiddenCount && node.overflowHiddenCount > 0
-        ? nbspIndent(2, `└ +${node.overflowHiddenCount} more`)
+        ? itemStyle("tree", `+${node.overflowHiddenCount} more`)
         : "";
 
     return lines([heading, body, overflow, heading ? "<br>" : ""]);
@@ -60,29 +67,29 @@ export const markdownFormatter: ChangelogRenderer<string> = {
 
     const styledItems =
       node.itemsStyle === "tree"
-        ? renderedItems.map((line) => `${nbspIndent(2, `└ ${line}`)}  `)
+        ? renderedItems.map((line) => itemStyle("tree", line))
         : node.itemsStyle === "bullet"
-          ? renderedItems.map((line) => `* ${line}`)
+          ? renderedItems.map((line) => itemStyle("bullet", line))
           : renderedItems;
 
     const compact =
       node.itemsStyle === "bullet" ||
       (node.itemsStyle !== "tree" &&
-        node.children.every((child) => child.type === "primaryItem"));
+        node.children.every((child) => child.type === "item"));
 
     return compact
       ? lines([heading, ...styledItems], 1)
       : lines([heading, ...styledItems]);
   },
 
-  primaryItem: (node, render) => {
+  item: (node, render) => {
     return lines([
-      `**${node.refLabel}** — ${node.title}  `,
-      ...(node.meta || []).map(render).map((line) => nbspIndent(1, `└ ${line}  `)),
+      `**${node.refLabel}** — ${node.title}`,
+      ...(node.meta || []).map(render).map((line) => itemStyle("tree", line)),
     ]);
   },
 
-  metaItem: (node, render) => {
+  meta: (node, render) => {
     const value = node.children.map(render).join("");
 
     if (node.kind === "scope") return `📦 ${value}`;

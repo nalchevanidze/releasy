@@ -389,7 +389,7 @@ describe("RenderAPI snapshots", () => {
     );
     expect(markdown).toContain("internal 0");
     expect(markdown).toContain("internal 4");
-    expect(markdown).toContain("&nbsp; &nbsp; &nbsp; &nbsp; └ +5 more");
+    expect(markdown).toContain("&nbsp; &nbsp; └ +5 more");
     expect(markdown).not.toContain("internal 9");
   });
 });

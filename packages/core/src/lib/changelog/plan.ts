@@ -4,8 +4,8 @@ import {
   DocNode,
   HeaderNode,
   LinkNode,
-  MetaItemNode,
-  PrimaryItemNode,
+  MetaNode,
+  ItemNode,
   SectionNode,
   StatNode,
   TextNode,
@@ -97,13 +97,13 @@ const authorInline = (change: Change): Array<TextNode | LinkNode> => {
   return change.author.url ? [link(`@${login}`, change.author.url)] : [text(`@${login}`)];
 };
 
-const primaryItem = (change: Change): PrimaryItemNode => {
-  const meta: MetaItemNode[] = [];
+const item = (change: Change): ItemNode => {
+  const meta: MetaNode[] = [];
 
   const scope = normalizedPkgs(change.pkgs);
   if (scope.length > 0) {
     meta.push({
-      type: "metaItem",
+      type: "meta",
       kind: "scope",
       children: [text(scope.map((x) => `\`${x}\``).join(" • "))],
     });
@@ -112,14 +112,14 @@ const primaryItem = (change: Change): PrimaryItemNode => {
   const author = authorInline(change);
   if (author.length > 0) {
     meta.push({
-      type: "metaItem",
+      type: "meta",
       kind: "author",
       children: author,
     });
   }
 
   return {
-    type: "primaryItem",
+    type: "item",
     refLabel: primaryRefLabel(change),
     title: changeTitle(change),
     meta: meta.length ? meta : undefined,
@@ -138,13 +138,13 @@ const refinementUrl = (api: Api, change: Change) => {
   return `https://github.com/${api.config.gh}`;
 };
 
-const unrecognizedCommitItem = (api: Api, change: Change): MetaItemNode => ({
-  type: "metaItem",
+const unrecognizedCommitItem = (api: Api, change: Change): MetaNode => ({
+  type: "meta",
   kind: "commit",
   children: change.sourceCommit
     ? [
       link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)),
-      text(` - ${changeTitle(change)}`),
+      text(` — ${changeTitle(change)}`),
     ]
     : [text(changeTitle(change))],
 });
@@ -152,10 +152,10 @@ const unrecognizedCommitItem = (api: Api, change: Change): MetaItemNode => ({
 const resolvedItem = (
   api: Api,
   change: Change,
-): PrimaryItemNode | MetaItemNode =>
+): ItemNode | MetaNode =>
   change.sourceCommit && change.number <= 0
     ? unrecognizedCommitItem(api, change)
-    : primaryItem(change);
+    : item(change);
 
 const sectionHeader = (api: Api, sectionId: string, sectionLabel: string): HeaderNode => ({
   type: "header",
@@ -182,14 +182,14 @@ const maintenanceSectionInfo = (api: Api): { id: string; label: string } | undef
   return undefined;
 };
 
-const unrecognizedSummary = (): PrimaryItemNode => ({
-  type: "primaryItem",
+const unrecognizedSummary = (): ItemNode => ({
+  type: "item",
   refLabel: "UNK",
   title: "commits missing Conventional Commit format or an associated PR",
 });
 
 const cluster = (
-  children: Array<PrimaryItemNode | MetaItemNode>,
+  children: Array<ItemNode | MetaNode>,
   header?: HeaderNode,
   itemsStyle?: "plain" | "tree" | "bullet",
 ): ClusterNode => ({
@@ -204,7 +204,7 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
 
   if (grouping === "none") {
     const items = primaryChanges.map((change) => resolvedItem(api, change));
-    const hasInternal = items.some((item) => item.type === "metaItem");
+    const hasInternal = items.some((item) => item.type === "meta");
 
     return [
       {

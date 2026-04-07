@@ -42922,7 +42922,16 @@ var require_markdown = __commonJS({
     exports2.markdownFormatter = void 0;
     var ramda_1 = require_src();
     var lines = (xs, size = 1) => xs.filter(Boolean).join((0, ramda_1.range)(0, size).map(() => "\n").join(""));
-    var nbspIndent = (level, txt = "") => `${(0, ramda_1.range)(0, level).map(() => "&nbsp; &nbsp; ").join("")}${txt}`;
+    var itemStyle = (type, txt) => {
+      switch (type) {
+        case "tree":
+          return `&nbsp; &nbsp; \u2514 ${txt}`;
+        case "bullet":
+          return `* ${txt}`;
+        default:
+          return txt;
+      }
+    };
     exports2.markdownFormatter = {
       doc: (node, render) => {
         const version = node.version.startsWith("v") ? node.version : `v${node.version}`;
@@ -42945,23 +42954,23 @@ var require_markdown = __commonJS({
       section: (node, render) => {
         const heading = node.header ? render(node.header) : "";
         const body = lines(node.children.map(render));
-        const overflow = node.overflowHiddenCount && node.overflowHiddenCount > 0 ? nbspIndent(2, `\u2514 +${node.overflowHiddenCount} more`) : "";
+        const overflow = node.overflowHiddenCount && node.overflowHiddenCount > 0 ? itemStyle("tree", `+${node.overflowHiddenCount} more`) : "";
         return lines([heading, body, overflow, heading ? "<br>" : ""]);
       },
       cluster: (node, render) => {
         const heading = node.header ? render(node.header) : "";
         const renderedItems = node.children.map(render);
-        const styledItems = node.itemsStyle === "tree" ? renderedItems.map((line) => `${nbspIndent(2, `\u2514 ${line}`)}  `) : node.itemsStyle === "bullet" ? renderedItems.map((line) => `* ${line}`) : renderedItems;
-        const compact = node.itemsStyle === "bullet" || node.itemsStyle !== "tree" && node.children.every((child) => child.type === "primaryItem");
+        const styledItems = node.itemsStyle === "tree" ? renderedItems.map((line) => itemStyle("tree", line)) : node.itemsStyle === "bullet" ? renderedItems.map((line) => itemStyle("bullet", line)) : renderedItems;
+        const compact = node.itemsStyle === "bullet" || node.itemsStyle !== "tree" && node.children.every((child) => child.type === "item");
         return compact ? lines([heading, ...styledItems], 1) : lines([heading, ...styledItems]);
       },
-      primaryItem: (node, render) => {
+      item: (node, render) => {
         return lines([
-          `**${node.refLabel}** \u2014 ${node.title}  `,
-          ...(node.meta || []).map(render).map((line) => nbspIndent(1, `\u2514 ${line}  `))
+          `**${node.refLabel}** \u2014 ${node.title}`,
+          ...(node.meta || []).map(render).map((line) => itemStyle("tree", line))
         ]);
       },
-      metaItem: (node, render) => {
+      meta: (node, render) => {
         const value = node.children.map(render).join("");
         if (node.kind === "scope")
           return `\u{1F4E6} ${value}`;
@@ -43003,10 +43012,10 @@ var require_renderer = __commonJS({
             return renderer.section(node, render);
           case "cluster":
             return renderer.cluster(node, render);
-          case "primaryItem":
-            return renderer.primaryItem(node, render);
-          case "metaItem":
-            return renderer.metaItem(node, render);
+          case "item":
+            return renderer.item(node, render);
+          case "meta":
+            return renderer.meta(node, render);
           case "header":
             return renderer.header(node, render);
           case "stat":
@@ -43085,12 +43094,12 @@ var require_plan = __commonJS({
         return [];
       return change.author.url ? [link(`@${login}`, change.author.url)] : [text(`@${login}`)];
     };
-    var primaryItem = (change) => {
+    var item = (change) => {
       const meta = [];
       const scope = normalizedPkgs(change.pkgs);
       if (scope.length > 0) {
         meta.push({
-          type: "metaItem",
+          type: "meta",
           kind: "scope",
           children: [text(scope.map((x) => `\`${x}\``).join(" \u2022 "))]
         });
@@ -43098,13 +43107,13 @@ var require_plan = __commonJS({
       const author = authorInline(change);
       if (author.length > 0) {
         meta.push({
-          type: "metaItem",
+          type: "meta",
           kind: "author",
           children: author
         });
       }
       return {
-        type: "primaryItem",
+        type: "item",
         refLabel: primaryRefLabel(change),
         title: changeTitle(change),
         meta: meta.length ? meta : void 0
@@ -43120,14 +43129,14 @@ var require_plan = __commonJS({
       return `https://github.com/${api.config.gh}`;
     };
     var unrecognizedCommitItem = (api, change) => ({
-      type: "metaItem",
+      type: "meta",
       kind: "commit",
       children: change.sourceCommit ? [
         link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)),
-        text(` - ${changeTitle(change)}`)
+        text(` \u2014 ${changeTitle(change)}`)
       ] : [text(changeTitle(change))]
     });
-    var resolvedItem = (api, change) => change.sourceCommit && change.number <= 0 ? unrecognizedCommitItem(api, change) : primaryItem(change);
+    var resolvedItem = (api, change) => change.sourceCommit && change.number <= 0 ? unrecognizedCommitItem(api, change) : item(change);
     var sectionHeader = (api, sectionId, sectionLabel) => ({
       type: "header",
       level: 3,
@@ -43147,7 +43156,7 @@ var require_plan = __commonJS({
       return void 0;
     };
     var unrecognizedSummary = () => ({
-      type: "primaryItem",
+      type: "item",
       refLabel: "UNK",
       title: "commits missing Conventional Commit format or an associated PR"
     });
@@ -43161,7 +43170,7 @@ var require_plan = __commonJS({
       const grouping = api.config.changelog?.grouping ?? "none";
       if (grouping === "none") {
         const items = primaryChanges.map((change) => resolvedItem(api, change));
-        const hasInternal = items.some((item) => item.type === "metaItem");
+        const hasInternal = items.some((item2) => item2.type === "meta");
         return [
           {
             type: "section",
