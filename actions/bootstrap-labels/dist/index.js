@@ -43692,7 +43692,7 @@ var require_markdown = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.markdownFormatter = void 0;
-    var lines = (...xs) => xs.filter(Boolean).join("\n");
+    var lines = (...xs) => xs.flat().filter(Boolean).join("\n");
     var withMarker = (type, txt) => {
       switch (type) {
         case "tree":

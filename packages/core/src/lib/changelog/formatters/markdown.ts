@@ -1,7 +1,7 @@
 import { ChangelogRenderer } from "./renderer";
 import { Marker } from "../ast";
 
-const lines = (...xs: (string[] | string | undefined)[]) => xs.filter(Boolean).join("\n");
+const lines = (...xs: (string[] | string | undefined)[]) => xs.flat().filter(Boolean).join("\n");
 
 
 const withMarker = (type: Marker, txt: string) => {

@@ -15,7 +15,8 @@
     "lint": "eslint . --max-warnings 0",
     "security:check": "node scripts/check-workflow-permissions.mjs",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "render": "pnpm build && pnpm relasy changelog --all"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
