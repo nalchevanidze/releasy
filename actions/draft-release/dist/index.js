@@ -42951,17 +42951,24 @@ var require_markdown = __commonJS({
       cluster: (node, render) => {
         const heading = node.header ? render(node.header) : "";
         const renderedItems = node.children.map(render);
-        const styledItems = node.childrenStyle === "tree" ? renderedItems.map((line) => `${nbspIndent(2, `\u2514 ${line}`)}  `) : node.childrenStyle === "bullet" ? renderedItems.map((line) => `* ${line}`) : renderedItems;
-        const compact = node.childrenStyle === "bullet" || node.childrenStyle !== "tree" && node.children.every((child) => child.type === "primaryItem");
+        const styledItems = node.itemsStyle === "tree" ? renderedItems.map((line) => `${nbspIndent(2, `\u2514 ${line}`)}  `) : node.itemsStyle === "bullet" ? renderedItems.map((line) => `* ${line}`) : renderedItems;
+        const compact = node.itemsStyle === "bullet" || node.itemsStyle !== "tree" && node.children.every((child) => child.type === "primaryItem");
         return compact ? lines([heading, ...styledItems], 1) : lines([heading, ...styledItems]);
       },
       primaryItem: (node, render) => {
         return lines([
           `**${node.refLabel}** \u2014 ${node.title}  `,
-          ...(node.children || []).map(render).map((line) => nbspIndent(1, `\u2514 ${line}  `))
+          ...(node.meta || []).map(render).map((line) => nbspIndent(1, `\u2514 ${line}  `))
         ]);
       },
-      metaItem: (node, render) => `${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
+      metaItem: (node, render) => {
+        const value = node.children.map(render).join("");
+        if (node.kind === "scope")
+          return `\u{1F4E6} ${value}`;
+        if (node.kind === "author")
+          return `\u270D\uFE0F ${value}`;
+        return value;
+      },
       header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
       stat: (node) => {
         if (node.name === "bump") {
@@ -43079,20 +43086,20 @@ var require_plan = __commonJS({
       return change.author.url ? [link(`@${login}`, change.author.url)] : [text(`@${login}`)];
     };
     var primaryItem = (change) => {
-      const children = [];
+      const meta = [];
       const scope = normalizedPkgs(change.pkgs);
       if (scope.length > 0) {
-        children.push({
+        meta.push({
           type: "metaItem",
-          icon: "\u{1F4E6}",
+          kind: "scope",
           children: [text(scope.map((x) => `\`${x}\``).join(" \u2022 "))]
         });
       }
       const author = authorInline(change);
       if (author.length > 0) {
-        children.push({
+        meta.push({
           type: "metaItem",
-          icon: "\u270D\uFE0F",
+          kind: "author",
           children: author
         });
       }
@@ -43100,7 +43107,7 @@ var require_plan = __commonJS({
         type: "primaryItem",
         refLabel: primaryRefLabel(change),
         title: changeTitle(change),
-        children: children.length ? children : void 0
+        meta: meta.length ? meta : void 0
       };
     };
     var refinementUrl = (api, change) => {
@@ -43114,7 +43121,7 @@ var require_plan = __commonJS({
     };
     var unrecognizedCommitItem = (api, change) => ({
       type: "metaItem",
-      icon: "",
+      kind: "commit",
       children: change.sourceCommit ? [
         link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)),
         text(` - ${changeTitle(change)}`)
@@ -43127,21 +43134,27 @@ var require_plan = __commonJS({
       icon: api.config.changeTypeEmojis?.[sectionId],
       children: [text(sectionLabel.toUpperCase())]
     });
-    var maintenanceHeader = () => ({
-      type: "header",
-      level: 3,
-      icon: "\u{1F9F9}",
-      children: [text("MAINTENANCE CHANGES")]
+    var bumpForType = (api, type) => api.config.changeTypeBumps?.[type] ?? (type === "breaking" ? "major" : type === "feature" ? "minor" : "patch");
+    var maintenanceSectionInfo = (api) => {
+      if ((0, utils_1.isKey)(api.config.changeTypes, "chore")) {
+        return { id: "chore", label: api.config.changeTypes.chore };
+      }
+      for (const [id, label] of Object.entries(api.config.changeTypes)) {
+        if (bumpForType(api, id) === "patch") {
+          return { id, label };
+        }
+      }
+      return void 0;
+    };
+    var unrecognizedSummary = () => ({
+      type: "primaryItem",
+      refLabel: "UNK",
+      title: "commits missing Conventional Commit format or an associated PR"
     });
-    var unrecognizedHeader = () => ({
-      type: "header",
-      level: 5,
-      children: [text("Unrecognized commits")]
-    });
-    var cluster = (children, header, childrenStyle) => ({
+    var cluster = (children, header, itemsStyle) => ({
       type: "cluster",
       header,
-      childrenStyle,
+      itemsStyle,
       children
     });
     var buildPrimarySections = (api, primaryChanges) => {
@@ -43181,19 +43194,18 @@ var require_plan = __commonJS({
         ];
       });
     };
-    var unrecognizedSection = (api, refinements) => {
+    var unrecognizedCluster = (api, refinements) => {
       const visible = refinements.filter((change) => !isIgnoredRefinement(change));
       if (visible.length === 0)
         return void 0;
       const shown = visible.slice(0, maxInternalChangesToShow);
       const hidden = visible.slice(maxInternalChangesToShow);
       return {
-        type: "section",
-        header: maintenanceHeader(),
-        overflowHiddenCount: hidden.length || void 0,
-        children: [
-          cluster(shown.map((change) => unrecognizedCommitItem(api, change)), unrecognizedHeader(), "tree")
-        ]
+        nodes: [
+          cluster([unrecognizedSummary()], void 0, "bullet"),
+          cluster(shown.map((change) => unrecognizedCommitItem(api, change)), void 0, "tree")
+        ],
+        overflowHiddenCount: hidden.length || void 0
       };
     };
     var tagRef = (version) => version.startsWith("v") ? version : `v${version}`;
@@ -43216,13 +43228,30 @@ var require_plan = __commonJS({
           };
         }
         if (primaryChanges.length === 0) {
-          const unrecognized2 = unrecognizedSection(this.api, refinements);
+          const unrecognized2 = unrecognizedCluster(this.api, refinements);
+          const maintenance = maintenanceSectionInfo(this.api);
+          if (!unrecognized2 || !maintenance) {
+            return {
+              type: "doc",
+              version,
+              date: releaseDate || (0, git_1.getDate)(),
+              compareUrl,
+              children: [{ type: "empty" }]
+            };
+          }
           return {
             type: "doc",
             version,
             date: releaseDate || (0, git_1.getDate)(),
             compareUrl,
-            children: unrecognized2 ? [unrecognized2] : [{ type: "empty" }]
+            children: [
+              {
+                type: "section",
+                header: sectionHeader(this.api, maintenance.id, maintenance.label),
+                overflowHiddenCount: unrecognized2.overflowHiddenCount,
+                children: unrecognized2.nodes
+              }
+            ]
           };
         }
         const stats = [
@@ -43235,9 +43264,40 @@ var require_plan = __commonJS({
           }
         ];
         const children = buildPrimarySections(this.api, primaryChanges);
-        const unrecognized = unrecognizedSection(this.api, refinements);
-        if (unrecognized)
-          children.push(unrecognized);
+        const unrecognized = unrecognizedCluster(this.api, refinements);
+        if (unrecognized) {
+          const grouping = this.api.config.changelog?.grouping ?? "none";
+          if (grouping === "none") {
+            if (children.length === 0) {
+              children.push({
+                type: "section",
+                children: unrecognized.nodes,
+                overflowHiddenCount: unrecognized.overflowHiddenCount
+              });
+            } else {
+              children[0].children.push(...unrecognized.nodes);
+              children[0].overflowHiddenCount = (children[0].overflowHiddenCount || 0) + (unrecognized.overflowHiddenCount || 0) || void 0;
+            }
+          } else {
+            const maintenance = maintenanceSectionInfo(this.api);
+            if (maintenance) {
+              const byType = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
+              const orderedIds = Object.keys(this.api.config.changeTypes).filter((id) => (0, utils_1.isKey)(byType, id));
+              const idx = orderedIds.indexOf(maintenance.id);
+              if (idx >= 0 && children[idx]) {
+                children[idx].children.push(...unrecognized.nodes);
+                children[idx].overflowHiddenCount = (children[idx].overflowHiddenCount || 0) + (unrecognized.overflowHiddenCount || 0) || void 0;
+              } else {
+                children.push({
+                  type: "section",
+                  header: sectionHeader(this.api, maintenance.id, maintenance.label),
+                  overflowHiddenCount: unrecognized.overflowHiddenCount,
+                  children: unrecognized.nodes
+                });
+              }
+            }
+          }
+        }
         return {
           type: "doc",
           version,

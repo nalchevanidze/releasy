@@ -59,15 +59,15 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     const renderedItems = node.children.map(render);
 
     const styledItems =
-      node.childrenStyle === "tree"
+      node.itemsStyle === "tree"
         ? renderedItems.map((line) => `${nbspIndent(2, `└ ${line}`)}  `)
-        : node.childrenStyle === "bullet"
+        : node.itemsStyle === "bullet"
           ? renderedItems.map((line) => `* ${line}`)
           : renderedItems;
 
     const compact =
-      node.childrenStyle === "bullet" ||
-      (node.childrenStyle !== "tree" &&
+      node.itemsStyle === "bullet" ||
+      (node.itemsStyle !== "tree" &&
         node.children.every((child) => child.type === "primaryItem"));
 
     return compact
@@ -78,12 +78,17 @@ export const markdownFormatter: ChangelogRenderer<string> = {
   primaryItem: (node, render) => {
     return lines([
       `**${node.refLabel}** — ${node.title}  `,
-      ...(node.children || []).map(render).map((line) => nbspIndent(1, `└ ${line}  `))
+      ...(node.meta || []).map(render).map((line) => nbspIndent(1, `└ ${line}  `)),
     ]);
   },
 
-  metaItem: (node, render) =>
-    `${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
+  metaItem: (node, render) => {
+    const value = node.children.map(render).join("");
+
+    if (node.kind === "scope") return `📦 ${value}`;
+    if (node.kind === "author") return `✍️ ${value}`;
+    return value;
+  },
 
   header: (node, render) =>
     `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,

@@ -326,8 +326,10 @@ describe("RenderAPI snapshots", () => {
 
     expect(markdown).not.toContain("Publish Release 0.2.1");
     expect(markdown).not.toContain("Publish Release v0.2.2");
-    expect(markdown).toContain("### 🧹 MAINTENANCE CHANGES");
-    expect(markdown).toContain("##### Unrecognized commits");
+    expect(markdown).toContain("### 🧹 CHORES");
+    expect(markdown).toContain(
+      "* **UNK** — commits missing Conventional Commit format or an associated PR",
+    );
     expect(markdown).toContain(
       "[1234567](https://github.com/acme/demo/commit/1234567890abcdef)",
     );
@@ -381,8 +383,10 @@ describe("RenderAPI snapshots", () => {
       refinements,
     );
 
-    expect(markdown).toContain("### 🧹 MAINTENANCE CHANGES");
-    expect(markdown).toContain("##### Unrecognized commits");
+    expect(markdown).toContain("### 🧹 CHORES");
+    expect(markdown).toContain(
+      "* **UNK** — commits missing Conventional Commit format or an associated PR",
+    );
     expect(markdown).toContain("internal 0");
     expect(markdown).toContain("internal 4");
     expect(markdown).toContain("&nbsp; &nbsp; &nbsp; &nbsp; └ +5 more");

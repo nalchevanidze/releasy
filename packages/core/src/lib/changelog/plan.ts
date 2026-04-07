@@ -98,22 +98,22 @@ const authorInline = (change: Change): Array<TextNode | LinkNode> => {
 };
 
 const primaryItem = (change: Change): PrimaryItemNode => {
-  const children: MetaItemNode[] = [];
+  const meta: MetaItemNode[] = [];
 
   const scope = normalizedPkgs(change.pkgs);
   if (scope.length > 0) {
-    children.push({
+    meta.push({
       type: "metaItem",
-      icon: "📦",
+      kind: "scope",
       children: [text(scope.map((x) => `\`${x}\``).join(" • "))],
     });
   }
 
   const author = authorInline(change);
   if (author.length > 0) {
-    children.push({
+    meta.push({
       type: "metaItem",
-      icon: "✍️",
+      kind: "author",
       children: author,
     });
   }
@@ -122,7 +122,7 @@ const primaryItem = (change: Change): PrimaryItemNode => {
     type: "primaryItem",
     refLabel: primaryRefLabel(change),
     title: changeTitle(change),
-    children: children.length ? children : undefined,
+    meta: meta.length ? meta : undefined,
   };
 };
 
@@ -140,7 +140,7 @@ const refinementUrl = (api: Api, change: Change) => {
 
 const unrecognizedCommitItem = (api: Api, change: Change): MetaItemNode => ({
   type: "metaItem",
-  icon: "",
+  kind: "commit",
   children: change.sourceCommit
     ? [
       link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)),
@@ -164,27 +164,38 @@ const sectionHeader = (api: Api, sectionId: string, sectionLabel: string): Heade
   children: [text(sectionLabel.toUpperCase())],
 });
 
-const maintenanceHeader = (): HeaderNode => ({
-  type: "header",
-  level: 3,
-  icon: "🧹",
-  children: [text("MAINTENANCE CHANGES")],
-});
+const bumpForType = (api: Api, type: string): "major" | "minor" | "patch" =>
+  api.config.changeTypeBumps?.[type] ??
+  (type === "breaking" ? "major" : type === "feature" ? "minor" : "patch");
 
-const unrecognizedHeader = (): HeaderNode => ({
-  type: "header",
-  level: 5,
-  children: [text("Unrecognized commits")],
+const maintenanceSectionInfo = (api: Api): { id: string; label: string } | undefined => {
+  if (isKey(api.config.changeTypes, "chore")) {
+    return { id: "chore", label: api.config.changeTypes.chore };
+  }
+
+  for (const [id, label] of Object.entries(api.config.changeTypes)) {
+    if (bumpForType(api, id) === "patch") {
+      return { id, label };
+    }
+  }
+
+  return undefined;
+};
+
+const unrecognizedSummary = (): PrimaryItemNode => ({
+  type: "primaryItem",
+  refLabel: "UNK",
+  title: "commits missing Conventional Commit format or an associated PR",
 });
 
 const cluster = (
   children: Array<PrimaryItemNode | MetaItemNode>,
   header?: HeaderNode,
-  childrenStyle?: "plain" | "tree" | "bullet",
+  itemsStyle?: "plain" | "tree" | "bullet",
 ): ClusterNode => ({
   type: "cluster",
   header,
-  childrenStyle,
+  itemsStyle,
   children,
 });
 
@@ -242,7 +253,10 @@ const buildPrimarySections = (api: Api, primaryChanges: Change[]): SectionNode[]
   });
 };
 
-const unrecognizedSection = (api: Api, refinements: Change[]): SectionNode | undefined => {
+const unrecognizedCluster = (
+  api: Api,
+  refinements: Change[],
+): { nodes: ClusterNode[]; overflowHiddenCount?: number } | undefined => {
   const visible = refinements.filter((change) => !isIgnoredRefinement(change));
   if (visible.length === 0) return undefined;
 
@@ -250,16 +264,11 @@ const unrecognizedSection = (api: Api, refinements: Change[]): SectionNode | und
   const hidden = visible.slice(maxInternalChangesToShow);
 
   return {
-    type: "section",
-    header: maintenanceHeader(),
-    overflowHiddenCount: hidden.length || undefined,
-    children: [
-      cluster(
-        shown.map((change) => unrecognizedCommitItem(api, change)),
-        unrecognizedHeader(),
-        "tree",
-      ),
+    nodes: [
+      cluster([unrecognizedSummary()], undefined, "bullet"),
+      cluster(shown.map((change) => unrecognizedCommitItem(api, change)), undefined, "tree"),
     ],
+    overflowHiddenCount: hidden.length || undefined,
   };
 };
 
@@ -293,13 +302,32 @@ export class ChangelogPlanner {
     }
 
     if (primaryChanges.length === 0) {
-      const unrecognized = unrecognizedSection(this.api, refinements);
+      const unrecognized = unrecognizedCluster(this.api, refinements);
+      const maintenance = maintenanceSectionInfo(this.api);
+
+      if (!unrecognized || !maintenance) {
+        return {
+          type: "doc",
+          version,
+          date: releaseDate || getDate(),
+          compareUrl,
+          children: [{ type: "empty" }],
+        };
+      }
+
       return {
         type: "doc",
         version,
         date: releaseDate || getDate(),
         compareUrl,
-        children: unrecognized ? [unrecognized] : [{ type: "empty" }],
+        children: [
+          {
+            type: "section",
+            header: sectionHeader(this.api, maintenance.id, maintenance.label),
+            overflowHiddenCount: unrecognized.overflowHiddenCount,
+            children: unrecognized.nodes,
+          },
+        ],
       };
     }
 
@@ -315,8 +343,45 @@ export class ChangelogPlanner {
 
     const children = buildPrimarySections(this.api, primaryChanges);
 
-    const unrecognized = unrecognizedSection(this.api, refinements);
-    if (unrecognized) children.push(unrecognized);
+    const unrecognized = unrecognizedCluster(this.api, refinements);
+    if (unrecognized) {
+      const grouping = this.api.config.changelog?.grouping ?? "none";
+
+      if (grouping === "none") {
+        if (children.length === 0) {
+          children.push({
+            type: "section",
+            children: unrecognized.nodes,
+            overflowHiddenCount: unrecognized.overflowHiddenCount,
+          });
+        } else {
+          children[0].children.push(...unrecognized.nodes);
+          children[0].overflowHiddenCount =
+            (children[0].overflowHiddenCount || 0) + (unrecognized.overflowHiddenCount || 0) || undefined;
+        }
+      } else {
+        const maintenance = maintenanceSectionInfo(this.api);
+
+        if (maintenance) {
+          const byType = groupBy(({ type }) => type, primaryChanges);
+          const orderedIds = Object.keys(this.api.config.changeTypes).filter((id) => isKey(byType, id));
+          const idx = orderedIds.indexOf(maintenance.id);
+
+          if (idx >= 0 && children[idx]) {
+            children[idx].children.push(...unrecognized.nodes);
+            children[idx].overflowHiddenCount =
+              (children[idx].overflowHiddenCount || 0) + (unrecognized.overflowHiddenCount || 0) || undefined;
+          } else {
+            children.push({
+              type: "section",
+              header: sectionHeader(this.api, maintenance.id, maintenance.label),
+              overflowHiddenCount: unrecognized.overflowHiddenCount,
+              children: unrecognized.nodes,
+            });
+          }
+        }
+      }
+    }
 
     return {
       type: "doc",

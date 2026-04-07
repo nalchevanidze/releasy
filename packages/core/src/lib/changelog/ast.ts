@@ -29,7 +29,7 @@ export type SectionNode = {
 export type ClusterNode = {
   type: "cluster";
   header?: HeaderNode;
-  childrenStyle?: "plain" | "tree" | "bullet";
+  itemsStyle?: "plain" | "tree" | "bullet";
   children: Array<PrimaryItemNode | MetaItemNode>;
 };
 
@@ -37,12 +37,12 @@ export type PrimaryItemNode = {
   type: "primaryItem";
   refLabel: string;
   title: string;
-  children?: MetaItemNode[];
+  meta?: MetaItemNode[];
 };
 
 export type MetaItemNode = {
   type: "metaItem";
-  icon: string;
+  kind: "commit" | "author" | "scope";
   children: Array<TextNode | LinkNode>;
 };
 
