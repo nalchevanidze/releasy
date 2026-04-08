@@ -1,99 +1,27 @@
 import { groupBy } from "ramda";
 import {
-  ClusterNode,
   CommitNode,
-  DocNode,
+  ChangelogDocumentNode,
+  ReleaseNode,
   HeaderNode,
+  TitleNode,
+  ChangeNode,
   LinkNode,
-  MetaNode,
-  ItemNode,
-  SectionNode,
-  StatNode,
+  ChangeTagNode,
   TextNode,
 } from "./ast";
-import { getDate } from "../git";
-import { isKey } from "../utils";
 import { Version } from "../version";
 import { Api, Change } from "./types";
 
-const maxInternalChangesToShow = 5;
-
-const text = (value: string): TextNode => ({ type: "text", value });
-const link = (label: string, url: string): LinkNode => ({
-  type: "link",
-  label,
-  url,
-});
+export type Bump = "major" | "minor" | "patch";
 
 const normalizedPkgs = (pkgs: string[]) => [...new Set(pkgs)].sort();
 
-const packageGroupKey = (pkgs: string[]) => {
-  const normalized = normalizedPkgs(pkgs);
-  return normalized.length ? normalized.join(",") : "general";
-};
-
-const packageHeader = (api: Api, key: string): HeaderNode => {
-  if (key === "general") {
-    return {
-      type: "header",
-      level: 5,
-      icon: "📦",
-      children: [text("General")],
-    };
-  }
-
-  const children = key.split(",").flatMap((pkg, idx) => {
-    const conf = api.config.pkgs[pkg];
-    const longName = conf?.name || pkg;
-    const url = api.module.pkg(longName);
-
-    return [
-      ...(idx > 0 ? [text(" · ")] : []),
-      url ? link(pkg, url) : text(pkg),
-    ];
-  });
-
-  return { type: "header", level: 5, icon: "📦", children };
-};
-
-const detectBump = (
-  api: Api,
-  changes: Change[],
-): "major" | "minor" | "patch" => {
-  const rank = { patch: 0, minor: 1, major: 2 } as const;
-
-  return changes.reduce<"major" | "minor" | "patch">((current, change) => {
-    const bump =
-      api.config.changeTypeBumps?.[change.type] ??
-      (change.type === "breaking"
-        ? "major"
-        : change.type === "feature"
-          ? "minor"
-          : "patch");
-
-    return rank[bump] > rank[current] ? bump : current;
-  }, "patch");
-};
-
-const isReleasePrTitle = (title: string) =>
-  /^publish release\s+v?\d+\.\d+\.\d+(?:[-+][\w.-]+)?\s*$/i.test(title);
-
-const isIgnoredRefinement = (change: Change) => {
-  const title = change.title?.trim() || "";
-  const body = change.body?.trim() || "";
-
-  return (
-    change.number > 0 &&
-    !change.sourceCommit &&
-    (body.includes("<!-- relasy:release-pr -->") || isReleasePrTitle(title))
-  );
-};
-
-const changeTitle = (change: Change) =>
-  change.title?.trim() || "Untitled change";
+const changeTitle = (api: Api, change: Change) =>
+  change.title?.trim() || api.config.changelog.untitledChangeMessage;
 
 const shortCommit = (change: Change) =>
-  change.sourceCommit?.slice(0, 7) || "unknown";
+  change.sourceCommit?.slice(0, 7) ?? "unknown";
 
 const primaryRefLabel = (change: Change) => {
   if (change.number > 0) return `#${change.number}`;
@@ -104,41 +32,13 @@ const primaryRefLabel = (change: Change) => {
 const authorInline = (change: Change): Array<TextNode | LinkNode> => {
   const login = change.author.login?.trim();
   if (!login || login.toLowerCase() === "unknown") return [];
+
   return change.author.url
-    ? [link(`@${login}`, change.author.url)]
-    : [text(`@${login}`)];
+    ? [{ type: "link", label: `@${login}`, url: change.author.url }]
+    : [{ type: "text", value: `@${login}`, style: "plain" }];
 };
 
-const item = (change: Change): ItemNode => {
-  const meta: MetaNode[] = [];
-
-  const scope = normalizedPkgs(change.pkgs);
-  if (scope.length > 0) {
-    meta.push({
-      type: "meta",
-      kind: "scope",
-      children: [text(scope.map((x) => `\`${x}\``).join(" • "))],
-    });
-  }
-
-  const author = authorInline(change);
-  if (author.length > 0) {
-    meta.push({
-      type: "meta",
-      kind: "author",
-      children: author,
-    });
-  }
-
-  return {
-    type: "item",
-    refLabel: primaryRefLabel(change),
-    title: changeTitle(change),
-    meta: meta.length ? meta : [],
-  };
-};
-
-const refinementUrl = (api: Api, change: Change) => {
+const changeUrl = (api: Api, change: Change) => {
   if (change.sourceCommit) {
     return `https://github.com/${api.config.gh}/commit/${change.sourceCommit}`;
   }
@@ -150,18 +50,110 @@ const refinementUrl = (api: Api, change: Change) => {
   return `https://github.com/${api.config.gh}`;
 };
 
-const unrecognizedCommitItem = (api: Api, change: Change): CommitNode => ({
-  type: "commit",
-  ref: change.sourceCommit
-    ? link(change.sourceCommit.slice(0, 7), refinementUrl(api, change))
-    : undefined,
-  title: changeTitle(change),
+const itemHeader = (refLabel: string, title: string): TitleNode => ({
+  type: "title",
+  main: { type: "text", value: refLabel, style: "strong" },
+  rest: [{ type: "text", value: title, style: "plain" }],
 });
 
-const resolvedItem = (api: Api, change: Change): ItemNode | CommitNode =>
-  change.sourceCommit && change.number <= 0
-    ? unrecognizedCommitItem(api, change)
-    : item(change);
+const scopeTag = (pkgs: string[]): ChangeTagNode | undefined => {
+  const scope = normalizedPkgs(pkgs);
+  if (scope.length === 0) return undefined;
+
+  return {
+    type: "tag",
+    kind: "scope",
+    children: scope.map((pkg) => ({
+      type: "text",
+      value: pkg,
+      style: "literal",
+    })),
+  };
+};
+
+const authorTag = (
+  authors: Array<TextNode | LinkNode>,
+): ChangeTagNode | undefined => {
+  if (authors.length === 0) return undefined;
+
+  return {
+    type: "tag",
+    kind: "author",
+    children: authors,
+  };
+};
+
+const metadataTags = (change: Change): ChangeTagNode[] => {
+  const tags: ChangeTagNode[] = [];
+
+  const scope = scopeTag(change.pkgs);
+  if (scope) tags.push(scope);
+
+  const author = authorTag(authorInline(change));
+  if (author) tags.push(author);
+
+  return tags;
+};
+
+const item = (api: Api, change: Change): ChangeNode => ({
+  type: "change",
+  level: 1,
+  header: itemHeader(primaryRefLabel(change), changeTitle(api, change)),
+  children: metadataTags(change),
+});
+
+const commitItem = (api: Api, change: Change): CommitNode => ({
+  type: "commit",
+  ref: change.sourceCommit
+    ? {
+        type: "link",
+        label: change.sourceCommit.slice(0, 7),
+        url: changeUrl(api, change),
+      }
+    : undefined,
+  title: changeTitle(api, change),
+});
+
+const isSyntheticCommit = (change: Change) =>
+  Boolean(change.sourceCommit) && change.number <= 0;
+
+const aggregatedAuthors = (commits: Change[]): Array<TextNode | LinkNode> => {
+  const unique = new Map<string, TextNode | LinkNode>();
+
+  commits
+    .flatMap((change) => authorInline(change))
+    .forEach((author) => {
+      const key =
+        author.type === "link"
+          ? `link:${author.label}:${author.url}`
+          : `text:${author.value}`;
+
+      unique.set(key, author);
+    });
+
+  return [...unique.values()];
+};
+
+const unknownItem = (api: Api, commits: Change[]): ChangeNode => {
+  const tags: ChangeTagNode[] = [];
+
+  const scope = scopeTag(commits.flatMap((change) => change.pkgs));
+  if (scope) tags.push(scope);
+
+  const authors = authorTag(aggregatedAuthors(commits));
+  if (authors) tags.push(authors);
+
+  return {
+    type: "change",
+    level: 1,
+    header: itemHeader(
+      "Unknown",
+      "Unrecognized commitlint items (no associated PR)",
+    ),
+    children: tags,
+    commits: commits.map((change) => commitItem(api, change)),
+  };
+};
 
 const sectionHeader = (
   api: Api,
@@ -169,259 +161,127 @@ const sectionHeader = (
   sectionLabel: string,
 ): HeaderNode => ({
   type: "header",
-  level: 3,
   icon: api.config.changeTypeEmojis?.[sectionId],
-  children: [text(sectionLabel.toUpperCase())],
+  children: [{ type: "text", value: sectionLabel, style: "plain" }],
 });
 
-const bumpForType = (api: Api, type: string): "major" | "minor" | "patch" =>
-  api.config.changeTypeBumps?.[type] ??
-  (type === "breaking" ? "major" : type === "feature" ? "minor" : "patch");
-
-const maintenanceSectionInfo = (
-  api: Api,
-): { id: string; label: string } | undefined => {
-  if (isKey(api.config.changeTypes, "chore")) {
-    return { id: "chore", label: api.config.changeTypes.chore };
-  }
-
-  for (const [id, label] of Object.entries(api.config.changeTypes)) {
-    if (bumpForType(api, id) === "patch") {
-      return { id, label };
-    }
-  }
-
-  return undefined;
+export type Release = {
+  tag: Version;
+  previousVersion?: Version;
+  releaseDate: Date;
+  changes: Change[];
 };
-
-const unrecognizedSummary = (): ItemNode => ({
-  type: "item",
-  refLabel: "UNK",
-  title: "commits missing Conventional Commit format or an associated PR",
-  meta: [],
-});
-
-const cluster = (
-  children: Array<ItemNode | MetaNode | CommitNode>,
-  header?: HeaderNode,
-  marker?: "plain" | "tree" | "bullet",
-  hiddenCount?: number,
-): ClusterNode => ({
-  type: "cluster",
-  header,
-  marker,
-  hiddenCount,
-  children,
-});
-
-const buildPrimarySections = (
-  api: Api,
-  primaryChanges: Change[],
-): SectionNode[] => {
-  const grouping = api.config.changelog?.grouping ?? "none";
-
-  if (grouping === "none") {
-    const items = primaryChanges.map((change) => resolvedItem(api, change));
-    const hasInternal = items.some((item) => item.type === "commit");
-
-    return [
-      {
-        type: "section",
-        children: [cluster(items, undefined, hasInternal ? "tree" : "bullet")],
-      },
-    ];
-  }
-
-  const byType = groupBy(({ type }) => type, primaryChanges);
-  const sectionTitles = { ...api.config.changeTypes };
-
-  return Object.entries(sectionTitles).flatMap(([sectionId, sectionLabel]) => {
-    if (!isKey(byType, sectionId)) return [];
-
-    const typeChanges = byType[sectionId];
-
-    if (grouping === "package") {
-      const byPkg = groupBy(
-        (change: Change) => packageGroupKey(change.pkgs),
-        typeChanges,
-      );
-
-      return [
-        {
-          type: "section",
-          header: sectionHeader(api, sectionId, sectionLabel),
-          children: Object.entries(byPkg).map(([key, pkgChanges]) =>
-            cluster(
-              pkgChanges.map((change) => resolvedItem(api, change)),
-              packageHeader(api, key),
-              "bullet",
-            ),
-          ),
-        },
-      ];
-    }
-
-    return [
-      {
-        type: "section",
-        header: sectionHeader(api, sectionId, sectionLabel),
-        children: [
-          cluster(
-            typeChanges.map((change) => resolvedItem(api, change)),
-            undefined,
-            "bullet",
-          ),
-        ],
-      },
-    ];
-  });
-};
-
-const unrecognizedCluster = (
-  api: Api,
-  refinements: Change[],
-): ClusterNode[] | undefined => {
-  const visible = refinements.filter((change) => !isIgnoredRefinement(change));
-  if (visible.length === 0) return undefined;
-
-  const shown = visible.slice(0, maxInternalChangesToShow);
-  const hidden = visible.slice(maxInternalChangesToShow);
-
-  return [
-    cluster([unrecognizedSummary()], undefined, "bullet"),
-    cluster(
-      shown.map((change) => unrecognizedCommitItem(api, change)),
-      undefined,
-      "tree",
-      hidden.length || undefined,
-    ),
-  ];
-};
-
-const tagRef = (version: string) =>
-  version.startsWith("v") ? version : `v${version}`;
 
 export class ChangelogPlanner {
   constructor(private api: Api) {}
 
-  public build(
+  private buildDocHeaders = (
     tag: Version,
-    changes: Change[],
-    previousTag?: string,
-    releaseDate?: string,
-  ): DocNode {
-    const primaryChanges = changes.filter((x) => !x.isRefinement);
-    const refinements = changes.filter((x) => x.isRefinement);
-
+    previousVersion: Version | undefined,
+    releaseDate: Date,
+  ): ReleaseNode["headers"] => {
     const version = tag.toString();
-    const compareUrl = previousTag
-      ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(version)}`
+
+    const compareUrl = previousVersion
+      ? `https://github.com/${this.api.config.gh}/compare/${previousVersion.toString()}...${version}`
       : undefined;
 
-    if (primaryChanges.length === 0 && refinements.length === 0) {
-      return {
-        type: "doc",
-        version,
-        date: releaseDate || getDate(),
-        compareUrl,
-        children: [{ type: "empty" }],
-      };
-    }
+    const versionHeader: LinkNode | TextNode = compareUrl
+      ? { type: "link", label: version, url: compareUrl }
+      : { type: "text", value: version, style: "plain" };
 
-    if (primaryChanges.length === 0) {
-      const unrecognized = unrecognizedCluster(this.api, refinements);
-      const maintenance = maintenanceSectionInfo(this.api);
+    const dateHeader: ReleaseNode["headers"][number] = Number.isNaN(
+      releaseDate.getTime(),
+    )
+      ? { type: "text", value: String(releaseDate), style: "plain" }
+      : { type: "date", date: releaseDate };
 
-      if (!unrecognized || !maintenance) {
-        return {
-          type: "doc",
-          version,
-          date: releaseDate || getDate(),
-          compareUrl,
-          children: [{ type: "empty" }],
-        };
-      }
+    return [versionHeader, dateHeader];
+  };
 
-      return {
-        type: "doc",
-        version,
-        date: releaseDate || getDate(),
-        compareUrl,
-        children: [
+  private buildSections = (changes: Change[]): (ChangeNode | TextNode)[] => {
+    const byType = groupBy(({ type }) => type, changes);
+
+    const changeTypeEntries = Object.entries(
+      this.api.config.changeTypes,
+    ) as Array<[Change["type"], string]>;
+
+    const sections = changeTypeEntries.flatMap(
+      ([sectionId, sectionLabel]): ChangeNode[] => {
+        const typedChanges: Change[] = byType[sectionId] ?? [];
+
+        if (typedChanges.length === 0) {
+          return [];
+        }
+
+        const standardItems = typedChanges
+          .filter((change) => !isSyntheticCommit(change))
+          .map((change) => item(this.api, change));
+
+        const syntheticCommits = typedChanges.filter((change) =>
+          isSyntheticCommit(change),
+        );
+
+        const children: ChangeNode[] = [...standardItems];
+
+        if (syntheticCommits.length > 0) {
+          children.push(unknownItem(this.api, syntheticCommits));
+        }
+
+        return [
           {
-            type: "section",
-            header: sectionHeader(this.api, maintenance.id, maintenance.label),
-            children: unrecognized,
+            type: "change",
+            level: 0,
+            header: sectionHeader(this.api, sectionId, sectionLabel),
+            children,
           },
-        ],
-      };
-    }
-
-    const stats: StatNode[] = [
-      {
-        type: "stat",
-        name: "bump",
-        value: detectBump(this.api, primaryChanges),
+        ];
       },
-      { type: "stat", name: "changes", value: String(primaryChanges.length) },
+    );
+
+    return sections.length > 0
+      ? sections
+      : [
+          {
+            type: "text",
+            value: this.api.config.changelog.noChangesMessage,
+            style: "plain",
+          },
+        ];
+  };
+
+  public build = (release: Release): ReleaseNode => ({
+    type: "release",
+    headers: this.buildDocHeaders(
+      release.tag,
+      release.previousVersion,
+      release.releaseDate,
+    ),
+    metrics: [
       {
-        type: "stat",
+        type: "metric",
+        name: "bump",
+        value: (release.previousVersion?.detectBump(release.tag) ??
+          "patch") as Bump,
+      },
+      {
+        type: "metric",
+        name: "changes",
+        value: String(release.changes.length),
+      },
+      {
+        type: "metric",
         name: "packages",
         value: String(
-          new Set(primaryChanges.flatMap((change) => change.pkgs)).size,
+          new Set(release.changes.flatMap((change) => change.pkgs)).size,
         ),
       },
-    ];
+    ],
+    children: this.buildSections(release.changes),
+  });
 
-    const children = buildPrimarySections(this.api, primaryChanges);
-
-    const unrecognized = unrecognizedCluster(this.api, refinements);
-    if (unrecognized) {
-      const grouping = this.api.config.changelog?.grouping ?? "none";
-
-      if (grouping === "none") {
-        if (children.length === 0) {
-          children.push({
-            type: "section",
-            children: unrecognized,
-          });
-        } else {
-          children[0].children.push(...unrecognized);
-        }
-      } else {
-        const maintenance = maintenanceSectionInfo(this.api);
-
-        if (maintenance) {
-          const byType = groupBy(({ type }) => type, primaryChanges);
-          const orderedIds = Object.keys(this.api.config.changeTypes).filter(
-            (id) => isKey(byType, id),
-          );
-          const idx = orderedIds.indexOf(maintenance.id);
-
-          if (idx >= 0 && children[idx]) {
-            children[idx].children.push(...unrecognized);
-          } else {
-            children.push({
-              type: "section",
-              header: sectionHeader(
-                this.api,
-                maintenance.id,
-                maintenance.label,
-              ),
-              children: unrecognized,
-            });
-          }
-        }
-      }
-    }
-
-    return {
-      type: "doc",
-      version,
-      date: releaseDate || getDate(),
-      compareUrl,
-      stats,
-      children,
-    };
-  }
+  public buildDocument = (releases: Release[]): ChangelogDocumentNode => ({
+    type: "doc",
+    releases: releases.map(this.build),
+  });
 }

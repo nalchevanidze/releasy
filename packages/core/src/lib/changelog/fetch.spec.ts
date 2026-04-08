@@ -9,6 +9,7 @@ import { Version } from "../version";
 
 vi.mock("../git", () => ({
   commitsAfterVersion: vi.fn(() => ["c1", "c2"]),
+  changedFilesAtCommit: vi.fn(() => []),
 }));
 
 type DetectionUse = Array<"labels" | "commits">;
@@ -34,6 +35,7 @@ const buildApi = (options: BuildOptions = {}) => {
     prTitle = "feat: From PR",
     prBody = "",
     prLabels = [],
+    prHeadRefName,
     commits,
     prCommits,
   } = options;
@@ -61,6 +63,7 @@ const buildApi = (options: BuildOptions = {}) => {
       title: prTitle,
       body: prBody,
       author: { login: "dev", url: "https://u/dev" },
+      headRefName: prHeadRefName,
       labels: { nodes: prLabels.map((name) => ({ name })) },
       commits: {
         nodes: (
@@ -207,6 +210,41 @@ describe("release artifact exclusion", () => {
   });
 });
 
+describe("FetchApi release filtering", () => {
+  test("filters generated release PRs by marker", async () => {
+    const changes = await new FetchApi(
+      buildApi({ prTitle: "any", prBody: "x\n<!-- relasy:release-pr -->" }),
+    ).changes(Version.parse("1.0.0"));
+
+    expect(changes).toHaveLength(0);
+  });
+
+  test("filters generated release PRs by release title (with v prefix)", async () => {
+    const changes = await new FetchApi(
+      buildApi({ prTitle: "Publish Release v1.2.3" }),
+    ).changes(Version.parse("1.0.0"));
+
+    expect(changes).toHaveLength(0);
+  });
+
+  test("filters generated release PRs by release title (without v prefix)", async () => {
+    const changes = await new FetchApi(
+      buildApi({ prTitle: "Publish Release 1.2.3" }),
+    ).changes(Version.parse("1.0.0"));
+
+    expect(changes).toHaveLength(0);
+  });
+
+  test("does not filter non-generated release phrasing", async () => {
+    const changes = await new FetchApi(
+      buildApi({ prTitle: "Publish Release process docs" }),
+    ).changes(Version.parse("1.0.0"));
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0].title).toBe("Publish Release process docs");
+  });
+});
+
 describe("FetchApi non-PR commit rule", () => {
   test("skip ignores non-PR commits", async () => {
     const changes = await new FetchApi(buildApi({ nonPrRule: "skip" })).changes(
@@ -251,6 +289,19 @@ describe("FetchApi detection interactions (labels + commits)", () => {
     ).changes(Version.parse("1.0.0"));
 
     expect(changes[0].type).toBe("feature"); // feat:
+  });
+
+  test("falls back to chore refinement when neither labels nor commits classify", async () => {
+    const changes = await new FetchApi(
+      buildApi({
+        detectionUse: ["labels", "commits"],
+        nonPrRule: "skip",
+        prTitle: "misc update",
+      }),
+    ).changes(Version.parse("1.0.0"));
+
+    expect(changes[0].type).toBe("chore");
+    expect(changes[0].isRefinement).toBe(true);
   });
 
   test("derives breaking from Conventional Commit ! marker", async () => {

@@ -19,6 +19,10 @@ describe("config normalization", () => {
     expect(out.policies.detectionUse).toEqual(["labels"]);
     expect(out.policies.rules.nonPrCommit).toBe("skip");
     expect(out.policies.rules.versionTagMismatch).toBe("error");
+    expect(out.changelog.noChangesMessage).toBe(
+      "No user-facing changes since the last tag.",
+    );
+    expect(out.changelog.untitledChangeMessage).toBe("Untitled change");
   });
 
   test("normalizes kebab-case keys and single-string paths", () => {
@@ -31,12 +35,18 @@ describe("config normalization", () => {
         "label-mode": "strict",
         "detection-use": ["labels"],
       },
+      changelog: {
+        "no-changes-message": "Nothing to ship",
+        "untitled-change-message": "No title",
+      },
     }) as any;
 
     expect(normalized.project.baseBranch).toBe("main");
 
     const out = normalizeConfig(normalized, "acme/demo");
     expect(out.pkgs.core.paths).toEqual(["packages/core/**"]);
+    expect(out.changelog?.noChangesMessage).toBe("Nothing to ship");
+    expect(out.changelog?.untitledChangeMessage).toBe("No title");
   });
 
   test("derives change titles/icons/bumps/scopes from changes map", () => {

@@ -10,7 +10,8 @@ export type DetectionInput = "labels" | "commits";
 export type BumpLevel = "major" | "minor" | "patch";
 
 export type ChangelogConfig = {
-  grouping?: "package" | "scope" | "none";
+  noChangesMessage: string;
+  untitledChangeMessage: string;
 };
 
 export type PkgConfig = {
@@ -44,9 +45,13 @@ export type ChangesConfig = Record<string, ChangeDefinition>;
 
 export const ChangelogConfigSchema = z
   .object({
-    grouping: z.enum(["package", "scope", "none"]).optional(),
+    noChangesMessage: z
+      .string()
+      .default("No user-facing changes since the last tag."),
+    untitledChangeMessage: z.string().default("Untitled change"),
   })
-  .optional();
+  .strict()
+  .default({});
 
 export const changeTypes = {
   breaking: "Breaking change (major bump)",
@@ -136,4 +141,4 @@ export const ConfigSchema = z
   })
   .strict();
 
-export type RawConfig = z.infer<typeof ConfigSchema>;
+export type RawConfig = z.input<typeof ConfigSchema>;

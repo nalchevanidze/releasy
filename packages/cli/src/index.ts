@@ -113,7 +113,8 @@ export const main = async () => {
         },
       },
       changelog: {
-        grouping: "package",
+        noChangesMessage: "No user-facing changes since the last tag.",
+        untitledChangeMessage: "Untitled change",
       },
     };
 
@@ -148,11 +149,12 @@ export const main = async () => {
         }
 
         const iRelasy = await loadRelasy();
+        const sinceRef = opts.sinceCommit ?? opts.sinceTag;
+
         await writeFile(
           `./changelog.md`,
           await iRelasy.changelog({
-            sinceTag: opts.sinceTag,
-            sinceCommit: opts.sinceCommit,
+            sinceRef,
             all: opts.all,
           }),
           "utf8",
@@ -201,7 +203,8 @@ export const main = async () => {
         ]),
       ),
       changelog: {
-        grouping: migrated.changelog?.grouping,
+        noChangesMessage: migrated.changelog.noChangesMessage,
+        untitledChangeMessage: migrated.changelog.untitledChangeMessage,
       },
     });
 

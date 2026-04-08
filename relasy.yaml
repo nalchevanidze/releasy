@@ -50,5 +50,7 @@ changes:
       - "**/*.spec.ts"
       - "**/*.test.ts"
 
-changelog:
-  grouping: scope
+  style:
+    icon: 🎨
+    title: Style
+    bump: patch

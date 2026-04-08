@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { RenderAPI } from "./render";
+import { Changelog } from "./index";
 import type { Api, Change } from "./types";
 import { Version } from "../version";
 
@@ -32,7 +32,10 @@ const api: Api = {
         versionTagMismatch: "error",
       },
     },
-    changelog: { grouping: "package" },
+    changelog: {
+      noChangesMessage: "No user-facing changes since the last tag.",
+      untitledChangeMessage: "Untitled change",
+    },
   },
   github: {
     setup: () => undefined,
@@ -54,7 +57,7 @@ const api: Api = {
   },
 };
 
-describe("RenderAPI scalability baseline", () => {
+describe("Changelog scalability baseline", () => {
   test("renders a large changelog fixture", () => {
     const changes: Change[] = Array.from({ length: 500 }).map((_, i) => ({
       number: i + 1,
@@ -67,7 +70,13 @@ describe("RenderAPI scalability baseline", () => {
     }));
 
     const start = Date.now();
-    const out = new RenderAPI(api).changes(Version.parse("9.9.9"), changes);
+    const out = new Changelog(api).documents([
+      {
+        tag: Version.parse("9.9.9"),
+        changes,
+        releaseDate: new Date("2026-04-05T00:00:00Z"),
+      },
+    ]);
     const elapsedMs = Date.now() - start;
 
     expect(out.length).toBeGreaterThan(1000);

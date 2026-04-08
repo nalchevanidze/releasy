@@ -23307,7 +23307,7 @@ var require_git = __commonJS({
   "../../packages/core/dist/lib/git.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.isUserSet = exports2.getDate = exports2.git = exports2.commitsAfterVersion = exports2.commitsBetweenRefs = exports2.commitsAfterRef = exports2.lastTag = exports2.listTags = exports2.dateAtRef = exports2.remote = void 0;
+    exports2.isUserSet = exports2.getDate = exports2.git = exports2.commitsAfterVersion = exports2.changedFilesAtCommit = exports2.commitsBetweenRefs = exports2.commitsAfterRef = exports2.lastTag = exports2.listTags = exports2.dateAtRef = exports2.remote = void 0;
     var utils_1 = require_utils2();
     var git = (...cmd) => (0, utils_1.execFile)("git", cmd);
     exports2.git = git;
@@ -23332,6 +23332,8 @@ var require_git = __commonJS({
     exports2.commitsAfterRef = commitsAfterRef;
     var commitsBetweenRefs = (fromExclusive, to) => fromExclusive ? splitLines(git("rev-list", "--reverse", `${fromExclusive}..${to}`)) : splitLines(git("rev-list", "--reverse", to));
     exports2.commitsBetweenRefs = commitsBetweenRefs;
+    var changedFilesAtCommit = (oid) => splitLines(git("show", "--pretty=format:", "--name-only", oid));
+    exports2.changedFilesAtCommit = changedFilesAtCommit;
     var isUserSet = () => {
       try {
         const user = `${git("config", "user.name")}${git("config", "user.email")}`.trim();
@@ -27738,8 +27740,9 @@ var require_schema = __commonJS({
     exports2.ruleLevelValues = ["skip", "warn", "error"];
     exports2.RuleLevelSchema = z.enum(exports2.ruleLevelValues);
     exports2.ChangelogConfigSchema = z.object({
-      grouping: z.enum(["package", "scope", "none"]).optional()
-    }).optional();
+      noChangesMessage: z.string().default("No user-facing changes since the last tag."),
+      untitledChangeMessage: z.string().default("Untitled change")
+    }).strict().default({});
     exports2.changeTypes = {
       breaking: "Breaking change (major bump)",
       feature: "New feature (minor bump)",
@@ -30717,11 +30720,7 @@ var require_load = __commonJS({
       ].some((key) => key in changelog) : false;
       return topLegacy || changelogLegacy;
     };
-    var hasNewFields = (cfg) => {
-      const topNew = ["policies", "changes", "changelog"].some((key) => key in cfg);
-      const changelogNew = isPlainObject3(cfg.changelog) && "grouping" in cfg.changelog;
-      return topNew || changelogNew;
-    };
+    var hasNewFields = (cfg) => ["policies", "changes", "changelog"].some((key) => key in cfg);
     var parseConfigInput = (input) => {
       const normalized = normalizeKeysDeep(input);
       if (!isPlainObject3(normalized)) {
@@ -30735,10 +30734,12 @@ var require_load = __commonJS({
     var normalizeConfig = (config, gh) => {
       const normalizedPkgs = normalizePkgs(config.pkgs);
       const normalizedChanges = normalizeChanges(config.changes);
+      const normalizedChangelog = schema_1.ChangelogConfigSchema.parse(config.changelog);
       return {
         ...config,
         pkgs: normalizedPkgs,
         gh,
+        changelog: normalizedChangelog,
         policies: {
           labelMode: config.policies?.labelMode ?? defaults_1.defaultLabelMode,
           autoAddInferredPackages: config.policies?.autoAddInferredPackages ?? false,
@@ -30838,6 +30839,21 @@ var require_version = __commonJS({
       constructor(value) {
         this.value = value;
       }
+      detectBump(nextVersion) {
+        const parse2 = (v) => v.value.split(".").slice(0, 3).map((part) => Number.parseInt(part, 10));
+        const [prevMajor, prevMinor, prevPatch] = parse2(this);
+        const [nextMajor, nextMinor, nextPatch] = parse2(nextVersion);
+        if ([prevMajor, prevMinor, prevPatch, nextMajor, nextMinor, nextPatch].some((part) => Number.isNaN(part))) {
+          return void 0;
+        }
+        if (nextMajor > prevMajor)
+          return "major";
+        if (nextMinor > prevMinor)
+          return "minor";
+        if (nextPatch > prevPatch)
+          return "patch";
+        return void 0;
+      }
       static parse(input) {
         return new _Version(input.replace(/^v/, ""));
       }
@@ -30847,6 +30863,34 @@ var require_version = __commonJS({
       isEqual(v) {
         if (this.value !== v.replace(/^v/, "")) {
           throw Error(`versions does not match: ${this.value} ${v}`);
+        }
+      }
+      ensureEqual(expected) {
+        this.isEqual(expected.toString());
+      }
+      enforceVersionTagRule(options) {
+        try {
+          this.isEqual(options.lastTag());
+        } catch (error2) {
+          const message = error2 instanceof Error ? error2.message : String(error2);
+          if (message.includes("No names found")) {
+            return;
+          }
+          const rule = options.rule ?? "error";
+          const mismatchMessage = `package.json version must match the last git tag. Root cause: ${message}`;
+          if (rule === "error") {
+            throw new Error(`Unable to continue release. ${mismatchMessage}`);
+          }
+          if (rule === "warn") {
+            options.warn?.(`[relasy] Continuing despite version/tag mismatch because policies.rules.version-tag-mismatch=warn. ${mismatchMessage}`);
+          }
+        }
+      }
+      checkAfterBump(expected) {
+        try {
+          this.ensureEqual(expected);
+        } catch {
+          throw new Error(`Version mismatch after bump: expected ${expected.toString()}, got ${this.toString()}.`);
         }
       }
     };
@@ -43482,6 +43526,7 @@ var require_fetch2 = __commonJS({
     exports2.FetchApi = exports2.isReleaseCommit = exports2.isReleasePr = exports2.parsePRNumberFromCommitMessage = void 0;
     var ramda_1 = require_src();
     var labels_1 = require_labels();
+    var version_1 = require_version();
     var git_1 = require_git();
     var parsePRNumberFromCommitMessage = (msg) => {
       const patterns = [
@@ -43499,6 +43544,38 @@ var require_fetch2 = __commonJS({
       return void 0;
     };
     exports2.parsePRNumberFromCommitMessage = parsePRNumberFromCommitMessage;
+    var defaultDetectionUse = ["labels"];
+    var defaultNonPrRule = "skip";
+    var escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var globToRegExp = (glob) => {
+      const normalized = glob.replace(/\\/g, "/");
+      const pattern = normalized.split("**").map((part) => part.split("*").map(escapeRegex).join("[^/]*")).join(".*");
+      return new RegExp(`^${pattern}$`);
+    };
+    var matchesAny = (path, patterns) => {
+      const normalized = path.replace(/\\/g, "/");
+      return patterns.some((pattern) => globToRegExp(pattern).test(normalized));
+    };
+    var inferPkgsFromPaths = (api, changedFiles) => Object.entries(api.config.pkgs).filter(([_, pkg]) => (pkg.paths ?? []).length > 0).filter(([_, pkg]) => changedFiles.some((file) => matchesAny(file, pkg.paths ?? []))).map(([pkg]) => pkg).sort();
+    var toReleaseDate = (value) => /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
+    var detectBump = (changes, changeTypeBumps) => {
+      const rank = { patch: 0, minor: 1, major: 2 };
+      return changes.reduce((current, change) => {
+        const bump = changeTypeBumps[change.type] ?? (change.type === "breaking" ? "major" : change.type === "feature" ? "minor" : "patch");
+        return rank[bump] > rank[current] ? bump : current;
+      }, "patch");
+    };
+    var nextVersionForBump = (currentVersion, bump) => {
+      const [majorRaw, minorRaw, patchRaw] = currentVersion.value.split(".").slice(0, 3).map((part) => Number.parseInt(part, 10));
+      const major = Number.isNaN(majorRaw) ? 0 : majorRaw;
+      const minor = Number.isNaN(minorRaw) ? 0 : minorRaw;
+      const patch = Number.isNaN(patchRaw) ? 0 : patchRaw;
+      if (bump === "major")
+        return version_1.Version.parse(`${major + 1}.0.0`);
+      if (bump === "minor")
+        return version_1.Version.parse(`${major}.${minor + 1}.0`);
+      return version_1.Version.parse(`${major}.${minor}.${patch + 1}`);
+    };
     var releaseVersionPattern = "v?\\d+\\.\\d+\\.\\d+(?:[-+][\\w.-]+)?";
     var releasePrTitleRegex = new RegExp(`^publish release\\s+${releaseVersionPattern}\\s*$`, "i");
     var releaseBranchRegex = new RegExp(`^release-${releaseVersionPattern}$`, "i");
@@ -43509,19 +43586,25 @@ var require_fetch2 = __commonJS({
       return releasePrTitleRegex.test(title) && releaseBranchRegex.test(branch);
     };
     exports2.isReleasePr = isReleasePr;
+    var isGeneratedReleasePr = (pr) => {
+      const title = pr.title?.trim() || "";
+      const body = pr.body?.trim() || "";
+      return (0, exports2.isReleasePr)(pr) || releasePrTitleRegex.test(title) || body.includes("<!-- relasy:release-pr -->");
+    };
     var isReleaseCommit = (commit) => {
       const title = (commit.message || "").split("\n")[0].trim();
       return releasePrTitleRegex.test(title) || releaseMergeCommitRegex.test(title) || releaseBranchRegex.test(title);
     };
     exports2.isReleaseCommit = isReleaseCommit;
-    var parseConventionalType = (text, availableChangeTypes) => {
+    var availableChangeTypes = (api) => Object.keys(api.config.changeTypes);
+    var parseConventionalType = (text, availableChangeTypes2) => {
       const normalized = text.trim();
       if (!normalized)
         return void 0;
       const breakingByFooter = /(^|\n)BREAKING CHANGE:/m.test(normalized);
       const match = normalized.match(/^(?<type>[a-zA-Z]+)(\([^)]+\))?(?<breaking>!)?:/m);
       if (breakingByFooter || match?.groups?.breaking) {
-        return availableChangeTypes.includes("breaking") ? "breaking" : void 0;
+        return availableChangeTypes2.includes("breaking") ? "breaking" : void 0;
       }
       const commitType = (match?.groups?.type || "").toLowerCase();
       const map = {
@@ -43537,7 +43620,7 @@ var require_fetch2 = __commonJS({
         build: "chore"
       };
       const mapped = map[commitType];
-      return mapped && availableChangeTypes.includes(mapped) ? mapped : void 0;
+      return mapped && availableChangeTypes2.includes(mapped) ? mapped : void 0;
     };
     var bumpRank = (bump) => bump === "major" ? 2 : bump === "minor" ? 1 : 0;
     var bumpForChangeType = (api, changeType) => api.config.changeTypeBumps?.[changeType] ?? (changeType === "breaking" ? "major" : changeType === "feature" ? "minor" : "patch");
@@ -43547,17 +43630,18 @@ var require_fetch2 = __commonJS({
       return [...new Set(types)].reduce((current, next) => bumpRank(bumpForChangeType(api, next)) > bumpRank(bumpForChangeType(api, current)) ? next : current);
     };
     var detectTypeFromPRCommits = (api, pr) => {
+      const types = availableChangeTypes(api);
       const commitNodes = pr.commits?.nodes ?? [];
       const detected = commitNodes.map(({ commit }) => parseConventionalType(`${commit.messageHeadline || ""}
-${commit.messageBody || ""}`, Object.keys(api.config.changeTypes))).filter((x) => Boolean(x));
+${commit.messageBody || ""}`, types)).filter((x) => Boolean(x));
       if (detected.length > 0) {
         return highestDetectedType(api, detected);
       }
       return parseConventionalType(`${pr.title}
-${pr.body || ""}`, Object.keys(api.config.changeTypes));
+${pr.body || ""}`, types);
     };
     var resolveDetectedType = (api, labelsType, commitsType) => {
-      const detectionUse = api.config.policies?.detectionUse ?? ["labels"];
+      const detectionUse = api.config.policies?.detectionUse ?? defaultDetectionUse;
       const conflictRule = api.config.policies?.rules?.detectionConflict ?? "error";
       if (labelsType && commitsType && labelsType !== commitsType) {
         const message = `Detection conflict: labels resolved "${labelsType}" but commits resolved "${commitsType}".`;
@@ -43581,12 +43665,14 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
       }
       return { type: "chore", isRefinement: true };
     };
+    var commitsDetectionEnabled = (api) => (api.config.policies?.detectionUse ?? defaultDetectionUse).includes("commits");
     var toSyntheticChange = (api, commit) => {
       const [title, ...bodyLines] = commit.message.split("\n");
       const body = bodyLines.join("\n").trim();
       const authorLogin = commit.author?.user?.login || commit.author?.name || "unknown";
       const authorUrl = commit.author?.user?.url || "";
-      const commitDetected = parseConventionalType(commit.message, Object.keys(api.config.changeTypes));
+      const commitDetected = parseConventionalType(commit.message, availableChangeTypes(api));
+      const changedFiles = (0, git_1.changedFilesAtCommit)(commit.oid);
       return {
         number: 0,
         title: title.trim() || `Commit ${commit.oid.slice(0, 7)}`,
@@ -43594,7 +43680,7 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
         author: { login: authorLogin, url: authorUrl },
         labels: { nodes: [] },
         type: commitDetected || "chore",
-        pkgs: [],
+        pkgs: inferPkgsFromPaths(api, changedFiles),
         sourceCommit: commit.oid,
         isRefinement: !commitDetected
       };
@@ -43660,26 +43746,92 @@ ${pr.body || ""}`, Object.keys(api.config.changeTypes));
             ...new Set(resolutions.filter((r) => r.kind === "pr").map((r) => r.prNumber))
           ];
           const nonPrCommits = resolutions.filter((r) => r.kind === "non-pr").map((r) => r.commit).filter((commit) => !(0, exports2.isReleaseCommit)(commit));
-          const prChanges = (await this.pullRequests(prNumbers)).filter((pr) => !(0, exports2.isReleasePr)(pr)).map(this.toChange);
-          const commitsEnabled = (this.api.config.policies?.detectionUse ?? ["labels"]).includes("commits");
-          if (!commitsEnabled || nonPrCommits.length === 0) {
+          const prChanges = (await this.pullRequests(prNumbers)).filter((pr) => !isGeneratedReleasePr(pr)).map(this.toChange);
+          if (!commitsDetectionEnabled(this.api) || nonPrCommits.length === 0) {
             return prChanges;
           }
-          const rule = this.api.config.policies?.rules?.nonPrCommit ?? "skip";
+          const rule = this.api.config.policies?.rules?.nonPrCommit ?? defaultNonPrRule;
+          if (rule === "skip") {
+            return prChanges;
+          }
           if (rule === "error") {
             const examples = nonPrCommits.slice(0, 3).map((c) => c.oid.slice(0, 7)).join(", ");
             throw new Error(`Found ${nonPrCommits.length} commits without associated PRs (examples: ${examples}). Adjust policies.rules.non-pr-commit to warn or skip to continue.`);
           }
-          if (rule === "skip") {
-            return prChanges;
-          }
           this.api.logger.warn(`[relasy] Including ${nonPrCommits.length} commits without PR linkage due to policies.rules.non-pr-commit=warn`);
-          const syntheticChanges = nonPrCommits.map((c) => toSyntheticChange(this.api, c));
-          return [...prChanges, ...syntheticChanges];
+          return [
+            ...prChanges,
+            ...nonPrCommits.map((c) => toSyntheticChange(this.api, c))
+          ];
+        };
+        this.currentRelease = async (currentVersion) => ({
+          tag: currentVersion,
+          changes: await this.changes(currentVersion),
+          releaseDate: toReleaseDate((0, git_1.getDate)())
+        });
+        this.previewRelease = async (options) => ({
+          tag: options.currentVersion,
+          changes: await this.changesSinceRef(options.sinceRef),
+          releaseDate: toReleaseDate((0, git_1.getDate)()),
+          previousVersion: options.sinceTag ? version_1.Version.parse(options.sinceTag) : void 0
+        });
+        this.fetchReleases = async (options) => {
+          if (options.all) {
+            return this.fullHistoryReleases(options.currentVersion);
+          }
+          if (options.sinceRef) {
+            return [
+              await this.previewRelease({
+                currentVersion: options.currentVersion,
+                sinceRef: options.sinceRef,
+                sinceTag: options.sinceTag
+              })
+            ];
+          }
+          return [await this.currentRelease(options.currentVersion)];
+        };
+        this.fetchLastRelease = async (options) => {
+          const releases = await this.fetchReleases(options);
+          return releases[0];
+        };
+        this.fetchReleasePlan = async (options) => {
+          const release = await this.currentRelease(options.currentVersion);
+          const bump = detectBump(release.changes, this.api.config?.changeTypeBumps ?? {});
+          return {
+            release: {
+              ...release,
+              tag: nextVersionForBump(options.currentVersion, bump),
+              previousVersion: options.currentVersion
+            },
+            bump
+          };
         };
         this.changes = async (version) => this.resolveChangesFromCommits((0, git_1.commitsAfterVersion)(version));
         this.changesSinceRef = async (ref) => this.resolveChangesFromCommits((0, git_1.commitsAfterRef)(ref));
         this.changesBetweenRefs = async (fromExclusive, to) => this.resolveChangesFromCommits((0, git_1.commitsBetweenRefs)(fromExclusive, to));
+        this.releasesByTags = async (tags) => Promise.all(tags.map(async (tag, i) => {
+          const previousTag = i > 0 ? tags[i - 1] : void 0;
+          const changes = await this.changesBetweenRefs(previousTag, tag);
+          return {
+            tag: version_1.Version.parse(tag),
+            previousVersion: previousTag ? version_1.Version.parse(previousTag) : void 0,
+            releaseDate: toReleaseDate((0, git_1.dateAtRef)(tag)),
+            changes
+          };
+        }));
+        this.fullHistoryReleases = async (currentVersion) => {
+          const tags = (0, git_1.listTags)();
+          if (tags.length === 0) {
+            return [
+              {
+                tag: currentVersion,
+                changes: await this.changes(currentVersion),
+                releaseDate: toReleaseDate((0, git_1.getDate)())
+              }
+            ];
+          }
+          return (await this.releasesByTags(tags)).reverse();
+        };
       }
     };
     exports2.FetchApi = FetchApi;
@@ -43692,53 +43844,61 @@ var require_markdown = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.markdownFormatter = void 0;
-    var lines = (...xs) => xs.flat().filter(Boolean).join("\n");
-    var withMarker = (type, txt) => {
-      switch (type) {
-        case "tree":
-          return `&nbsp; \u2514 ${txt}`;
-        case "bullet":
-          return `* ${txt}`;
-        default:
-          return txt;
-      }
-    };
-    var list = (header, items, marker = "plain") => lines(...[header, ...items.flat().map((item) => withMarker(marker, item))].filter(Boolean).map((value) => `${value}  `));
+    var lines = (...ls) => ls.flat().filter((x) => x !== void 0).reduce((txt, line) => txt.length === 0 ? line : [txt, line.startsWith("  ") ? "  \n" : "\n", line].join(""), "");
+    var list = (isTree, ...items) => items.flat().filter((item) => item !== void 0).map((item) => isTree ? `  \u2514 ${item}` : `* ${item}`);
+    var indentText = (text, indent = "  ") => text.split("\n").map((line) => `${indent}${line}`).join("\n");
+    var renderDetails = (summary2, items) => lines("<details>", `<summary>${summary2}</summary>`, "", list(true, items), "</details>");
+    var isCollapsibleCommitGroup = (child) => child.type === "change" && child.level === 1 && (child.commits?.length ?? 0) > 0;
     exports2.markdownFormatter = {
-      doc: ({ version, date, compareUrl, stats, children }, render) => {
-        const versionText = version.startsWith("v") ? version : `v${version}`;
-        const parsedDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-        const formattedDate = Number.isNaN(parsedDate.getTime()) ? date : parsedDate.toLocaleDateString("en-US", {
-          month: "long",
-          day: "2-digit",
-          year: "numeric",
-          timeZone: "UTC"
-        });
-        const versionLink = compareUrl ? render({ type: "link", label: versionText, url: compareUrl }) : versionText;
-        const header = `# \u{1F680} ${versionLink} &nbsp; \u2022 &nbsp; ${formattedDate}`;
-        return lines(header, stats ? (stats || []).map(render).join(" ") : void 0, children.map(render));
+      doc: ({ releases }, render) => releases.map(render).join("\n\n<br>\n\n"),
+      release: ({ headers, metrics, children }, render) => lines(`# \u{1F680} ${headers.map(render).join(" \u2022 ")} `, metrics?.map(render).join(" "), children.map(render)),
+      change: ({ level, header, children, commits }, render) => {
+        const headerText = header ? render(header) : void 0;
+        if (level === 0) {
+          const renderedChildren = children.map((child) => {
+            if (isCollapsibleCommitGroup(child)) {
+              const childHeader = child.header ? render(child.header) : void 0;
+              const count = child.commits?.length ?? 0;
+              const summary2 = `${count} commit${count === 1 ? "" : "s"}`;
+              const details = renderDetails(summary2, child.commits.map(render));
+              return lines(`* ${childHeader}`, lines(list(true, child.children.map(render)), indentText(details)));
+            }
+            return `* ${render(child)}`;
+          });
+          return lines(headerText, renderedChildren, headerText ? "<br>" : void 0);
+        }
+        return lines(headerText, list(true, children.map(render)), list(true, commits?.map(render)));
       },
-      section: ({ header, children }, render) => lines(header ? render(header) : void 0, children.map(render), header ? "<br>" : void 0),
-      cluster: ({ header, children, hiddenCount, marker }, render) => list(header ? render(header) : void 0, [
-        children.map(render),
-        hiddenCount && hiddenCount > 0 ? `+${hiddenCount} more` : []
-      ], marker),
-      item: ({ refLabel, title, meta }, render) => list(`**${refLabel}** \u2014 ${title}`, meta.map(render), "tree"),
-      meta: ({ children, kind }, render) => {
-        const value = children.map(render).join("");
+      tag: ({ children, kind }, render) => {
+        const value = children.map(render).join(" \u2022 ");
         if (kind === "scope")
-          return `\u{1F4E6} - ${value}`;
+          return `\u{1F4E6} - ${value} `;
         if (kind === "author")
-          return `\u{1F9D1}\u200D\u{1F4BB} - ${value}`;
+          return `\u{1F9D1}\u200D\u{1F4BB} - ${value} `;
         return value;
       },
-      commit: ({ ref, title }, render) => {
+      commit: ({ ref, title }) => {
         if (!ref)
           return title;
-        return `\u{1F518} - ${render(ref)} ${title}`;
+        return `\u{1F518} - [\`${ref.label}\`](${ref.url}) ${title} `;
       },
-      header: (node, render) => `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
-      stat: ({ value, name }) => {
+      header: (node, render) => {
+        const children = node.children.map((child) => {
+          if (child.type === "text") {
+            return render({ ...child, value: child.value.toUpperCase() });
+          }
+          if (child.type === "link") {
+            return render({ ...child, label: child.label.toUpperCase() });
+          }
+          return render(child);
+        }).join("");
+        return `### ${node.icon ? `${node.icon} ` : ""}${children} `;
+      },
+      title: ({ main, rest }, render) => {
+        const tail = (rest ?? []).map(render).join("");
+        return `${render(main)}${tail ? ` \u2014 ${tail}` : ""} `;
+      },
+      metric: ({ value, name }) => {
         if (name === "bump") {
           const bumpLabel = value.toUpperCase();
           const color = bumpLabel === "MAJOR" ? "red" : bumpLabel === "MINOR" ? "yellow" : "green";
@@ -43749,9 +43909,14 @@ var require_markdown = __commonJS({
         }
         return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(value)}-orange?style=flat-square)`;
       },
-      text: ({ value }) => value,
-      link: ({ label, url }) => `[${label}](${url})`,
-      empty: () => "_No user-facing changes since the last tag._"
+      date: ({ date }) => date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "2-digit",
+        year: "numeric",
+        timeZone: "UTC"
+      }),
+      text: ({ value, style }) => style === "literal" ? `\`${value}\`` : style === "strong" ? `**${value}**` : value,
+      link: ({ label, url }) => `[${label}](${url})`
     };
   }
 });
@@ -43767,26 +43932,30 @@ var require_renderer = __commonJS({
         switch (node.type) {
           case "doc":
             return renderer.doc(node, render);
-          case "section":
-            return renderer.section(node, render);
-          case "cluster":
-            return renderer.cluster(node, render);
-          case "item":
-            return renderer.item(node, render);
-          case "meta":
-            return renderer.meta(node, render);
+          case "release":
+            return renderer.release(node, render);
+          case "change":
+            return renderer.change(node, render);
+          case "tag":
+            return renderer.tag(node, render);
           case "commit":
             return renderer.commit(node, render);
           case "header":
             return renderer.header(node, render);
-          case "stat":
-            return renderer.stat(node, render);
+          case "title":
+            return renderer.title(node, render);
+          case "metric":
+            return renderer.metric(node, render);
+          case "date":
+            return renderer.date(node, render);
           case "text":
             return renderer.text(node, render);
           case "link":
             return renderer.link(node, render);
-          case "empty":
-            return renderer.empty(node, render);
+          default: {
+            const _exhaustive = node;
+            return _exhaustive;
+          }
         }
       };
       return render(root);
@@ -43802,46 +43971,9 @@ var require_plan = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.ChangelogPlanner = void 0;
     var ramda_1 = require_src();
-    var git_1 = require_git();
-    var utils_1 = require_utils2();
-    var maxInternalChangesToShow = 5;
-    var text = (value) => ({ type: "text", value });
-    var link = (label, url) => ({ type: "link", label, url });
     var normalizedPkgs = (pkgs) => [...new Set(pkgs)].sort();
-    var packageGroupKey = (pkgs) => {
-      const normalized = normalizedPkgs(pkgs);
-      return normalized.length ? normalized.join(",") : "general";
-    };
-    var packageHeader = (api, key) => {
-      if (key === "general") {
-        return { type: "header", level: 5, icon: "\u{1F4E6}", children: [text("General")] };
-      }
-      const children = key.split(",").flatMap((pkg, idx) => {
-        const conf = api.config.pkgs[pkg];
-        const longName = conf?.name || pkg;
-        const url = api.module.pkg(longName);
-        return [
-          ...idx > 0 ? [text(" \xB7 ")] : [],
-          url ? link(pkg, url) : text(pkg)
-        ];
-      });
-      return { type: "header", level: 5, icon: "\u{1F4E6}", children };
-    };
-    var detectBump = (api, changes) => {
-      const rank = { patch: 0, minor: 1, major: 2 };
-      return changes.reduce((current, change) => {
-        const bump = api.config.changeTypeBumps?.[change.type] ?? (change.type === "breaking" ? "major" : change.type === "feature" ? "minor" : "patch");
-        return rank[bump] > rank[current] ? bump : current;
-      }, "patch");
-    };
-    var isReleasePrTitle = (title) => /^publish release\s+v?\d+\.\d+\.\d+(?:[-+][\w.-]+)?\s*$/i.test(title);
-    var isIgnoredRefinement = (change) => {
-      const title = change.title?.trim() || "";
-      const body = change.body?.trim() || "";
-      return change.number > 0 && !change.sourceCommit && (body.includes("<!-- relasy:release-pr -->") || isReleasePrTitle(title));
-    };
-    var changeTitle = (change) => change.title?.trim() || "Untitled change";
-    var shortCommit = (change) => change.sourceCommit?.slice(0, 7) || "unknown";
+    var changeTitle = (api, change) => change.title?.trim() || api.config.changelog.untitledChangeMessage;
+    var shortCommit = (change) => change.sourceCommit?.slice(0, 7) ?? "unknown";
     var primaryRefLabel = (change) => {
       if (change.number > 0)
         return `#${change.number}`;
@@ -43853,34 +43985,9 @@ var require_plan = __commonJS({
       const login = change.author.login?.trim();
       if (!login || login.toLowerCase() === "unknown")
         return [];
-      return change.author.url ? [link(`@${login}`, change.author.url)] : [text(`@${login}`)];
+      return change.author.url ? [{ type: "link", label: `@${login}`, url: change.author.url }] : [{ type: "text", value: `@${login}`, style: "plain" }];
     };
-    var item = (change) => {
-      const meta = [];
-      const scope = normalizedPkgs(change.pkgs);
-      if (scope.length > 0) {
-        meta.push({
-          type: "meta",
-          kind: "scope",
-          children: [text(scope.map((x) => `\`${x}\``).join(" \u2022 "))]
-        });
-      }
-      const author = authorInline(change);
-      if (author.length > 0) {
-        meta.push({
-          type: "meta",
-          kind: "author",
-          children: author
-        });
-      }
-      return {
-        type: "item",
-        refLabel: primaryRefLabel(change),
-        title: changeTitle(change),
-        meta: meta.length ? meta : []
-      };
-    };
-    var refinementUrl = (api, change) => {
+    var changeUrl = (api, change) => {
       if (change.sourceCommit) {
         return `https://github.com/${api.config.gh}/commit/${change.sourceCommit}`;
       }
@@ -43889,209 +43996,159 @@ var require_plan = __commonJS({
       }
       return `https://github.com/${api.config.gh}`;
     };
-    var unrecognizedCommitItem = (api, change) => ({
-      type: "commit",
-      ref: change.sourceCommit ? link(change.sourceCommit.slice(0, 7), refinementUrl(api, change)) : void 0,
-      title: changeTitle(change)
+    var itemHeader = (refLabel, title) => ({
+      type: "title",
+      main: { type: "text", value: refLabel, style: "strong" },
+      rest: [{ type: "text", value: title, style: "plain" }]
     });
-    var resolvedItem = (api, change) => change.sourceCommit && change.number <= 0 ? unrecognizedCommitItem(api, change) : item(change);
+    var scopeTag = (pkgs) => {
+      const scope = normalizedPkgs(pkgs);
+      if (scope.length === 0)
+        return void 0;
+      return {
+        type: "tag",
+        kind: "scope",
+        children: scope.map((pkg) => ({
+          type: "text",
+          value: pkg,
+          style: "literal"
+        }))
+      };
+    };
+    var authorTag = (authors) => {
+      if (authors.length === 0)
+        return void 0;
+      return {
+        type: "tag",
+        kind: "author",
+        children: authors
+      };
+    };
+    var metadataTags = (change) => {
+      const tags = [];
+      const scope = scopeTag(change.pkgs);
+      if (scope)
+        tags.push(scope);
+      const author = authorTag(authorInline(change));
+      if (author)
+        tags.push(author);
+      return tags;
+    };
+    var item = (api, change) => ({
+      type: "change",
+      level: 1,
+      header: itemHeader(primaryRefLabel(change), changeTitle(api, change)),
+      children: metadataTags(change)
+    });
+    var commitItem = (api, change) => ({
+      type: "commit",
+      ref: change.sourceCommit ? {
+        type: "link",
+        label: change.sourceCommit.slice(0, 7),
+        url: changeUrl(api, change)
+      } : void 0,
+      title: changeTitle(api, change)
+    });
+    var isSyntheticCommit = (change) => Boolean(change.sourceCommit) && change.number <= 0;
+    var aggregatedAuthors = (commits) => {
+      const unique = /* @__PURE__ */ new Map();
+      commits.flatMap((change) => authorInline(change)).forEach((author) => {
+        const key = author.type === "link" ? `link:${author.label}:${author.url}` : `text:${author.value}`;
+        unique.set(key, author);
+      });
+      return [...unique.values()];
+    };
+    var unknownItem = (api, commits) => {
+      const tags = [];
+      const scope = scopeTag(commits.flatMap((change) => change.pkgs));
+      if (scope)
+        tags.push(scope);
+      const authors = authorTag(aggregatedAuthors(commits));
+      if (authors)
+        tags.push(authors);
+      return {
+        type: "change",
+        level: 1,
+        header: itemHeader("Unknown", "Unrecognized commitlint items (no associated PR)"),
+        children: tags,
+        commits: commits.map((change) => commitItem(api, change))
+      };
+    };
     var sectionHeader = (api, sectionId, sectionLabel) => ({
       type: "header",
-      level: 3,
       icon: api.config.changeTypeEmojis?.[sectionId],
-      children: [text(sectionLabel.toUpperCase())]
+      children: [{ type: "text", value: sectionLabel, style: "plain" }]
     });
-    var bumpForType = (api, type) => api.config.changeTypeBumps?.[type] ?? (type === "breaking" ? "major" : type === "feature" ? "minor" : "patch");
-    var maintenanceSectionInfo = (api) => {
-      if ((0, utils_1.isKey)(api.config.changeTypes, "chore")) {
-        return { id: "chore", label: api.config.changeTypes.chore };
-      }
-      for (const [id, label] of Object.entries(api.config.changeTypes)) {
-        if (bumpForType(api, id) === "patch") {
-          return { id, label };
-        }
-      }
-      return void 0;
-    };
-    var unrecognizedSummary = () => ({
-      type: "item",
-      refLabel: "UNK",
-      title: "commits missing Conventional Commit format or an associated PR",
-      meta: []
-    });
-    var cluster = (children, header, marker, hiddenCount) => ({
-      type: "cluster",
-      header,
-      marker,
-      hiddenCount,
-      children
-    });
-    var buildPrimarySections = (api, primaryChanges) => {
-      const grouping = api.config.changelog?.grouping ?? "none";
-      if (grouping === "none") {
-        const items = primaryChanges.map((change) => resolvedItem(api, change));
-        const hasInternal = items.some((item2) => item2.type === "commit");
-        return [
-          {
-            type: "section",
-            children: [cluster(items, void 0, hasInternal ? "tree" : "bullet")]
-          }
-        ];
-      }
-      const byType = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
-      const sectionTitles = { ...api.config.changeTypes };
-      return Object.entries(sectionTitles).flatMap(([sectionId, sectionLabel]) => {
-        if (!(0, utils_1.isKey)(byType, sectionId))
-          return [];
-        const typeChanges = byType[sectionId];
-        if (grouping === "package") {
-          const byPkg = (0, ramda_1.groupBy)((change) => packageGroupKey(change.pkgs), typeChanges);
-          return [
-            {
-              type: "section",
-              header: sectionHeader(api, sectionId, sectionLabel),
-              children: Object.entries(byPkg).map(([key, pkgChanges]) => cluster(pkgChanges.map((change) => resolvedItem(api, change)), packageHeader(api, key), "bullet"))
-            }
-          ];
-        }
-        return [
-          {
-            type: "section",
-            header: sectionHeader(api, sectionId, sectionLabel),
-            children: [cluster(typeChanges.map((change) => resolvedItem(api, change)), void 0, "bullet")]
-          }
-        ];
-      });
-    };
-    var unrecognizedCluster = (api, refinements) => {
-      const visible = refinements.filter((change) => !isIgnoredRefinement(change));
-      if (visible.length === 0)
-        return void 0;
-      const shown = visible.slice(0, maxInternalChangesToShow);
-      const hidden = visible.slice(maxInternalChangesToShow);
-      return [
-        cluster([unrecognizedSummary()], void 0, "bullet"),
-        cluster(shown.map((change) => unrecognizedCommitItem(api, change)), void 0, "tree", hidden.length || void 0)
-      ];
-    };
-    var tagRef = (version) => version.startsWith("v") ? version : `v${version}`;
     var ChangelogPlanner = class {
       constructor(api) {
         this.api = api;
-      }
-      build(tag, changes, previousTag, releaseDate) {
-        const primaryChanges = changes.filter((x) => !x.isRefinement);
-        const refinements = changes.filter((x) => x.isRefinement);
-        const version = tag.toString();
-        const compareUrl = previousTag ? `https://github.com/${this.api.config.gh}/compare/${tagRef(previousTag)}...${tagRef(version)}` : void 0;
-        if (primaryChanges.length === 0 && refinements.length === 0) {
-          return {
-            type: "doc",
-            version,
-            date: releaseDate || (0, git_1.getDate)(),
-            compareUrl,
-            children: [{ type: "empty" }]
-          };
-        }
-        if (primaryChanges.length === 0) {
-          const unrecognized2 = unrecognizedCluster(this.api, refinements);
-          const maintenance = maintenanceSectionInfo(this.api);
-          if (!unrecognized2 || !maintenance) {
-            return {
-              type: "doc",
-              version,
-              date: releaseDate || (0, git_1.getDate)(),
-              compareUrl,
-              children: [{ type: "empty" }]
-            };
-          }
-          return {
-            type: "doc",
-            version,
-            date: releaseDate || (0, git_1.getDate)(),
-            compareUrl,
-            children: [
-              {
-                type: "section",
-                header: sectionHeader(this.api, maintenance.id, maintenance.label),
-                children: unrecognized2
-              }
-            ]
-          };
-        }
-        const stats = [
-          { type: "stat", name: "bump", value: detectBump(this.api, primaryChanges) },
-          { type: "stat", name: "changes", value: String(primaryChanges.length) },
-          {
-            type: "stat",
-            name: "packages",
-            value: String(new Set(primaryChanges.flatMap((change) => change.pkgs)).size)
-          }
-        ];
-        const children = buildPrimarySections(this.api, primaryChanges);
-        const unrecognized = unrecognizedCluster(this.api, refinements);
-        if (unrecognized) {
-          const grouping = this.api.config.changelog?.grouping ?? "none";
-          if (grouping === "none") {
-            if (children.length === 0) {
-              children.push({
-                type: "section",
-                children: unrecognized
-              });
-            } else {
-              children[0].children.push(...unrecognized);
-            }
-          } else {
-            const maintenance = maintenanceSectionInfo(this.api);
-            if (maintenance) {
-              const byType = (0, ramda_1.groupBy)(({ type }) => type, primaryChanges);
-              const orderedIds = Object.keys(this.api.config.changeTypes).filter((id) => (0, utils_1.isKey)(byType, id));
-              const idx = orderedIds.indexOf(maintenance.id);
-              if (idx >= 0 && children[idx]) {
-                children[idx].children.push(...unrecognized);
-              } else {
-                children.push({
-                  type: "section",
-                  header: sectionHeader(this.api, maintenance.id, maintenance.label),
-                  children: unrecognized
-                });
-              }
-            }
-          }
-        }
-        return {
-          type: "doc",
-          version,
-          date: releaseDate || (0, git_1.getDate)(),
-          compareUrl,
-          stats,
-          children
+        this.buildDocHeaders = (tag, previousVersion, releaseDate) => {
+          const version = tag.toString();
+          const compareUrl = previousVersion ? `https://github.com/${this.api.config.gh}/compare/${previousVersion.toString()}...${version}` : void 0;
+          const versionHeader = compareUrl ? { type: "link", label: version, url: compareUrl } : { type: "text", value: version, style: "plain" };
+          const dateHeader = Number.isNaN(releaseDate.getTime()) ? { type: "text", value: String(releaseDate), style: "plain" } : { type: "date", date: releaseDate };
+          return [versionHeader, dateHeader];
         };
+        this.buildSections = (changes) => {
+          const byType = (0, ramda_1.groupBy)(({ type }) => type, changes);
+          const changeTypeEntries = Object.entries(this.api.config.changeTypes);
+          const sections = changeTypeEntries.flatMap(([sectionId, sectionLabel]) => {
+            const typedChanges = byType[sectionId] ?? [];
+            if (typedChanges.length === 0) {
+              return [];
+            }
+            const standardItems = typedChanges.filter((change) => !isSyntheticCommit(change)).map((change) => item(this.api, change));
+            const syntheticCommits = typedChanges.filter((change) => isSyntheticCommit(change));
+            const children = [...standardItems];
+            if (syntheticCommits.length > 0) {
+              children.push(unknownItem(this.api, syntheticCommits));
+            }
+            return [
+              {
+                type: "change",
+                level: 0,
+                header: sectionHeader(this.api, sectionId, sectionLabel),
+                children
+              }
+            ];
+          });
+          return sections.length > 0 ? sections : [
+            {
+              type: "text",
+              value: this.api.config.changelog.noChangesMessage,
+              style: "plain"
+            }
+          ];
+        };
+        this.build = (release) => ({
+          type: "release",
+          headers: this.buildDocHeaders(release.tag, release.previousVersion, release.releaseDate),
+          metrics: [
+            {
+              type: "metric",
+              name: "bump",
+              value: release.previousVersion?.detectBump(release.tag) ?? "patch"
+            },
+            {
+              type: "metric",
+              name: "changes",
+              value: String(release.changes.length)
+            },
+            {
+              type: "metric",
+              name: "packages",
+              value: String(new Set(release.changes.flatMap((change) => change.pkgs)).size)
+            }
+          ],
+          children: this.buildSections(release.changes)
+        });
+        this.buildDocument = (releases) => ({
+          type: "doc",
+          releases: releases.map(this.build)
+        });
       }
     };
     exports2.ChangelogPlanner = ChangelogPlanner;
-  }
-});
-
-// ../../packages/core/dist/lib/changelog/render.js
-var require_render = __commonJS({
-  "../../packages/core/dist/lib/changelog/render.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.RenderAPI = void 0;
-    var markdown_1 = require_markdown();
-    var renderer_1 = require_renderer();
-    var plan_1 = require_plan();
-    var RenderAPI = class {
-      constructor(api) {
-        this.api = api;
-        this.changes = (tag, changes, previousTag, releaseDate) => {
-          const ast = new plan_1.ChangelogPlanner(this.api).build(tag, changes, previousTag, releaseDate);
-          return (0, renderer_1.renderAst)(ast, markdown_1.markdownFormatter);
-        };
-      }
-    };
-    exports2.RenderAPI = RenderAPI;
   }
 });
 
@@ -44100,80 +44157,47 @@ var require_changelog = __commonJS({
   "../../packages/core/dist/lib/changelog/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.renderChangelog = void 0;
+    exports2.Changelog = void 0;
     var git_1 = require_git();
-    var version_1 = require_version();
     var fetch_1 = require_fetch2();
-    var render_1 = require_render();
-    var detectChangeType = (changes, changeTypeBumps) => {
-      const rank = { patch: 0, minor: 1, major: 2 };
-      const highest = changes.reduce((current, change) => {
-        const bump = changeTypeBumps[change.type] ?? (change.type === "breaking" ? "major" : change.type === "feature" ? "minor" : "patch");
-        return rank[bump] > rank[current] ? bump : current;
-      }, "patch");
-      return highest;
-    };
-    var enforceVersionTagRule = (api, previousVersion) => {
-      try {
-        previousVersion.isEqual((0, git_1.lastTag)());
-      } catch (error2) {
-        const message = error2 instanceof Error ? error2.message : String(error2);
-        if (message.includes("No names found")) {
-          return;
+    var markdown_1 = require_markdown();
+    var renderer_1 = require_renderer();
+    var plan_1 = require_plan();
+    var Changelog = class {
+      constructor(api) {
+        this.api = api;
+      }
+      documents(releases) {
+        const ast = new plan_1.ChangelogPlanner(this.api).buildDocument(releases);
+        return (0, renderer_1.renderAst)(ast, markdown_1.markdownFormatter);
+      }
+      async render(options = {}) {
+        const fetch2 = new fetch_1.FetchApi(this.api);
+        const currentVersion = this.api.module.version();
+        const sinceRef = options.sinceRef;
+        if (!options.all && !sinceRef) {
+          currentVersion.enforceVersionTagRule({
+            lastTag: git_1.lastTag,
+            rule: this.api.config.policies?.rules?.versionTagMismatch,
+            warn: (message) => this.api.logger.warn(message)
+          });
+          const plan = await fetch2.fetchReleasePlan({ currentVersion });
+          await this.api.module.bump(plan.bump);
+          const nextVersion = this.api.module.version();
+          nextVersion.checkAfterBump(plan.release.tag);
+          return this.documents([plan.release]);
         }
-        const rule = api.config.policies?.rules?.versionTagMismatch ?? "error";
-        const mismatchMessage = `package.json version must match the last git tag. Root cause: ${message}`;
-        if (rule === "error") {
-          throw new Error(`Unable to continue release. ${mismatchMessage}`);
-        }
-        if (rule === "warn") {
-          api.logger.warn(`[relasy] Continuing despite version/tag mismatch because policies.rules.version-tag-mismatch=warn. ${mismatchMessage}`);
-        }
+        const releases = options.all ? await fetch2.fetchReleases({ currentVersion, all: true }) : [
+          await fetch2.previewRelease({
+            currentVersion,
+            sinceRef,
+            sinceTag: void 0
+          })
+        ];
+        return this.documents(releases);
       }
     };
-    var renderIncrementalChangelog = async (api, options) => {
-      const fetch2 = new fetch_1.FetchApi(api);
-      const renderer = new render_1.RenderAPI(api);
-      const currentVersion = api.module.version();
-      const sinceRef = options.sinceCommit || options.sinceTag;
-      const changes = sinceRef ? await fetch2.changesSinceRef(sinceRef) : await fetch2.changes(currentVersion);
-      if (!sinceRef) {
-        await api.module.bump(detectChangeType(changes, api.config?.changeTypeBumps ?? {}));
-        return renderer.changes(api.module.version(), changes, currentVersion.toString());
-      }
-      return renderer.changes(currentVersion, changes, options.sinceTag);
-    };
-    var renderFullHistoryChangelog = async (api) => {
-      const tags = (0, git_1.listTags)();
-      const fetch2 = new fetch_1.FetchApi(api);
-      const renderer = new render_1.RenderAPI(api);
-      if (tags.length === 0) {
-        const currentVersion = api.module.version();
-        const changes = await fetch2.changes(currentVersion);
-        return renderer.changes(currentVersion, changes);
-      }
-      const sections = [];
-      for (let i = 0; i < tags.length; i += 1) {
-        const tag = tags[i];
-        const previousTag = i > 0 ? tags[i - 1] : void 0;
-        const changes = await fetch2.changesBetweenRefs(previousTag, tag);
-        sections.push(renderer.changes(version_1.Version.parse(tag), changes, previousTag, (0, git_1.dateAtRef)(tag)));
-      }
-      return sections.reverse().join("\n\n");
-    };
-    var renderChangelog = async (api, options = {}) => {
-      const hasCustomStart = Boolean(options.sinceTag || options.sinceCommit);
-      if (options.all) {
-        return renderFullHistoryChangelog(api);
-      }
-      if (hasCustomStart) {
-        return renderIncrementalChangelog(api, options);
-      }
-      const previousVersion = api.module.version();
-      enforceVersionTagRule(api, previousVersion);
-      return renderIncrementalChangelog(api, options);
-    };
-    exports2.renderChangelog = renderChangelog;
+    exports2.Changelog = Changelog;
   }
 });
 
@@ -44462,7 +44486,7 @@ var require_dist = __commonJS({
         return new _Relasy(config, new gh_1.Github(config.gh, void 0, config.project.baseBranch), (0, project_1.setupToolchain)(config.project));
       }
       changelog(options) {
-        return (0, changelog_1.renderChangelog)(this, options);
+        return new changelog_1.Changelog(this).render(options);
       }
       labels(ls) {
         return (0, labels_1.genLabels)(this.config, ls);

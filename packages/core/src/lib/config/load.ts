@@ -10,7 +10,13 @@ import {
   defaultLabelMode,
   defaultRuleLevels,
 } from "./defaults";
-import { ChangeType, ConfigSchema, RawConfig, RulesConfig } from "./schema";
+import {
+  ChangeType,
+  ChangelogConfigSchema,
+  ConfigSchema,
+  RawConfig,
+  RulesConfig,
+} from "./schema";
 
 type ExtraConfig = {
   gh: string;
@@ -19,6 +25,10 @@ type ExtraConfig = {
   changeTypeBumps?: Record<string, BumpLevel>;
   pkgs: Record<string, { name: string; paths?: string[] }>;
   changeTypeScopes?: Record<string, { paths: string[] }>;
+  changelog: {
+    noChangesMessage: string;
+    untitledChangeMessage: string;
+  };
   policies: {
     labelMode: "strict" | "permissive";
     autoAddInferredPackages: boolean;
@@ -128,14 +138,8 @@ const hasLegacyFields = (cfg: Record<string, unknown>) => {
   return topLegacy || changelogLegacy;
 };
 
-const hasNewFields = (cfg: Record<string, unknown>) => {
-  const topNew = ["policies", "changes", "changelog"].some((key) => key in cfg);
-
-  const changelogNew =
-    isPlainObject(cfg.changelog) && "grouping" in cfg.changelog;
-
-  return topNew || changelogNew;
-};
+const hasNewFields = (cfg: Record<string, unknown>) =>
+  ["policies", "changes", "changelog"].some((key) => key in cfg);
 
 const parseConfigInput = (input: unknown): RawConfig => {
   const normalized = normalizeKeysDeep(input);
@@ -155,11 +159,13 @@ const parseConfigInput = (input: unknown): RawConfig => {
 export const normalizeConfig = (config: RawConfig, gh: string): Config => {
   const normalizedPkgs = normalizePkgs(config.pkgs);
   const normalizedChanges = normalizeChanges(config.changes);
+  const normalizedChangelog = ChangelogConfigSchema.parse(config.changelog);
 
   return {
     ...config,
     pkgs: normalizedPkgs,
     gh,
+    changelog: normalizedChangelog,
     policies: {
       labelMode: config.policies?.labelMode ?? defaultLabelMode,
       autoAddInferredPackages:
