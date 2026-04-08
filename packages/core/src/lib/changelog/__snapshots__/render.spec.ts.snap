@@ -7,7 +7,7 @@ exports[`RenderAPI snapshots > commit-only synthetic entries (sourceCommit + no 
 * **Unknown** — Unrecognized commitlint items (no associated PR)   
   └ 🧑‍💻 - @ci-bot   
   <details>
-  <summary><sub>1 commit</sub></summary>
+  <summary>1 commit</summary>
     
     └ 🔘 - [\`abcdef1\`](https://github.com/acme/demo/commit/abcdef1234567890) Standalone commit 
   </details>
