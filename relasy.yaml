@@ -49,3 +49,8 @@ changes:
     paths:
       - "**/*.spec.ts"
       - "**/*.test.ts"
+
+  style:
+    icon: 🎨
+    title: Style
+    bump: patch
