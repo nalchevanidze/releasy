@@ -4,7 +4,7 @@ import { loadConfig } from "./lib/config";
 export { normalizeConfig, normalizeConfigInputKeys } from "./lib/config";
 import { setupEnv } from "./lib/utils";
 import { setupToolchain } from "./lib/project";
-import { renderChangelog, type ChangelogOptions } from "./lib/changelog";
+import { Changelog, type ChangelogOptions } from "./lib/changelog";
 import { genLabels, parseLabels } from "./lib/labels";
 export * from "./app";
 export { withRetry } from "./lib/retry";
@@ -32,7 +32,7 @@ export class Relasy extends Api implements IRelasy {
   public version = () => this.module.version();
 
   public changelog(options?: ChangelogOptions) {
-    return renderChangelog(this, options);
+    return new Changelog(this).render(options);
   }
 
   public labels(ls: string[]) {

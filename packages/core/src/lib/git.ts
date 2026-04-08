@@ -40,6 +40,9 @@ export const commitsBetweenRefs = (
     ? splitLines(git("rev-list", "--reverse", `${fromExclusive}..${to}`))
     : splitLines(git("rev-list", "--reverse", to));
 
+export const changedFilesAtCommit = (oid: string) =>
+  splitLines(git("show", "--pretty=format:", "--name-only", oid));
+
 const isUserSet = () => {
   try {
     const user = `${git("config", "user.name")}${git(

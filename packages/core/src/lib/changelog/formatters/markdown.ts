@@ -1,94 +1,132 @@
+import { ChangeNode } from "../ast";
 import { ChangelogRenderer } from "./renderer";
-import { Marker } from "../ast";
 
-const lines = (...xs: (string[] | string | undefined)[]) =>
-  xs.flat().filter(Boolean).join("\n");
+type Line = string | string[] | undefined;
 
-const withMarker = (type: Marker, txt: string) => {
-  switch (type) {
-    case "tree":
-      return `&nbsp; └ ${txt}`;
-    case "bullet":
-      return `* ${txt}`;
-    default:
-      return txt;
-  }
-};
+const lines = (...ls: Line[]) =>
+  ls
+    .flat()
+    .filter((x): x is string => x !== undefined)
+    .reduce(
+      (txt, line) =>
+        txt.length === 0
+          ? line
+          : [txt, line.startsWith("  ") ? "  \n" : "\n", line].join(""),
+      "",
+    );
 
 const list = (
-  header: string | undefined,
-  items: (string | string[])[],
-  marker: Marker = "plain",
+  isTree: boolean,
+  ...items: Array<string | string[] | undefined>
 ) =>
+  items
+    .flat()
+    .filter((item): item is string => item !== undefined)
+    .map((item) => (isTree ? `  └ ${item}` : `* ${item}`));
+
+const indentText = (text: string, indent = "  ") =>
+  text
+    .split("\n")
+    .map((line) => `${indent}${line}`)
+    .join("\n");
+
+const renderDetails = (summary: string, items: string[]) =>
   lines(
-    ...[header, ...items.flat().map((item) => withMarker(marker, item))]
-      .filter(Boolean)
-      .map((value) => `${value}  `),
+    "<details>",
+    `<summary>${summary}</summary>`,
+    "",
+    list(true, items),
+    "</details>",
   );
 
+const isCollapsibleCommitGroup = (
+  child: ChangeNode["children"][number],
+): child is ChangeNode & { commits: NonNullable<ChangeNode["commits"]> } =>
+  child.type === "change" &&
+  child.level === 1 &&
+  (child.commits?.length ?? 0) > 0;
+
 export const markdownFormatter: ChangelogRenderer<string> = {
-  doc: ({ version, date, compareUrl, stats, children }, render) => {
-    const versionText = version.startsWith("v") ? version : `v${version}`;
+  doc: ({ releases }, render) => releases.map(render).join("\n\n<br>\n\n"),
 
-    const parsedDate = new Date(`${date}T00:00:00Z`);
-    const formattedDate = Number.isNaN(parsedDate.getTime())
-      ? date
-      : parsedDate.toLocaleDateString("en-US", {
-          month: "long",
-          day: "2-digit",
-          year: "numeric",
-          timeZone: "UTC",
-        });
+  release: ({ headers, metrics, children }, render) =>
+    lines(
+      `# 🚀 ${headers.map(render).join(" • ")} `,
+      metrics?.map(render).join(" "),
+      children.map(render),
+    ),
 
-    const versionLink = compareUrl
-      ? render({ type: "link", label: versionText, url: compareUrl })
-      : versionText;
-    const header = `# 🚀 ${versionLink} &nbsp; • &nbsp; ${formattedDate}`;
+  change: ({ level, header, children, commits }, render) => {
+    const headerText = header ? render(header) : undefined;
+
+    if (level === 0) {
+      const renderedChildren = children.map((child) => {
+        if (isCollapsibleCommitGroup(child)) {
+          const childHeader = child.header ? render(child.header) : undefined;
+          const count = child.commits?.length ?? 0;
+          const summary = `${count} commit${count === 1 ? "" : "s"}`;
+          const details = renderDetails(summary, child.commits.map(render));
+
+          return lines(
+            `* ${childHeader}`,
+            lines(list(true, child.children.map(render)), indentText(details)),
+          );
+        }
+
+        return `* ${render(child)}`;
+      });
+
+      return lines(
+        headerText,
+        renderedChildren,
+        headerText ? "<br>" : undefined,
+      );
+    }
 
     return lines(
-      header,
-      stats ? (stats || []).map(render).join(" ") : undefined,
-      children.map(render),
+      headerText,
+      list(true, children.map(render)),
+      list(true, commits?.map(render)),
     );
   },
 
-  section: ({ header, children }, render) =>
-    lines(
-      header ? render(header) : undefined,
-      children.map(render),
-      header ? "<br>" : undefined,
-    ),
+  tag: ({ children, kind }, render) => {
+    const value = children.map(render).join(" • ");
 
-  cluster: ({ header, children, hiddenCount, marker }, render) =>
-    list(
-      header ? render(header) : undefined,
-      [
-        children.map(render),
-        hiddenCount && hiddenCount > 0 ? `+${hiddenCount} more` : [],
-      ],
-      marker,
-    ),
-
-  item: ({ refLabel, title, meta }, render) =>
-    list(`**${refLabel}** — ${title}`, meta.map(render), "tree"),
-
-  meta: ({ children, kind }, render) => {
-    const value = children.map(render).join("");
-
-    if (kind === "scope") return `📦 - ${value}`;
-    if (kind === "author") return `🧑‍💻 - ${value}`;
+    if (kind === "scope") return `📦 - ${value} `;
+    if (kind === "author") return `🧑‍💻 - ${value} `;
     return value;
   },
 
-  commit: ({ ref, title }, render) => {
+  commit: ({ ref, title }) => {
     if (!ref) return title;
-    return `🔘 - ${render(ref)} ${title}`;
+    return `🔘 - [\`${ref.label}\`](${ref.url}) ${title} `;
   },
 
-  header: (node, render) =>
-    `${"#".repeat(node.level)} ${node.icon ? `${node.icon} ` : ""}${node.children.map(render).join("")}`,
+  header: (node, render) => {
+    const children = node.children
+      .map((child) => {
+        if (child.type === "text") {
+          return render({ ...child, value: child.value.toUpperCase() });
+        }
 
-  stat: ({ value, name }) => {
+        if (child.type === "link") {
+          return render({ ...child, label: child.label.toUpperCase() });
+        }
+
+        return render(child);
+      })
+      .join("");
+
+    return `### ${node.icon ? `${node.icon} ` : ""}${children} `;
+  },
+
+  title: ({ main, rest }, render) => {
+    const tail = (rest ?? []).map(render).join("");
+    return `${render(main)}${tail ? ` — ${tail}` : ""} `;
+  },
+
+  metric: ({ value, name }) => {
     if (name === "bump") {
       const bumpLabel = value.toUpperCase();
       const color =
@@ -107,9 +145,20 @@ export const markdownFormatter: ChangelogRenderer<string> = {
     return `![PACKAGES](https://img.shields.io/badge/PACKAGES-${encodeURIComponent(value)}-orange?style=flat-square)`;
   },
 
-  text: ({ value }) => value,
+  date: ({ date }) =>
+    date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "2-digit",
+      year: "numeric",
+      timeZone: "UTC",
+    }),
+
+  text: ({ value, style }) =>
+    style === "literal"
+      ? `\`${value}\``
+      : style === "strong"
+        ? `**${value}**`
+        : value,
 
   link: ({ label, url }) => `[${label}](${url})`,
-
-  empty: () => "_No user-facing changes since the last tag._",
 };

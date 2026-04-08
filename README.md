@@ -136,7 +136,6 @@ changelog:
     header: "## {{VERSION}} ({{DATE}})"
     section: "#### {{LABEL}}\n{{CHANGES}}"
     item: "* {{REF}}: {{TITLE}}"
-  grouping: package
 ```
 
 > **Key style:** canonical config keys are **kebab-case** in YAML. Relasy normalizes to camelCase internally.
@@ -196,10 +195,10 @@ If neither `build` nor `post-bump` is set, Relasy auto-detects the package manag
 - `templates.header` (string): supports `{{VERSION}}` and `{{DATE}}`
 - `templates.section` (string): custom section template with `{{LABEL}}` and `{{CHANGES}}`
 - `templates.item` (string): custom entry template with `{{REF}}`, `{{TITLE}}`, `{{AUTHOR}}`, `{{PACKAGES}}`, `{{BODY}}`, `{{DETAILS}}`, `{{STATS}}`
-- `grouping` (`package | scope | none`): how entries are grouped in output
 
 Default renderer behavior (when templates are not provided):
 
+- entries are grouped by change type sections
 - section icons are taken from `changes.<type>.icon` (`changeTypeEmojis` internally)
 - adds a compact top summary row (`type counts`, `package count`, `total changes`)
 - renders package + author metadata in a compact secondary line

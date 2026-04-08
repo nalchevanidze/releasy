@@ -1,11 +1,16 @@
 import { pluck } from "ramda";
 import { Change, Api, Commit, PR } from "./types";
+import { type Release, type Bump } from "./plan";
 import { parseLabels } from "../labels";
 import { Version } from "../version";
 import {
+  changedFilesAtCommit,
   commitsAfterRef,
   commitsAfterVersion,
   commitsBetweenRefs,
+  dateAtRef,
+  getDate,
+  listTags,
 } from "../git";
 
 export const parsePRNumberFromCommitMessage = (
@@ -33,6 +38,70 @@ type CommitResolution =
   | { kind: "pr"; prNumber: number; commit: Commit }
   | { kind: "non-pr"; commit: Commit };
 
+type DetectionSource = "labels" | "commits";
+const defaultDetectionUse: DetectionSource[] = ["labels"];
+const defaultNonPrRule: "skip" | "warn" | "error" = "skip";
+
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const globToRegExp = (glob: string): RegExp => {
+  const normalized = glob.replace(/\\/g, "/");
+  const pattern = normalized
+    .split("**")
+    .map((part) => part.split("*").map(escapeRegex).join("[^/]*"))
+    .join(".*");
+  return new RegExp(`^${pattern}$`);
+};
+
+const matchesAny = (path: string, patterns: string[]) => {
+  const normalized = path.replace(/\\/g, "/");
+  return patterns.some((pattern) => globToRegExp(pattern).test(normalized));
+};
+
+const inferPkgsFromPaths = (api: Api, changedFiles: string[]): string[] =>
+  Object.entries(api.config.pkgs)
+    .filter(([_, pkg]) => (pkg.paths ?? []).length > 0)
+    .filter(([_, pkg]) =>
+      changedFiles.some((file) => matchesAny(file, pkg.paths ?? [])),
+    )
+    .map(([pkg]) => pkg)
+    .sort();
+
+const toReleaseDate = (value: string): Date => new Date(`${value}T00:00:00Z`);
+
+const detectBump = (
+  changes: Change[],
+  changeTypeBumps: Record<string, Bump>,
+): Bump => {
+  const rank = { patch: 0, minor: 1, major: 2 } as const;
+
+  return changes.reduce<Bump>((current, change) => {
+    const bump =
+      changeTypeBumps[change.type] ??
+      (change.type === "breaking"
+        ? "major"
+        : change.type === "feature"
+          ? "minor"
+          : "patch");
+    return rank[bump] > rank[current] ? bump : current;
+  }, "patch");
+};
+
+const nextVersionForBump = (currentVersion: Version, bump: Bump): Version => {
+  const [majorRaw, minorRaw, patchRaw] = currentVersion.value
+    .split(".")
+    .slice(0, 3)
+    .map((part) => Number.parseInt(part, 10));
+
+  const major = Number.isNaN(majorRaw) ? 0 : majorRaw;
+  const minor = Number.isNaN(minorRaw) ? 0 : minorRaw;
+  const patch = Number.isNaN(patchRaw) ? 0 : patchRaw;
+
+  if (bump === "major") return Version.parse(`${major + 1}.0.0`);
+  if (bump === "minor") return Version.parse(`${major}.${minor + 1}.0`);
+  return Version.parse(`${major}.${minor}.${patch + 1}`);
+};
+
 const releaseVersionPattern = "v?\\d+\\.\\d+\\.\\d+(?:[-+][\\w.-]+)?";
 const releasePrTitleRegex = new RegExp(
   `^publish release\\s+${releaseVersionPattern}\\s*$`,
@@ -54,6 +123,17 @@ export const isReleasePr = (pr: PR): boolean => {
   return releasePrTitleRegex.test(title) && releaseBranchRegex.test(branch);
 };
 
+const isGeneratedReleasePr = (pr: PR): boolean => {
+  const title = pr.title?.trim() || "";
+  const body = pr.body?.trim() || "";
+
+  return (
+    isReleasePr(pr) ||
+    releasePrTitleRegex.test(title) ||
+    body.includes("<!-- relasy:release-pr -->")
+  );
+};
+
 export const isReleaseCommit = (commit: Commit): boolean => {
   const title = (commit.message || "").split("\n")[0].trim();
 
@@ -63,6 +143,8 @@ export const isReleaseCommit = (commit: Commit): boolean => {
     releaseBranchRegex.test(title)
   );
 };
+
+const availableChangeTypes = (api: Api) => Object.keys(api.config.changeTypes);
 
 const parseConventionalType = (
   text: string,
@@ -124,12 +206,13 @@ const highestDetectedType = (api: Api, types: string[]): string | undefined => {
 };
 
 const detectTypeFromPRCommits = (api: Api, pr: PR): string | undefined => {
+  const types = availableChangeTypes(api);
   const commitNodes = pr.commits?.nodes ?? [];
   const detected = commitNodes
     .map(({ commit }) =>
       parseConventionalType(
         `${commit.messageHeadline || ""}\n${commit.messageBody || ""}`,
-        Object.keys(api.config.changeTypes),
+        types,
       ),
     )
     .filter((x): x is string => Boolean(x));
@@ -139,10 +222,7 @@ const detectTypeFromPRCommits = (api: Api, pr: PR): string | undefined => {
   }
 
   // fallback for compatibility when commit payload is unavailable
-  return parseConventionalType(
-    `${pr.title}\n${pr.body || ""}`,
-    Object.keys(api.config.changeTypes),
-  );
+  return parseConventionalType(`${pr.title}\n${pr.body || ""}`, types);
 };
 
 const resolveDetectedType = (
@@ -150,7 +230,7 @@ const resolveDetectedType = (
   labelsType?: string,
   commitsType?: string,
 ): { type: string; isRefinement: boolean } => {
-  const detectionUse = api.config.policies?.detectionUse ?? ["labels"];
+  const detectionUse = api.config.policies?.detectionUse ?? defaultDetectionUse;
   const conflictRule = api.config.policies?.rules?.detectionConflict ?? "error";
 
   if (labelsType && commitsType && labelsType !== commitsType) {
@@ -182,6 +262,11 @@ const resolveDetectedType = (
   return { type: "chore", isRefinement: true };
 };
 
+const commitsDetectionEnabled = (api: Api) =>
+  (api.config.policies?.detectionUse ?? defaultDetectionUse).includes(
+    "commits",
+  );
+
 const toSyntheticChange = (api: Api, commit: Commit): Change => {
   const [title, ...bodyLines] = commit.message.split("\n");
   const body = bodyLines.join("\n").trim();
@@ -190,8 +275,9 @@ const toSyntheticChange = (api: Api, commit: Commit): Change => {
   const authorUrl = commit.author?.user?.url || "";
   const commitDetected = parseConventionalType(
     commit.message,
-    Object.keys(api.config.changeTypes),
+    availableChangeTypes(api),
   );
+  const changedFiles = changedFilesAtCommit(commit.oid);
 
   return {
     number: 0,
@@ -200,10 +286,33 @@ const toSyntheticChange = (api: Api, commit: Commit): Change => {
     author: { login: authorLogin, url: authorUrl },
     labels: { nodes: [] },
     type: (commitDetected || "chore") as Change["type"],
-    pkgs: [],
+    pkgs: inferPkgsFromPaths(api, changedFiles),
     sourceCommit: commit.oid,
     isRefinement: !commitDetected,
   };
+};
+
+export type FetchReleasesOptions = {
+  currentVersion: Version;
+  sinceRef?: string;
+  sinceTag?: string;
+  all?: boolean;
+};
+
+export type FetchReleasePlanOptions = {
+  currentVersion: Version;
+  all?: boolean;
+};
+
+export type FetchPreviewReleaseOptions = {
+  currentVersion: Version;
+  sinceRef: string;
+  sinceTag?: string;
+};
+
+export type ReleasePlan = {
+  release: Release;
+  bump: Bump;
 };
 
 export class FetchApi {
@@ -307,18 +416,19 @@ export class FetchApi {
       .filter((commit) => !isReleaseCommit(commit));
 
     const prChanges = (await this.pullRequests(prNumbers))
-      .filter((pr) => !isReleasePr(pr))
+      .filter((pr) => !isGeneratedReleasePr(pr))
       .map(this.toChange);
 
-    const commitsEnabled = (
-      this.api.config.policies?.detectionUse ?? ["labels"]
-    ).includes("commits");
-
-    if (!commitsEnabled || nonPrCommits.length === 0) {
+    if (!commitsDetectionEnabled(this.api) || nonPrCommits.length === 0) {
       return prChanges;
     }
 
-    const rule = this.api.config.policies?.rules?.nonPrCommit ?? "skip";
+    const rule =
+      this.api.config.policies?.rules?.nonPrCommit ?? defaultNonPrRule;
+
+    if (rule === "skip") {
+      return prChanges;
+    }
 
     if (rule === "error") {
       const examples = nonPrCommits
@@ -331,18 +441,79 @@ export class FetchApi {
       );
     }
 
-    if (rule === "skip") {
-      return prChanges;
-    }
-
     this.api.logger.warn(
       `[relasy] Including ${nonPrCommits.length} commits without PR linkage due to policies.rules.non-pr-commit=warn`,
     );
 
-    const syntheticChanges = nonPrCommits.map((c) =>
-      toSyntheticChange(this.api, c),
+    return [
+      ...prChanges,
+      ...nonPrCommits.map((c) => toSyntheticChange(this.api, c)),
+    ];
+  };
+
+  public currentRelease = async (
+    currentVersion: Version,
+  ): Promise<Release> => ({
+    tag: currentVersion,
+    changes: await this.changes(currentVersion),
+    releaseDate: toReleaseDate(getDate()),
+  });
+
+  public previewRelease = async (
+    options: FetchPreviewReleaseOptions,
+  ): Promise<Release> => ({
+    tag: options.currentVersion,
+    changes: await this.changesSinceRef(options.sinceRef),
+    releaseDate: toReleaseDate(getDate()),
+    previousVersion: options.sinceTag
+      ? Version.parse(options.sinceTag)
+      : undefined,
+  });
+
+  public fetchReleases = async (
+    options: FetchReleasesOptions,
+  ): Promise<Release[]> => {
+    if (options.all) {
+      return this.fullHistoryReleases(options.currentVersion);
+    }
+
+    if (options.sinceRef) {
+      return [
+        await this.previewRelease({
+          currentVersion: options.currentVersion,
+          sinceRef: options.sinceRef,
+          sinceTag: options.sinceTag,
+        }),
+      ];
+    }
+
+    return [await this.currentRelease(options.currentVersion)];
+  };
+
+  public fetchLastRelease = async (
+    options: FetchReleasesOptions,
+  ): Promise<Release | undefined> => {
+    const releases = await this.fetchReleases(options);
+    return releases[0];
+  };
+
+  public fetchReleasePlan = async (
+    options: FetchReleasePlanOptions,
+  ): Promise<ReleasePlan> => {
+    const release = await this.currentRelease(options.currentVersion);
+    const bump = detectBump(
+      release.changes,
+      (this.api.config?.changeTypeBumps ?? {}) as Record<string, Bump>,
     );
-    return [...prChanges, ...syntheticChanges];
+
+    return {
+      release: {
+        ...release,
+        tag: nextVersionForBump(options.currentVersion, bump),
+        previousVersion: options.currentVersion,
+      },
+      bump,
+    };
   };
 
   public changes = async (version: Version): Promise<Change[]> =>
@@ -356,4 +527,37 @@ export class FetchApi {
     to: string,
   ): Promise<Change[]> =>
     this.resolveChangesFromCommits(commitsBetweenRefs(fromExclusive, to));
+
+  public releasesByTags = async (tags: string[]): Promise<Release[]> =>
+    Promise.all(
+      tags.map(async (tag, i) => {
+        const previousTag = i > 0 ? tags[i - 1] : undefined;
+        const changes = await this.changesBetweenRefs(previousTag, tag);
+
+        return {
+          tag: Version.parse(tag),
+          previousVersion: previousTag ? Version.parse(previousTag) : undefined,
+          releaseDate: toReleaseDate(dateAtRef(tag)),
+          changes,
+        };
+      }),
+    );
+
+  public fullHistoryReleases = async (
+    currentVersion: Version,
+  ): Promise<Release[]> => {
+    const tags = listTags();
+
+    if (tags.length === 0) {
+      return [
+        {
+          tag: currentVersion,
+          changes: await this.changes(currentVersion),
+          releaseDate: toReleaseDate(getDate()),
+        },
+      ];
+    }
+
+    return (await this.releasesByTags(tags)).reverse();
+  };
 }

@@ -49,6 +49,3 @@ changes:
     paths:
       - "**/*.spec.ts"
       - "**/*.test.ts"
-
-changelog:
-  grouping: scope

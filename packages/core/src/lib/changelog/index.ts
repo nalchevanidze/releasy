@@ -1,147 +1,54 @@
-import { dateAtRef, lastTag, listTags } from "../git";
-import { Version } from "../version";
+import { lastTag } from "../git";
 import { FetchApi } from "./fetch";
-import { RenderAPI } from "./render";
-import { Api, Change } from "./types";
+import { markdownFormatter } from "./formatters/markdown";
+import { renderAst } from "./formatters/renderer";
+import { ChangelogPlanner, type Release } from "./plan";
+import { Api } from "./types";
 
 export type ChangelogOptions = {
-  sinceTag?: string;
-  sinceCommit?: string;
+  sinceRef?: string;
   all?: boolean;
 };
 
-const detectChangeType = (
-  changes: Change[],
-  changeTypeBumps: Record<string, "major" | "minor" | "patch">,
-) => {
-  const rank = { patch: 0, minor: 1, major: 2 } as const;
+export class Changelog {
+  constructor(private api: Api) {}
 
-  const highest = changes.reduce<"major" | "minor" | "patch">(
-    (current, change) => {
-      const bump =
-        changeTypeBumps[change.type] ??
-        (change.type === "breaking"
-          ? "major"
-          : change.type === "feature"
-            ? "minor"
-            : "patch");
-      return rank[bump] > rank[current] ? bump : current;
-    },
-    "patch",
-  );
+  public documents(releases: Release[]): string {
+    const ast = new ChangelogPlanner(this.api).buildDocument(releases);
+    return renderAst(ast, markdownFormatter);
+  }
 
-  return highest;
-};
+  public async render(options: ChangelogOptions = {}): Promise<string> {
+    const fetch = new FetchApi(this.api);
+    const currentVersion = this.api.module.version();
+    const sinceRef = options.sinceRef;
 
-const enforceVersionTagRule = (api: Api, previousVersion: Version) => {
-  try {
-    previousVersion.isEqual(lastTag());
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    if (!options.all && !sinceRef) {
+      currentVersion.enforceVersionTagRule({
+        lastTag,
+        rule: this.api.config.policies?.rules?.versionTagMismatch,
+        warn: (message) => this.api.logger.warn(message),
+      });
 
-    if (message.includes("No names found")) {
-      // first release in repository (no tags yet)
-      return;
+      const plan = await fetch.fetchReleasePlan({ currentVersion });
+      await this.api.module.bump(plan.bump);
+
+      const nextVersion = this.api.module.version();
+      nextVersion.checkAfterBump(plan.release.tag);
+
+      return this.documents([plan.release]);
     }
 
-    const rule = api.config.policies?.rules?.versionTagMismatch ?? "error";
-    const mismatchMessage = `package.json version must match the last git tag. Root cause: ${message}`;
+    const releases = options.all
+      ? await fetch.fetchReleases({ currentVersion, all: true })
+      : [
+          await fetch.previewRelease({
+            currentVersion,
+            sinceRef: sinceRef as string,
+            sinceTag: undefined,
+          }),
+        ];
 
-    if (rule === "error") {
-      throw new Error(`Unable to continue release. ${mismatchMessage}`);
-    }
-
-    if (rule === "warn") {
-      api.logger.warn(
-        `[relasy] Continuing despite version/tag mismatch because policies.rules.version-tag-mismatch=warn. ${mismatchMessage}`,
-      );
-    }
-    // skip => continue silently
+    return this.documents(releases);
   }
-};
-
-const renderIncrementalChangelog = async (
-  api: Api,
-  options: ChangelogOptions,
-): Promise<string> => {
-  const fetch = new FetchApi(api);
-  const renderer = new RenderAPI(api);
-  const currentVersion = api.module.version();
-
-  const sinceRef = options.sinceCommit || options.sinceTag;
-  const changes = sinceRef
-    ? await fetch.changesSinceRef(sinceRef)
-    : await fetch.changes(currentVersion);
-
-  if (!sinceRef) {
-    await api.module.bump(
-      detectChangeType(
-        changes,
-        (api.config?.changeTypeBumps ?? {}) as Record<
-          string,
-          "major" | "minor" | "patch"
-        >,
-      ),
-    );
-
-    return renderer.changes(
-      api.module.version(),
-      changes,
-      currentVersion.toString(),
-    );
-  }
-
-  return renderer.changes(currentVersion, changes, options.sinceTag);
-};
-
-const renderFullHistoryChangelog = async (api: Api): Promise<string> => {
-  const tags = listTags();
-  const fetch = new FetchApi(api);
-  const renderer = new RenderAPI(api);
-
-  if (tags.length === 0) {
-    const currentVersion = api.module.version();
-    const changes = await fetch.changes(currentVersion);
-
-    return renderer.changes(currentVersion, changes);
-  }
-
-  const sections: string[] = [];
-
-  for (let i = 0; i < tags.length; i += 1) {
-    const tag = tags[i];
-    const previousTag = i > 0 ? tags[i - 1] : undefined;
-    const changes = await fetch.changesBetweenRefs(previousTag, tag);
-
-    sections.push(
-      renderer.changes(
-        Version.parse(tag),
-        changes,
-        previousTag,
-        dateAtRef(tag),
-      ),
-    );
-  }
-
-  return sections.reverse().join("\n\n");
-};
-
-export const renderChangelog = async (
-  api: Api,
-  options: ChangelogOptions = {},
-) => {
-  const hasCustomStart = Boolean(options.sinceTag || options.sinceCommit);
-
-  if (options.all) {
-    return renderFullHistoryChangelog(api);
-  }
-
-  if (hasCustomStart) {
-    return renderIncrementalChangelog(api, options);
-  }
-
-  const previousVersion = api.module.version();
-  enforceVersionTagRule(api, previousVersion);
-
-  return renderIncrementalChangelog(api, options);
-};
+}
